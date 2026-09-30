@@ -39,7 +39,7 @@
   const initialOperations = structuredClone(state);
   try {
     const saved = JSON.parse(localStorage.getItem(key) || "null");
-    if (saved && typeof saved === "object") state = { ...state, ...saved };
+    if (saved && typeof saved === "object") state = model.normalizeOperations(initialOperations,saved);
   } catch {}
   state.cmsPages = state.cmsPages || {};
   state.cmsDrafts = state.cmsDrafts || {};
@@ -55,14 +55,14 @@
   });
   addEventListener("fourthform:restore", (e) => {
     if (e.detail.operations) {
-      state = structuredClone(e.detail.operations);
+      state = model.normalizeOperations(initialOperations,e.detail.operations);
       views.forEach(render);
-      localStorage.setItem(key, JSON.stringify(state));
+      try{localStorage.setItem(key, JSON.stringify(state));}catch{notify("Restored in this tab. Save or export to keep your changes.");}
     }
   });
   addEventListener("fourthform:reset", () => {
     state = { ...structuredClone(initialOperations), cmsPages: {},cmsDrafts: {} };
-    localStorage.removeItem(key);
+    try{localStorage.removeItem(key);}catch{notify("Device storage could not be cleared.");}
     views.forEach(render);
   });
   const pageDefaults = {
@@ -217,6 +217,11 @@
       document.querySelector("#saveState").textContent = "Not saved";
       return false;
     }
+  }
+  function commitState(change,message){
+    const previous=structuredClone(state);change();
+    if(save(message))return true;
+    state=previous;markDirty();return false;
   }
   const button = (text, action, primary = false) =>
     `<button class="top-button ${primary ? "primary" : ""}" data-ops="${action}" type="button">${text}</button>`;
@@ -653,16 +658,16 @@
       closeOpsDialog();
       return;
     }
+    if (!action) return;
     if (action.startsWith("connect-")) {
-      state.connections[action.slice(8)] = true;
-      save("Connection saved locally");
+      if(!commitState(()=>{state.connections[action.slice(8)]=true;},"Connection saved locally"))return;
       render("connections");
       closeOpsDialog();
       return;
     }
     switch (action) {
       case "save":
-        save();
+        if(!save())break;
         render("seo");
         break;
       case "save-cms":
@@ -685,12 +690,11 @@
           );
           break;
         }
-        save("Schedule saved locally");
+        if(!save("Schedule saved locally"))break;
         render("states");
         break;
       case "toggle-state":
-        state.scheduled = !state.scheduled;
-        save(state.scheduled ? "State resumed" : "State paused");
+        if(!commitState(()=>{state.scheduled=!state.scheduled;},state.scheduled?"State paused":"State resumed"))break;
         render("states");
         break;
       case "check-domain":
@@ -703,8 +707,7 @@
           notify("Enter a domain without https:// or a page path.");
           break;
         }
-        state.domainChecked = true;
-        save("Sample domain connection checked");
+        if(!commitState(()=>{state.domainChecked=true;},"Sample domain connection checked"))break;
         render("domains");
         break;
       case "copy-dns":
@@ -748,8 +751,7 @@
         );
         break;
       case "confirm-pro":
-        state.pro = true;
-        if(!save("Pro preview activated"))break;
+        if(!commitState(()=>{state.pro=true;},"Pro preview activated"))break;
         render("billing");
         closeOpsDialog();
         break;
@@ -761,8 +763,7 @@
         );
         break;
       case "cancel-pro":
-        state.pro = false;
-        if(!save("Core preview restored"))break;
+        if(!commitState(()=>{state.pro=false;},"Core preview restored"))break;
         render("billing");
         closeOpsDialog();
         break;
@@ -788,8 +789,7 @@
         );
         break;
       case "approve-site":
-        state.launch[0] = true;
-        save("Website approved in preview");
+        if(!commitState(()=>{state.launch[0]=true;},"Website approved in preview"))break;
         render("launch");
         break;
       case "pay-balance":
@@ -800,27 +800,23 @@
         );
         break;
       case "confirm-balance":
-        state.launch[1] = true;
-        if(!save("Completed payment state selected"))break;
+        if(!commitState(()=>{state.launch[1]=true;},"Completed payment state selected"))break;
         render("launch");
         render("billing");
         closeOpsDialog();
         break;
       case "launch-domain":
-        state.launch[2] = true;
-        state.domainChecked = true;
-        save("Sample domain check complete");
+        if(!/^(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,}$/i.test(state.domain.trim())){notify("Add a valid domain in Domains before checking launch.");break;}
+        if(!commitState(()=>{state.launch[2]=true;state.domainChecked=true;},"Sample domain check complete"))break;
         render("launch");
         render("domains");
         break;
       case "verify-integrations":
-        state.launch[3] = true;
-        save("Sample integrations check complete");
+        if(!commitState(()=>{state.launch[3]=true;},"Sample integrations check complete"))break;
         render("launch");
         break;
       case "final-check":
-        state.launch[4] = true;
-        save("Final preview check complete");
+        if(!commitState(()=>{state.launch[4]=true;},"Final preview check complete"))break;
         render("launch");
         break;
       case "go-live":

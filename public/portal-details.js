@@ -23,10 +23,17 @@
   if(e.key==='Escape'&&($('#leftRail').classList.contains('open')||$('#contextRail').classList.contains('open'))){e.preventDefault();e.stopImmediatePropagation();closeDrawers();drawerTrigger?.focus();}
   if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='s'){
    e.preventDefault();if(document.querySelector('.modal-backdrop.open'))return;
+   if(currentView==='settings'){$('#settingsForm').requestSubmit();return;}
    if(['review','direction'].includes(currentView))$('#saveBtn').click();
    else $(`[data-view-panel="${currentView}"] [data-ops="save-cms"], [data-view-panel="${currentView}"] [data-ops="save"], [data-view-panel="${currentView}"] [data-ops="save-state"]`)?.click();
   }
  },true);
+ const popovers=[[$('#projectBtn'),$('#projectPopover')],[$('#modeBtn'),$('#modePopover')]];
+ const syncPopovers=()=>popovers.forEach(([button,panel])=>{button.setAttribute('aria-controls',panel.id);button.setAttribute('aria-expanded',String(panel.classList.contains('open')));});
+ popovers.forEach(([button,panel])=>{new MutationObserver(syncPopovers).observe(panel,{attributes:true,attributeFilter:['class']});button.addEventListener('keydown',e=>{if(e.key==='ArrowDown'){e.preventDefault();if(!panel.classList.contains('open'))togglePopover(panel,button);panel.querySelector('button:not(:disabled)')?.focus();}});});
+ syncPopovers();
+ document.addEventListener('keydown',e=>{if(e.key!=='Escape'||document.querySelector('.modal-backdrop.open'))return;const open=popovers.find(([,panel])=>panel.classList.contains('open'));if(open){e.preventDefault();e.stopImmediatePropagation();open[1].classList.remove('open');open[0].focus();}},true);
+ const intent=$('#intentBtn'),intentPanel=$('#intentNote');intent.setAttribute('aria-controls','intentNote');const syncIntent=()=>intent.setAttribute('aria-expanded',String(intentPanel.classList.contains('open')));new MutationObserver(syncIntent).observe(intentPanel,{attributes:true,attributeFilter:['class']});syncIntent();
  const previousShow=showView;
  showView=function(name){previousShow(name);document.querySelectorAll('#leftRail [data-view],#leftRail [data-stage],#mobileDock [data-view]').forEach(b=>{const active=(b.dataset.view||b.dataset.stage)===name;if(active)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');});};
  const previousSelect=selectPage;

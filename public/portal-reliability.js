@@ -90,6 +90,7 @@
   function apply(record) {
     pageState = { ...defaultPages, ...record.pages };
     directions = structuredClone(record.directions);
+    if(["Review mode","Browse mode","Edit site"].includes(record.mode)){currentMode=record.mode;qs("#modeBtn").firstChild.textContent=currentMode+" ";}
     renderDirections();
     if (["Home", "Menu", "Visit"].includes(record.page))
       selectPage(record.page);
@@ -240,7 +241,10 @@
       JSON.stringify(draft.directions) !== JSON.stringify(directions) ||
       JSON.stringify(draft.initialDirection) !==
         JSON.stringify(stored?.initialDirection) ||
-      JSON.stringify(draft.operations) !== JSON.stringify(stored?.operations))
+      JSON.stringify(draft.operations) !== JSON.stringify(stored?.operations) ||
+      draft.revisionSubmitted !== stored?.revisionSubmitted ||
+      draft.revisionUsed !== stored?.revisionUsed ||
+      JSON.stringify(draft.revisionHistory) !== JSON.stringify(stored?.revisionHistory))
   )
     showRecovery(draft);
   else status();
