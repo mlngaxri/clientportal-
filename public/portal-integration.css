@@ -1,0 +1,14 @@
+:root{--muted:#6f6b63;--paper:#f3f1eb;--accent-soft:#665cf60c;--mono:'Geist',monospace}
+.preview-mode-badge{border:1px solid #d8d5cc;border-radius:20px;font:9px var(--sans);padding:3px 7px;color:#6f6b63;white-space:nowrap}
+.ops-top-preview{color:#6f6b63}.ops-label{font-size:12px}.ops-box p,.ops-notice{font-size:12px}.ops-line,.ops-table{font-size:12px}.ops-metric small{font-size:11px}.ops-metric span,.ops-chart-labels{font-size:10px}.ops-title{color:var(--ink)}
+[hidden]{display:none!important}
+.comm-drop{border:0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);border-radius:0;padding:24px 0}.comm-drop.dragging{padding:24px 18px;background:var(--accent-soft);box-shadow:0 0 0 1px var(--accent)}
+@media(max-width:640px){.project-main{gap:5px}.preview-mode-badge{font-size:8px;padding:3px 5px}.ops-title{font-size:31px}.ops-lead{font-size:13px}.top-actions .top-button.primary{max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}}
+@media(prefers-reduced-motion:reduce){.mori-page,.comm-object,.ops-panel{scroll-behavior:auto!important}}
+@media(max-width:360px){
+ .project-main .preview-mode-badge{display:none}
+ .project strong{display:block;max-width:54px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+ .top-actions{gap:4px;padding-right:8px}
+ .top-actions .top-button.primary{padding-left:9px;padding-right:9px;font-size:10px}
+ .project{min-width:0}
+}

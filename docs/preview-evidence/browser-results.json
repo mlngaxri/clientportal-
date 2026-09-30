@@ -1,0 +1,76 @@
+{
+  "checkedAt": "2026-09-30T10:24:55.091Z",
+  "base": "http://127.0.0.1:3002",
+  "portal": "http://127.0.0.1:4174",
+  "checks": [
+    {
+      "name": "Marketing reflows at five widths",
+      "result": "pass"
+    },
+    {
+      "name": "Marketing funnel exposes preview and onboarding",
+      "result": "pass"
+    },
+    {
+      "name": "Onboarding sample can save, reload and complete example checkout",
+      "result": "pass"
+    },
+    {
+      "name": "First preview has its own price and revision scope",
+      "result": "pass"
+    },
+    {
+      "name": "Onboarding reflows at five widths",
+      "result": "pass"
+    },
+    {
+      "name": "Portal reflows at five widths",
+      "result": "pass"
+    },
+    {
+      "name": "Portal page navigation and direction creation",
+      "result": "pass"
+    },
+    {
+      "name": "Direction text persists and Send preserves revision allowance",
+      "result": "pass"
+    },
+    {
+      "name": "Drawing keeps editable vector strokes and keyboard dismiss restores focus",
+      "result": "pass"
+    },
+    {
+      "name": "Review image proposal leaves the website unchanged",
+      "result": "pass"
+    },
+    {
+      "name": "Revision hold cancellation, submit once, reload and withdrawal",
+      "result": "pass"
+    },
+    {
+      "name": "CMS saved content appears on the reviewed page",
+      "result": "pass"
+    },
+    {
+      "name": "SEO inspection responds to missing information",
+      "result": "pass"
+    },
+    {
+      "name": "Analytics range updates metrics and chart",
+      "result": "pass"
+    },
+    {
+      "name": "Billing preview can explore Pro and return to Core",
+      "result": "pass"
+    },
+    {
+      "name": "Operational drafts recover and Reset clears all sample settings",
+      "result": "pass"
+    },
+    {
+      "name": "No empty named buttons in active portal surface",
+      "result": "pass"
+    }
+  ],
+  "uncaughtErrors": []
+}
