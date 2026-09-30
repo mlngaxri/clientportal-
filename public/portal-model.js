@@ -1,9 +1,9 @@
 /* Shared preview data rules; no account or service dependencies. */
 (function(root){
  const clone=value=>structuredClone(value);
- function cmsFields(state,page,defaults){return clone(state.cmsDrafts?.[page]||state.cmsPages?.[page]||defaults[page]);}
+ function cmsFields(state,page,defaults){return clone({...defaults[page],...state.cmsPages?.[page],...state.cmsDrafts?.[page]});}
  function stageCms(state,page,fields){state.cmsDrafts=state.cmsDrafts||{};state.cmsDrafts[page]=clone(fields);}
- function validateCms(fields){return fields.heading.trim()&&fields.cta.trim()?null:'Add a main heading and a button label before saving.';}
+ function validateCms(fields){return typeof fields.heading==='string'&&fields.heading.trim()&&typeof fields.cta==='string'&&fields.cta.trim()?null:'Add a main heading and a button label before saving.';}
  function prepareCms(state,page,fields){const saved=state.cmsPages?.[page];state.cmsPages=state.cmsPages||{};state.cmsPages[page]=clone(fields);return {page,previous:saved?clone(saved):null};}
  function rollbackCms(state,change){if(change.previous)state.cmsPages[change.page]=change.previous;else delete state.cmsPages[change.page];}
  function validSchedule(state){const time=v=>/^\d{2}:\d{2}$/.test(v)&&Number(v.slice(0,2))<24&&Number(v.slice(3))<60;return !!state.stateName.trim()&&Array.isArray(state.stateDays)&&state.stateDays.length>0&&state.stateDays.every(d=>Number.isInteger(d)&&d>=0&&d<=6)&&time(state.stateStart)&&time(state.stateEnd)&&state.stateStart!==state.stateEnd;}

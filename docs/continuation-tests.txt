@@ -3,17 +3,18 @@ npm warn Unknown env config "http-proxy". This will stop working in the next maj
 > fourthform-client-portal@0.2.0 test
 > node --test tests/*.test.mjs
 
-✔ unsaved per-page edits and images stay separate from saved website content (0.809829ms)
-✔ failed saves restore the previous published page and retain its draft (0.188584ms)
-✔ blank headings and action labels cannot replace visible website content (0.17955ms)
-✔ overnight States remain valid while missing, malformed or equal times fail (0.250828ms)
-✔ every period’s source and page breakdown adds up to its visible total (0.347393ms)
-✔ standalone build retains ordered scripts and all local assets (85.547404ms)
-ℹ tests 6
+✔ unsaved per-page edits and images stay separate from saved website content (1.131332ms)
+✔ failed saves restore the previous published page and retain its draft (0.233171ms)
+✔ blank headings and action labels cannot replace visible website content (0.163205ms)
+✔ overnight States remain valid while missing, malformed or equal times fail (0.314483ms)
+✔ every period’s source and page breakdown adds up to its visible total (0.405731ms)
+✔ older text-only CMS records inherit the correct page image (0.147972ms)
+✔ standalone build retains ordered scripts and all local assets (84.040545ms)
+ℹ tests 7
 ℹ suites 0
-ℹ pass 6
+ℹ pass 7
 ℹ fail 0
 ℹ cancelled 0
 ℹ skipped 0
 ℹ todo 0
-ℹ duration_ms 164.88013
+ℹ duration_ms 163.98721
