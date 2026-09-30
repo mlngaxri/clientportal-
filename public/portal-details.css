@@ -1,0 +1,32 @@
+/* Small interface refinements, shared with the marketing preview. */
+:root{--detail-focus:#665cf6}
+button,input,textarea,select,a{-webkit-tap-highlight-color:transparent}
+button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:2px solid var(--detail-focus);outline-offset:3px}
+button:disabled{cursor:not-allowed;opacity:.48}
+button:not(:disabled):active{filter:brightness(.96)}
+textarea{resize:vertical;min-height:72px;line-height:1.6}
+input,textarea,select{accent-color:var(--detail-focus)}
+.ops-wrap,.comm-initial,.context,.left{scrollbar-gutter:stable;overscroll-behavior:contain}
+.ops-table td{font-variant-numeric:tabular-nums;vertical-align:top}
+.ops-metric strong,.ops-plan-price,.resize-control{font-variant-numeric:tabular-nums}
+.ops-table th{text-align:left}
+.ops-search-result h3,.ops-search-result p,.ops-line p,.comm-object p{overflow-wrap:anywhere}
+.detail-counter{display:block;margin-top:6px;font-size:11px;font-weight:400;color:var(--muted);line-height:1.5}
+.detail-counter.warning{color:#946027}
+.detail-hint{font-size:11px;line-height:1.5;color:var(--muted);margin:8px 0 0}
+.toast{max-width:calc(100vw - 32px);width:max-content;white-space:normal;text-align:center;line-height:1.5;padding:10px 16px;font-size:12px}
+.ops-label:focus-within{color:var(--ink)}
+.plate-track{scroll-padding-inline:20px}
+@media(max-width:640px){
+ .toast{bottom:calc(76px + env(safe-area-inset-bottom))}
+ .mobile-dock{bottom:calc(10px + env(safe-area-inset-bottom));min-height:48px}
+ .ops-tabs button,.ops-actions button,.comm-actions button{min-height:40px}
+ .ops-label input,.ops-label textarea,.ops-label select{font-size:16px}
+ .ops-wrap{padding-bottom:calc(100px + env(safe-area-inset-bottom))}
+ .left,.context{padding-bottom:calc(90px + env(safe-area-inset-bottom))}
+ .modal-backdrop{padding:12px}
+ .modal{max-height:calc(100dvh - 24px);overflow-y:auto;overscroll-behavior:contain}
+ .ops-actions{flex-wrap:wrap}
+}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important}.toast{transition:none}}
+.ops-lead{max-width:65ch}.ops-label textarea{line-height:1.6}.ops-box{scroll-margin-top:20px}.ops-table tr:last-child td{border-bottom:0}.ops-table td:last-child{text-align:right;white-space:nowrap}.ops-search-result p{line-height:1.65}.detail-hint,.detail-counter{user-select:text}.toast{box-shadow:0 8px 28px #17171520}.comm-drawing-preview{overflow:hidden}.ops-tabs button[aria-pressed=true]{font-weight:500}

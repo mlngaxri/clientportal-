@@ -1,0 +1,33 @@
+{
+  "results": [
+    {
+      "name": "Password visibility preserves the typed value",
+      "result": "pass"
+    },
+    {
+      "name": "Malformed saved onboarding selections recover safely",
+      "result": "pass"
+    },
+    {
+      "name": "SEO counters update and describe their inputs",
+      "result": "pass"
+    },
+    {
+      "name": "Save shortcut retains a verified device copy",
+      "result": "pass"
+    },
+    {
+      "name": "Mobile drawers expose state and restore focus on Escape",
+      "result": "pass"
+    },
+    {
+      "name": "Editing a checked domain invalidates its status",
+      "result": "pass"
+    },
+    {
+      "name": "DNS copy gives a fallback when clipboard is unavailable",
+      "result": "pass"
+    }
+  ],
+  "uncaughtErrors": []
+}

@@ -505,6 +505,7 @@
     const field = e.target.dataset.field;
     if (!field) return;
     state[field] = e.target.value;
+    if(field === "domain"){state.domainChecked=false;state.launch[2]=false;document.querySelector("[data-domain-status]").textContent="Needs verification";}
     document
       .querySelectorAll("[data-mini-heading]")
       .forEach(
@@ -592,6 +593,7 @@
         ? state.stateDays.filter((v) => v !== d)
         : [...state.stateDays, d];
       el.setAttribute("aria-pressed", state.stateDays.includes(d));
+      markDirty();
       document.querySelector("#saveState").textContent = "Unsaved changes";
       return;
     }
@@ -655,6 +657,8 @@
         if (
           !state.stateName.trim() ||
           !state.stateDays.length ||
+          !/^\d{2}:\d{2}$/.test(state.stateStart) ||
+          !/^\d{2}:\d{2}$/.test(state.stateEnd) ||
           state.stateStart === state.stateEnd
         ) {
           notify(
@@ -671,6 +675,7 @@
         render("states");
         break;
       case "check-domain":
+        state.domain=state.domain.trim().toLowerCase();
         if (
           !/^(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,}$/i.test(
             state.domain,
@@ -684,8 +689,9 @@
         render("domains");
         break;
       case "copy-dns":
+        if(!navigator.clipboard){notify("Copy A @ 76.76.21.21 and CNAME www cname.vercel-dns.com");break;}
         navigator.clipboard
-          ?.writeText("A @ 76.76.21.21\nCNAME www cname.vercel-dns.com")
+          .writeText("A @ 76.76.21.21\nCNAME www cname.vercel-dns.com")
           .then(() => notify("DNS records copied"))
           .catch(() =>
             notify("Copy A @ 76.76.21.21 and CNAME www cname.vercel-dns.com"),
