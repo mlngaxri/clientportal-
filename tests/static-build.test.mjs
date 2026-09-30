@@ -8,6 +8,7 @@ test("standalone build retains ordered scripts and all local assets", async () =
   const scripts = [...html.matchAll(/<script[^>]*src="([^"]+)"/g)].map(
     (x) => x[1],
   );
+  assert.ok(scripts.indexOf("portal-model.js") < scripts.indexOf("portal-operations.js"));
   assert.ok(
     scripts.indexOf("portal-reliability.js") <
       scripts.indexOf("portal-communication.js"),

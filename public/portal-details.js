@@ -40,7 +40,7 @@
  }
  let scheduled=false;
  function details(){
-  counter('heading',120);counter('description',1200);counter('cta',80);counter('seoTitle',65,'20–65');counter('seoDescription',160,'70–160');
+  counter('heading',120);counter('description',1200);counter('cta',80);counter('imageAlt',180);counter('seoTitle',65,'20–65');counter('seoDescription',160,'70–160');
   const upload=$('[data-cms-image]');if(upload&&!upload.dataset.detailHint){upload.dataset.detailHint='true';const note=document.createElement('p');note.className='detail-hint';note.textContent='JPG, PNG or WebP · up to 1.5 MB';upload.closest('label').after(note);}
   const domain=$('[data-field="domain"]');if(domain){domain.autocapitalize='none';domain.spellcheck=false;domain.setAttribute('inputmode','url');domain.setAttribute('autocomplete','off');}
   document.querySelectorAll('.ops-table').forEach(t=>{if(!t.getAttribute('aria-label'))t.setAttribute('aria-label',t.closest('.ops-box')?.querySelector('h3')?.textContent||'Website details');});

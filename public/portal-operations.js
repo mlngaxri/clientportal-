@@ -12,6 +12,7 @@
           "'": "&#39;",
         })[c],
     );
+  const model=window.ffPortalModel;
   const key = "fourthform-operations-preview-v1";
   let state = {
     page: "Home",
@@ -41,6 +42,12 @@
     if (saved && typeof saved === "object") state = { ...state, ...saved };
   } catch {}
   state.cmsPages = state.cmsPages || {};
+  state.cmsDrafts = state.cmsDrafts || {};
+  // Migrate the older shared image to the page it was edited on.
+  if(state.cmsImage){const page=state.page||"Home";state.image=state.cmsImage;if(state.cmsPages[page])state.cmsPages[page].image=state.cmsImage;else state.cmsDrafts[page]={heading:state.heading,description:state.description,cta:state.cta,image:state.cmsImage,imageAlt:"Mori House dining room"};delete state.cmsImage;}
+  function cmsDraft(){return {heading:state.heading,description:state.description,cta:state.cta,image:state.image||"",imageAlt:state.imageAlt||"Mori House dining room"};}
+  function retainCmsDraft(){model.stageCms(state,state.page,cmsDraft());}
+
   const previousSnapshot = window.ffLocalSnapshot;
   window.ffLocalSnapshot = () => ({
     ...previousSnapshot?.(),
@@ -54,7 +61,7 @@
     }
   });
   addEventListener("fourthform:reset", () => {
-    state = { ...structuredClone(initialOperations), cmsPages: {} };
+    state = { ...structuredClone(initialOperations), cmsPages: {},cmsDrafts: {} };
     localStorage.removeItem(key);
     views.forEach(render);
   });
@@ -78,6 +85,15 @@
       cta: "Reserve a table",
     },
   };
+  Object.keys(pageDefaults).forEach(page=>{
+    const template=document.createElement("template");template.innerHTML=defaultPages[page];
+    const heading=template.content.querySelector("h1");
+    const copy=heading?.parentElement.querySelector("p");
+    const image=template.content.querySelector("[data-edit-image] img");
+    pageDefaults[page]={...pageDefaults[page],cta:document.querySelector("#reserveBtn").textContent,heading:heading?.textContent.replace(/\s+/g," ").trim()||pageDefaults[page].heading,description:copy?.textContent||pageDefaults[page].description,image:image?.getAttribute("src")||"",imageAlt:image?.getAttribute("alt")||"Mori House dining room"};
+  });
+  if(!state.savedAt&&!Object.keys(state.cmsDrafts).length)Object.assign(state,pageDefaults[state.page]||pageDefaults.Home);
+  Object.assign(initialOperations,pageDefaults.Home);
   const views = [
     "pages",
     "analytics",
@@ -182,17 +198,21 @@
   badge.textContent = "Interactive preview · Sample project";
   document.querySelector("#leftRail").append(badge);
   function save(message = "Changes saved in this browser") {
+    let previousRecord=null;const previousTime=state.savedAt;
     try {
+      previousRecord=localStorage.getItem(key);
       state.savedAt = new Date().toISOString();
       const serialized = JSON.stringify(state);
       localStorage.setItem(key, serialized);
       if (localStorage.getItem(key) !== serialized)
         throw new Error("Save readback failed");
-      if (saveLocal() === false) return;
+      if (saveLocal() === false) throw new Error("Device snapshot failed");
       notify(message);
       document.querySelector("#saveState").textContent = "Saved on this device";
       return true;
     } catch {
+      state.savedAt=previousTime;try{if(previousRecord===null)localStorage.removeItem(key);else localStorage.setItem(key,previousRecord);}catch{}
+      markDirty();
       notify("Could not save. Keep this tab open and export your draft.");
       document.querySelector("#saveState").textContent = "Not saved";
       return false;
@@ -205,8 +225,9 @@
   }
   const input = (label, field, type = "text", extra = "") =>
     `<label class="ops-label">${label}<input type="${type}" data-field="${field}" value="${esc(state[field])}" ${extra}></label>`;
-  const mini = (heading = state.heading) =>
-    `<div class="ops-mini-site"><img src="${esc(state.cmsImage || "mori/interior.webp")}" alt="Mori House dining room"><div class="ops-mini-copy"><small>Mori House · Brisbane</small><h2 data-mini-heading>${esc(heading)}</h2><p>${esc(state.description)}</p><p style="border-top:1px solid #ffffff24;padding-top:15px">${esc(state.cta)} ↗</p></div></div>`;
+  const siteContent=()=>state.cmsPages.Home||pageDefaults.Home;
+  const mini = (heading = state.heading,content=cmsDraft()) =>
+    `<div class="ops-mini-site"><img src="${esc(content.image || pageDefaults[state.page]?.image || "mori/interior.webp")}" alt="${esc(content.imageAlt||"Mori House dining room")}"><div class="ops-mini-copy"><small>Mori House · Brisbane</small><h2 data-mini-heading>${esc(heading)}</h2><p>${esc(content.description)}</p><p style="border-top:1px solid #ffffff24;padding-top:15px">${esc(content.cta)} ↗</p></div></div>`;
   function pages() {
     return (
       intro(
@@ -214,9 +235,10 @@
         "Update the words and details. The design stays beautifully intact.",
         "pages",
       ) +
-      `<div class="ops-tabs">${["Home", "Menu", "Visit"].map((p) => `<button data-page="${p}" aria-pressed="${state.page === p}">${p}</button>`).join("")}</div><div class="ops-grid"><div><div class="ops-box"><h3>${esc(state.page)} / Content</h3>${input("Main heading", "heading", "text", 'maxlength="120"')}<label class="ops-label">Introduction<textarea data-field="description" maxlength="1200">${esc(state.description)}</textarea></label>${input("Button label", "cta", "text", 'maxlength="80"')}<label class="ops-upload">Change the feature image<input type="file" accept="image/png,image/jpeg,image/webp" data-cms-image></label><div class="ops-actions">${button("Save changes", "save-cms", true)}${button("Open full preview", "open-site")}<small data-local-status>${state.savedAt ? "Saved locally" : "Ready to edit"}</small></div></div><p class="ops-notice">Your layout, spacing and typography are protected. For a bigger change, add a Direction.</p></div><div>${mini()}<p class="ops-notice">Content preview / Desktop</p></div></div></div>`
+      `<div class="ops-tabs">${["Home", "Menu", "Visit"].map((p) => `<button data-page="${p}" aria-pressed="${state.page === p}">${p}</button>`).join("")}</div><div class="ops-grid"><div><div class="ops-box"><h3>${esc(state.page)} / Content</h3>${input("Main heading", "heading", "text", 'maxlength="120"')}<label class="ops-label">Introduction<textarea data-field="description" maxlength="1200">${esc(state.description)}</textarea></label>${input("Button label", "cta", "text", 'maxlength="80"')}${input("Image description", "imageAlt", "text", 'maxlength="180"')}<label class="ops-upload">Change the feature image<input type="file" accept="image/png,image/jpeg,image/webp" data-cms-image></label><div class="ops-actions">${button("Save changes", "save-cms", true)}${button("Open full preview", "open-site")}<small data-local-status>${state.savedAt ? "Saved locally" : "Ready to edit"}</small></div></div><p class="ops-notice">Your layout, spacing and typography are protected. For a bigger change, add a Direction.</p></div><div>${mini()}<p class="ops-notice">Content preview / Desktop</p></div></div></div>`
     );
   }
+  function analyticsReport(i){const visitors=[642,2481,7423][i],views=[1612,6204,18648][i];return {days:[7,30,90][i],visitors,views,reservations:[38,148,426][i],sources:model.distribute(visitors,[1126,682,421,252]),pages:model.distribute(views,[2942,1806,1021,435])};}
   function analytics() {
     return (
       intro(
@@ -236,7 +258,7 @@
         )
         .join(
           "",
-        )}</div><div class="ops-box"><h3>Visitors over time</h3><svg class="ops-chart" viewBox="0 0 720 170" preserveAspectRatio="none" role="img" aria-label="Sample visitor activity over thirty days"><defs><linearGradient id="opsFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#71806b" stop-opacity=".2"/><stop offset="1" stop-color="#71806b" stop-opacity="0"/></linearGradient></defs>${[30, 80, 130].map((y) => `<path d="M0 ${y}H720" stroke="#D8D5CC" stroke-dasharray="3 5"/>`).join("")}<path d="M0 130L24 108L48 120L72 90L96 95L120 105L144 67L168 92L192 78L216 110L240 89L264 97L288 57L312 69L336 80L360 54L384 64L408 70L432 32L456 55L480 71L504 44L528 49L552 34L576 62L600 32L624 46L648 28L672 37L696 17L720 25V170H0Z" fill="url(#opsFill)"/><path d="M0 130L24 108L48 120L72 90L96 95L120 105L144 67L168 92L192 78L216 110L240 89L264 97L288 57L312 69L336 80L360 54L384 64L408 70L432 32L456 55L480 71L504 44L528 49L552 34L576 62L600 32L624 46L648 28L672 37L696 17L720 25" fill="none" stroke="#71806b" stroke-width="2"/></svg><div class="ops-chart-labels"><span>1 September</span><span>15 September</span><span>30 September</span></div></div><div class="ops-grid" style="margin-top:24px"><div class="ops-box"><h3>Where people arrive</h3><table class="ops-table"><thead><tr><th>Source</th><th>Visitors</th></tr></thead><tbody>${[
+        )}</div><div class="ops-box"><h3>Visitors over time</h3><svg class="ops-chart" viewBox="0 0 720 170" preserveAspectRatio="none" role="img" aria-label="Sample visitor activity over thirty days"><defs><linearGradient id="opsFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#71806b" stop-opacity=".2"/><stop offset="1" stop-color="#71806b" stop-opacity="0"/></linearGradient></defs>${[30, 80, 130].map((y) => `<path d="M0 ${y}H720" stroke="#D8D5CC" stroke-dasharray="3 5"/>`).join("")}<path d="M0 130L24 108L48 120L72 90L96 95L120 105L144 67L168 92L192 78L216 110L240 89L264 97L288 57L312 69L336 80L360 54L384 64L408 70L432 32L456 55L480 71L504 44L528 49L552 34L576 62L600 32L624 46L648 28L672 37L696 17L720 25V170H0Z" fill="url(#opsFill)"/><path d="M0 130L24 108L48 120L72 90L96 95L120 105L144 67L168 92L192 78L216 110L240 89L264 97L288 57L312 69L336 80L360 54L384 64L408 70L432 32L456 55L480 71L504 44L528 49L552 34L576 62L600 32L624 46L648 28L672 37L696 17L720 25" fill="none" stroke="#71806b" stroke-width="2"/></svg><div class="ops-chart-labels"><span>1 September</span><span>15 September</span><span>30 September</span></div></div><div class="ops-grid" style="margin-top:24px"><div class="ops-box"><h3>Where people arrive</h3><table class="ops-table"><thead><tr><th data-report-kind="sources">Source</th><th>Visitors</th></tr></thead><tbody>${[
         ["Google", "1,126"],
         ["Direct", "682"],
         ["Instagram", "421"],
@@ -245,7 +267,7 @@
         .map((v) => `<tr><td>${v[0]}</td><td>${v[1]}</td></tr>`)
         .join(
           "",
-        )}</tbody></table></div><div class="ops-box"><h3>What they explore</h3><table class="ops-table"><thead><tr><th>Page</th><th>Views</th></tr></thead><tbody>${[
+        )}</tbody></table></div><div class="ops-box"><h3>What they explore</h3><table class="ops-table"><thead><tr><th data-report-kind="pages">Page</th><th>Views</th></tr></thead><tbody>${[
         ["Home", "2,942"],
         ["Menu", "1,806"],
         ["Reservations", "1,021"],
@@ -308,7 +330,7 @@
         "A lunch menu at midday. A different welcome in the evening. Schedule content that follows your business.",
         "states",
       ) +
-      `<div class="ops-grid"><div><div class="ops-box"><h3>Evening service <span style="float:right" class="ops-status">${state.scheduled ? "Scheduled" : "Paused"}</span></h3>${input("State name", "stateName")}${input("Alternate heading", "stateHeading")}<div class="ops-tabs">${["S", "M", "T", "W", "T", "F", "S"].map((d, i) => `<button data-day="${i}" aria-label="${["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][i]}" aria-pressed="${state.stateDays.includes(i)}">${d}</button>`).join("")}</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">${input("From", "stateStart", "time")}${input("Until", "stateEnd", "time")}</div><p>Australia / Brisbane · End time is exclusive. Overnight schedules belong to the day they begin.</p><div class="ops-actions">${button("Save schedule", "save-state", true)}${button(state.scheduled ? "Pause State" : "Resume State", "toggle-state")}</div></div><div class="ops-state-card"><h3>Your usual website</h3><p>Always the fallback. Nothing is lost when a State finishes.</p></div></div><div>${mini(state.stateHeading)}<div class="ops-tabs" style="margin-top:18px"><button data-state-preview="base" aria-pressed="false">Usual content</button><button data-state-preview="state" aria-pressed="true">Evening service</button></div><p class="ops-notice">State preview / Wednesday, 6:00pm. Scheduled content inherits your website’s design.</p></div></div></div>`
+      `<div class="ops-grid"><div><div class="ops-box"><h3>${esc(state.stateName)} <span style="float:right" class="ops-status">${state.scheduled ? "Scheduled" : "Paused"}</span></h3>${input("State name", "stateName")}${input("Alternate heading", "stateHeading")}<div class="ops-tabs">${["S", "M", "T", "W", "T", "F", "S"].map((d, i) => `<button data-day="${i}" aria-label="${["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][i]}" aria-pressed="${state.stateDays.includes(i)}">${d}</button>`).join("")}</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">${input("From", "stateStart", "time")}${input("Until", "stateEnd", "time")}</div><p>Australia / Brisbane · End time is exclusive. Overnight schedules belong to the day they begin.</p><div class="ops-actions">${button("Save schedule", "save-state", true)}${button(state.scheduled ? "Pause State" : "Resume State", "toggle-state")}</div></div><div class="ops-state-card"><h3>Your usual website</h3><p>Always the fallback. Nothing is lost when a State finishes.</p></div></div><div>${mini(state.statePreview==="base"?siteContent().heading:state.stateHeading,siteContent())}<div class="ops-tabs" style="margin-top:18px"><button data-state-preview="base" aria-pressed="${state.statePreview==='base'}">Usual content</button><button data-state-preview="state" aria-pressed="${state.statePreview!=='base'}">${esc(state.stateName)}</button></div><p class="ops-notice">State preview / Wednesday, 6:00pm. Scheduled content inherits your website’s design.</p></div></div></div>`
     );
   }
   function billing() {
@@ -362,7 +384,7 @@
         )
         .join(
           "",
-        )}<div class="ops-actions">${button(count === 5 ? "Launch website" : "Complete the essentials first", "go-live", true)}</div></div><div>${mini()}<p class="ops-notice">Your finished website / Mori House</p></div></div></div>`
+        )}<div class="ops-actions">${button(count === 5 ? "Launch website" : "Complete the essentials first", "go-live", true)}</div></div><div>${mini(siteContent().heading,siteContent())}<p class="ops-notice">Your finished website / Mori House</p></div></div></div>`
     );
   }
   const renderers = {
@@ -431,9 +453,9 @@
       hero.append(copy);
     }
     if (copy) copy.textContent = content.description;
-    if (state.cmsImage) {
+    if (content.image) {
       const img = root.querySelector("[data-edit-image] img");
-      if (img) img.src = state.cmsImage;
+      if (img){img.src = content.image;img.alt=content.imageAlt||"Mori House dining room";}
     }
     pageState[page] = template.innerHTML;
     if (currentPage === page) {
@@ -446,8 +468,10 @@
   const originalRenderPage = renderPage;
   renderPage = function (page) {
     originalRenderPage(page);
+    document.querySelector("#reserveBtn").textContent=state.cmsPages[page]?.cta||pageDefaults[page].cta;
     applyCms(page);
   };
+  let cmsImageVersion=0;
   document.addEventListener("change", (e) => {
     if (!e.target.matches("[data-cms-image]")) return;
     const file = e.target.files[0];
@@ -459,12 +483,17 @@
       notify("Choose a JPG, PNG or WebP under 1.5 MB for this local preview.");
       return;
     }
+    const version=++cmsImageVersion;
     const reader = new FileReader();
+    const selectedPage=state.page;
     reader.onload = () => {
-      state.cmsImage = reader.result;
-      render("pages");
-      document.querySelector("#saveState").textContent = "Unsaved changes";
+      const image=new Image();
+      image.onerror=()=>notify("That file is not a readable image. Choose another JPG, PNG or WebP.");
+      image.onload=()=>{if(version!==cmsImageVersion)return;if(state.page!==selectedPage){notify("Return to "+selectedPage+" to choose its image.");return;}
+        state.image = reader.result;retainCmsDraft();markDirty();render("pages");document.querySelector("#saveState").textContent = "Unsaved changes";};
+      image.src=reader.result;
     };
+    reader.onerror=()=>notify("We could not read that image. Choose another file.");
     reader.readAsDataURL(file);
   });
   let opsModal, opsReturnFocus;
@@ -505,14 +534,11 @@
     const field = e.target.dataset.field;
     if (!field) return;
     state[field] = e.target.value;
+    if(["heading","description","cta","imageAlt"].includes(field))retainCmsDraft();
     if(field === "domain"){state.domainChecked=false;state.launch[2]=false;document.querySelector("[data-domain-status]").textContent="Needs verification";}
-    document
-      .querySelectorAll("[data-mini-heading]")
-      .forEach(
-        (el) =>
-          (el.textContent =
-            field === "stateHeading" ? state.stateHeading : state.heading),
-      );
+    const cmsPreview=document.querySelector('[data-view-panel="pages"] .ops-mini-site');
+    if(cmsPreview&&["heading","description","cta","imageAlt"].includes(field)){cmsPreview.querySelector('h2').textContent=state.heading;const copy=cmsPreview.querySelectorAll('p');copy[0].textContent=state.description;copy[1].textContent=state.cta+' ↗';cmsPreview.querySelector('img').alt=state.imageAlt;}
+    if(field==='stateHeading'&&state.statePreview!=='base')document.querySelector('[data-view-panel="states"] [data-mini-heading]').textContent=state.stateHeading;
     document
       .querySelectorAll("[data-search-title]")
       .forEach((el) => (el.textContent = state.seoTitle));
@@ -529,17 +555,14 @@
     );
     if (!el) return;
     if (el.dataset.page) {
-      state.cmsPages[state.page] = {
-        heading: state.heading,
-        description: state.description,
-        cta: state.cta,
-      };
+      retainCmsDraft();
       state.page = el.dataset.page;
       Object.assign(
         state,
-        state.cmsPages[state.page] || pageDefaults[state.page],
+        model.cmsFields(state,state.page,pageDefaults),
       );
       render("pages");
+      markDirty();
       return;
     }
     if (el.dataset.range) {
@@ -556,6 +579,8 @@
       document
         .querySelectorAll("[data-metric]")
         .forEach((m, n) => (m.textContent = vals[n]));
+      const report=analyticsReport(i);
+      for(const kind of ["sources","pages"]){const table=document.querySelector(`[data-report-kind="${kind}"]`)?.closest("table");table?.querySelectorAll("tbody tr").forEach((row,n)=>row.lastElementChild.textContent=report[kind][n].toLocaleString("en-AU"));}
       const svg = document.querySelector(".ops-chart");
       const series = [
         [54, 83, 61, 98, 72, 110, 88],
@@ -598,10 +623,11 @@
       return;
     }
     if (el.dataset.statePreview) {
+      state.statePreview=el.dataset.statePreview;
       document.querySelector(
         '[data-view-panel="states"] [data-mini-heading]',
       ).textContent =
-        el.dataset.statePreview === "base" ? state.heading : state.stateHeading;
+        el.dataset.statePreview === "base" ? siteContent().heading : state.stateHeading;
       document
         .querySelectorAll("[data-state-preview]")
         .forEach((b) => b.setAttribute("aria-pressed", b === el));
@@ -640,13 +666,12 @@
         render("seo");
         break;
       case "save-cms":
-        state.cmsPages[state.page] = {
-          heading: state.heading,
-          description: state.description,
-          cta: state.cta,
-        };
+        const invalid=model.validateCms(cmsDraft());if(invalid){notify(invalid);break;}
+        const change=model.prepareCms(state,state.page,cmsDraft());
+        if(!save()){model.rollbackCms(state,change);markDirty();break;}
+        delete state.cmsDrafts[state.page];
         applyCms(state.page);
-        save();
+        saveLocal();
         render("pages");
         break;
       case "open-site":
@@ -654,13 +679,7 @@
         selectPage(state.page);
         break;
       case "save-state":
-        if (
-          !state.stateName.trim() ||
-          !state.stateDays.length ||
-          !/^\d{2}:\d{2}$/.test(state.stateStart) ||
-          !/^\d{2}:\d{2}$/.test(state.stateEnd) ||
-          state.stateStart === state.stateEnd
-        ) {
+        if (!model.validSchedule(state)) {
           notify(
             "Add a name, select days and choose different start and end times.",
           );
@@ -730,7 +749,7 @@
         break;
       case "confirm-pro":
         state.pro = true;
-        save("Pro preview activated");
+        if(!save("Pro preview activated"))break;
         render("billing");
         closeOpsDialog();
         break;
@@ -743,7 +762,7 @@
         break;
       case "cancel-pro":
         state.pro = false;
-        save("Core preview restored");
+        if(!save("Core preview restored"))break;
         render("billing");
         closeOpsDialog();
         break;
@@ -782,7 +801,7 @@
         break;
       case "confirm-balance":
         state.launch[1] = true;
-        save("Completed payment state selected");
+        if(!save("Completed payment state selected"))break;
         render("launch");
         render("billing");
         closeOpsDialog();
@@ -821,25 +840,14 @@
         notify("Launch journey complete");
         break;
       case "export": {
-        const factor = [0.259, 1, 2.992][state.analyticsRange ?? 1];
-        const csv =
-          "Sample period," +
-          [7, 30, 90][state.analyticsRange ?? 1] +
-          " days\nSource,Visitors\n" +
-          [
-            ["Google", 1126],
-            ["Direct", 682],
-            ["Instagram", 421],
-            ["Other", 252],
-          ]
-            .map(([source, count]) => source + "," + Math.round(count * factor))
-            .join("\n");
+        const report=analyticsReport(state.analyticsRange??1);
+        const csv=`Sample period,${report.days} days\nMetric,Value\nVisitors,${report.visitors}\nPage views,${report.views}\nReservations,${report.reservations}\n\nSource,Visitors\n`+["Google","Direct","Instagram","Other"].map((v,i)=>v+","+report.sources[i]).join("\n")+"\n\nPage,Views\n"+["Home","Menu","Reservations","About"].map((v,i)=>v+","+report.pages[i]).join("\n");
         const blob = new Blob([csv], { type: "text/csv" });
         const a = document.createElement("a");
         a.href = URL.createObjectURL(blob);
-        a.download = "mori-house-sample-analytics.csv";
+        a.download = "mori-house-"+[7,30,90][state.analyticsRange??1]+"-day-sample-analytics.csv";
         a.click();
-        URL.revokeObjectURL(a.href);
+        setTimeout(()=>URL.revokeObjectURL(a.href),1000);
         notify("Sample report downloaded");
         break;
       }

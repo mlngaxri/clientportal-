@@ -17,3 +17,7 @@ The marketing repository includes the same portal under `public/portal-preview` 
 All data stays in this browser. The UI does not create accounts, charge cards, crawl live SEO, collect real analytics, verify DNS or publish customer sites. Media capture uses the browser permission flow where supported. Do not enter sensitive customer information. Save confirms a device copy; Export saves a JSON draft; Reset restores the sample. Product and keyboard/mobile checks are documented in `docs/LOCAL_ACCEPTANCE.md`.
 
 Source is separated into `public/portal-operations.js`, `portal-communication.js`, `portal-reliability.js`, and visual integration files. `public/index.html` contains the original shell and sample website. Fonts and photography are hosted locally.
+
+## Continuous validation
+
+GitHub Actions runs the portal data-rule tests and standalone build integrity checks on pushes and pull requests. The marketing workflow verifies the matching embedded portal in Chromium.
