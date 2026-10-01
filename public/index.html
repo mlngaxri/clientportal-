@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Fourthform portal preview</title>
+<script src="portal-preview-spaces.js"></script>
 <meta name="theme-color" content="#F3F1EB">
 <link rel="preload" as="font" href="fonts/geist.woff2" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="fonts.css">
@@ -129,6 +130,7 @@ button.pill:hover{background:var(--surface);border-color:#c4c0b6;color:var(--ink
 
 <link rel="stylesheet" href="portal-communication.css">
 <link rel="stylesheet" href="portal-details.css">
+<script src="portal-preview-spaces.js"></script>
 <meta name="theme-color" content="#f3f1eb">
 <meta name="robots" content="noindex,nofollow">
 <meta name="color-scheme" content="light">
@@ -361,7 +363,7 @@ const qs=(s,r=document)=>r.querySelector(s), qsa=(s,r=document)=>[...r.querySele
 const saveState=qs('#saveState'), device=qs('#device'), deviceWrap=qs('#deviceWrap'), ring=qs('#ring'), replaceTag=qs('#replaceTag'), dropStatus=qs('#dropStatus');
 const leftRail=qs('#leftRail'), contextRail=qs('#contextRail'), toast=qs('#toast'), moriSite=qs('#moriSite'), moriPage=qs('#moriPage'), siteScroll=qs('#siteScroll');
 let leaveTimer=null, holdTimer=null, holdRaf=null, currentView='review', currentPage='Home', currentMode='Review mode', currentStage='review', currentImageTarget=null, localDirty=false, pendingImageTarget=null;
-const STORAGE_KEY='fourthform-mori-local-v5';
+const STORAGE_KEY=window.ffStorageKey('fourthform-mori-local-v5');
 const PHOTOS={
   interior:'mori/interior.webp',
   warm:'mori/warm.webp',
@@ -481,7 +483,7 @@ qsa('[data-stage]').forEach(b=>b.addEventListener('click',()=>showView(b.dataset
 qsa('[data-open-page]').forEach(b=>b.addEventListener('click',()=>{showView('review');selectPage(b.dataset.openPage)}));
 requestAnimationFrame(syncNavSelection);
 
-const settingsForm=qs('#settingsForm'),settingsKey='fourthform-mori-settings-v1';
+const settingsForm=qs('#settingsForm'),settingsKey=window.ffStorageKey('fourthform-mori-settings-v1');
 try{
   const savedSettings=JSON.parse(localStorage.getItem(settingsKey)||'null');
   if(savedSettings){

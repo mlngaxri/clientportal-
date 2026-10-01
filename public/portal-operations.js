@@ -19,7 +19,7 @@
     return copy.textContent.replace(/\s+/g, " ").trim();
   };
   const model=window.ffPortalModel;
-  const key = "fourthform-operations-preview-v1";
+  const key = window.ffStorageKey("fourthform-operations-preview-v1");
   let state = {
     page: "Home",
     heading: "A quieter kind of dining.",

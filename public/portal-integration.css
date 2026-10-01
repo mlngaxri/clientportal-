@@ -12,3 +12,9 @@
  .top-actions .top-button.primary{padding-left:9px;padding-right:9px;font-size:10px}
  .project{min-width:0}
 }
+
+/* The same four-corner signature as the marketing site. */
+.ff-frame-mark{display:inline-block;width:20px;height:20px;color:var(--ink);background:linear-gradient(currentColor,currentColor) left top/7px 2px no-repeat,linear-gradient(currentColor,currentColor) left top/2px 7px no-repeat,linear-gradient(currentColor,currentColor) right top/7px 2px no-repeat,linear-gradient(currentColor,currentColor) right top/2px 7px no-repeat,linear-gradient(currentColor,currentColor) left bottom/7px 2px no-repeat,linear-gradient(currentColor,currentColor) left bottom/2px 7px no-repeat,linear-gradient(currentColor,currentColor) right bottom/7px 2px no-repeat,linear-gradient(currentColor,currentColor) right bottom/2px 7px no-repeat}
+.brand{display:flex;align-items:center;gap:10px}.brand::before{content:"";width:17px;height:17px;background:linear-gradient(currentColor,currentColor) left top/6px 2px no-repeat,linear-gradient(currentColor,currentColor) left top/2px 6px no-repeat,linear-gradient(currentColor,currentColor) right top/6px 2px no-repeat,linear-gradient(currentColor,currentColor) right top/2px 6px no-repeat,linear-gradient(currentColor,currentColor) left bottom/6px 2px no-repeat,linear-gradient(currentColor,currentColor) left bottom/2px 6px no-repeat,linear-gradient(currentColor,currentColor) right bottom/6px 2px no-repeat,linear-gradient(currentColor,currentColor) right bottom/2px 6px no-repeat;flex-shrink:0}
+.preview-space-heading{border-bottom:1px solid var(--line);padding-bottom:20px;margin-bottom:6px}.preview-space-heading strong{display:block;font-size:12px;margin-top:14px}.preview-space-heading p{font-size:11px;line-height:1.7;color:#69665f;margin:9px 0}.preview-space-heading a{display:inline-flex;align-items:center;min-height:40px;font-size:10px;color:var(--ink);text-underline-offset:4px}
+[hidden]{display:none!important}
