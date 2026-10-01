@@ -48,6 +48,7 @@ export default function Onboarding({
     [feel, setFeel] = useState(String(initial?.brief.feel || "")),
     [state, setState] = useState("saved"),
     [error, setError] = useState(""),
+    [authNotice, setAuthNotice] = useState(""),
     [busy, setBusy] = useState(false);
   useUnsavedGuard(state !== "saved");
   const saving = useRef(false);
@@ -107,6 +108,7 @@ export default function Onboarding({
   async function auth(google = false) {
     setBusy(true);
     setError("");
+    setAuthNotice("");
     try {
       const r = await api("/api/auth", {
         mode: google ? "google" : mode,
@@ -115,7 +117,11 @@ export default function Onboarding({
         remember,
         next: returnTo,
       });
-      window.location.assign(r.url || returnTo);
+      if (r.confirmationRequired) {
+        setAuthNotice("Check your email to finish creating your account. Open the link in this browser.");
+      } else {
+        window.location.assign(r.url || returnTo);
+      }
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -298,6 +304,7 @@ export default function Onboarding({
                       : "Welcome back."}
                   </h2>
                 </div>
+                {authNotice && <p className="notice" role="status">{authNotice}</p>}
                 <button
                   className="google-button"
                   disabled={busy || !configurationReady}

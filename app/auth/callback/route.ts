@@ -14,26 +14,25 @@ export async function GET(req: Request) {
   try {
     if (code) {
       const jar = await cookies();
-      {
-        const remember = jar.get("ff-remember")?.value === "yes";
-        const expiry = String(
-          Date.now() + (remember ? REMEMBER_SECONDS : SESSION_SECONDS) * 1000,
-        );
+      const remember = jar.get("ff-remember")?.value === "yes";
+      const expiry = String(
+        Date.now() + (remember ? REMEMBER_SECONDS : SESSION_SECONDS) * 1000,
+      );
+      const client = await db({ remember, expiry });
+      const { error } = await client.auth.exchangeCodeForSession(code);
+      if (!error) {
         jar.set(
           "ff-session-until",
           await signSessionExpiry(expiry),
           sessionCookieOptions(remember, expiry),
         );
-      }
-      const client = await db();
-      const { error } = await client.auth.exchangeCodeForSession(code);
-      if (!error)
         return NextResponse.redirect(
           new URL(
             safeReturnPath(url.searchParams.get("next")),
             process.env.APP_URL || url.origin,
           ),
         );
+      }
     }
   } catch {
     /* Invalid/expired recovery or OAuth links return to a recoverable sign-in. */

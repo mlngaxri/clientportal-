@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import {
+  isAuthSessionCookie,
   verifiedSessionExpiry,
   sessionCookieOptions,
 } from "./lib/auth-session";

@@ -24,16 +24,13 @@ export async function POST(req: Request) {
     if (body.mode !== "logout")
       await rateLimit("auth", requestSubject(req), 12, 60);
     const jar = await cookies();
-    if (body.mode !== "logout") {
-      const expiry = String(
-        Date.now() +
-          (body.remember ? REMEMBER_SECONDS : SESSION_SECONDS) * 1000,
-      );
-      const options = sessionCookieOptions(body.remember, expiry);
-      jar.set("ff-remember", body.remember ? "yes" : "no", options);
-      jar.set("ff-session-until", await signSessionExpiry(expiry), options);
-    }
-    const client = await db();
+    const expiry = String(
+      Date.now() + (body.remember ? REMEMBER_SECONDS : SESSION_SECONDS) * 1000,
+    );
+    const options = sessionCookieOptions(body.remember, expiry);
+    const client = await db(
+      body.mode === "logout" ? undefined : { remember: body.remember, expiry },
+    );
     if (body.mode === "logout") {
       const { error } = await client.auth.signOut({ scope: "local" });
       if (error) throw new Error("Sign out could not complete. Try again.");
@@ -56,6 +53,7 @@ export async function POST(req: Request) {
         throw new Error(
           "Google sign-in is temporarily unavailable. Try again.",
         );
+      jar.set("ff-remember", body.remember ? "yes" : "no", options);
       return Response.json({ url: data.url });
     }
     if (!body.email || !body.password)
@@ -79,8 +77,10 @@ export async function POST(req: Request) {
           ? "Sign-in failed. Check your email and password, then try again."
           : "Account creation could not complete. Try again or sign in to your existing account.",
       );
+    jar.set("ff-remember", body.remember ? "yes" : "no", options);
     if (!data.session)
-      throw new Error("Check your email to finish signing in.");
+      return Response.json({ ok: true, confirmationRequired: true });
+    jar.set("ff-session-until", await signSessionExpiry(expiry), options);
     return Response.json({ ok: true, url: next });
   } catch (e) {
     return failure(e);

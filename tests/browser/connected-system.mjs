@@ -667,7 +667,18 @@ try {
                 timezone: "Australia/Brisbane",
                 days: [0, 1, 2, 3, 4, 5, 6],
                 start: "00:00",
-                end: "23:59",
+                end: "12:00",
+                priority: 1,
+                overrides: { heading: "Today in the workshop." },
+              },
+              {
+                id: "night",
+                title: "Every evening",
+                enabled: true,
+                timezone: "Australia/Brisbane",
+                days: [0, 1, 2, 3, 4, 5, 6],
+                start: "12:00",
+                end: "00:00",
                 priority: 1,
                 overrides: { heading: "Today in the workshop." },
               },
@@ -789,12 +800,14 @@ try {
       const recovered = await page();
       await signIn(recovered, email, newPassword);
       assert.equal((await ok(recovered, `/api/projects/${id}`)).project.id, id);
+      const existingProof = (await otherPage.context().cookies()).find((c) => c.name === "ff-session-until")?.value;
       const stale = await call(otherPage, "/api/auth", {
         mode: "signin",
         email,
         password,
       });
       assert.ok(stale.status >= 400);
+      assert.equal((await otherPage.context().cookies()).find((c) => c.name === "ff-session-until")?.value, existingProof, "Failed authentication must not extend an existing signed session.");
       await recovered.context().clearCookies({ name: "ff-session-until" });
       assert.equal(
         (await call(recovered, `/api/projects/${id}`)).status,

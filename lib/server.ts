@@ -15,7 +15,7 @@ export function configured() {
     process.env.SUPABASE_SERVICE_ROLE_KEY
   );
 }
-export async function db() {
+export async function db(newSession?: { remember: boolean; expiry: string }) {
   if (!configured())
     throw new Error(
       "Account services are not configured yet. Your work has not been saved.",
@@ -39,7 +39,10 @@ export async function db() {
             items.forEach(({ name, value, options }) =>
               jar.set(name, value, {
                 ...options,
-                ...sessionCookieOptions(remember, expiry || undefined),
+                ...sessionCookieOptions(
+                  newSession?.remember ?? remember,
+                  newSession?.expiry ?? expiry ?? undefined,
+                ),
                 ...(value ? {} : { maxAge: 0 }),
               }),
             );
