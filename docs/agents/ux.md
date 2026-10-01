@@ -14,3 +14,11 @@ Latest known portal work includes complete interactive preview flows plus subseq
 - Implementation writes to the runtime JavaScript were blocked by the connected GitHub write safety layer during this run, so no product behavior was changed and no S0/S1 claim is made.
 - Commit `774d85542167782b69fbf627bc4b2e1961e7623f` only recorded an interim handoff marker and is not a product change.
 - Next: retry the bounded recovery accessibility patch, add a static regression assertion, then let Builder 5 grade deployment evidence.
+
+### 2026-10-02 — Route-error keyboard recovery regression coverage
+- Added a focused source regression to `tests/static-build.test.mjs` for the connected route-error boundary introduced by `4fb682e878113d76ac8e146604c1d291dbc5aa32`.
+- The regression requires a programmatically focusable error heading, focus-on-mount, and the visible retry action so future refactors cannot silently remove the keyboard/screen-reader recovery context.
+- Source/test commit: `e2b1102ab03d5daad5d1c62fc01e4665a2ff9be4`.
+- Evidence: **S0 pending CI**. No workflow run existed for the exact commit when checked, so S1 is not claimed.
+- Blocker: the repository already had a separate TypeScript failure in the persisted-State database regression before this UX-only change; Builder 4/5 owns that operational/release blocker.
+- Next: use the new UX audit as the prioritized backlog and take the highest-value connected-app UX item that remains after red build issues are cleared; do not spend a UX run on deployment plumbing.
