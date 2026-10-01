@@ -8,6 +8,7 @@ import RecoveryNotice from "./RecoveryNotice";
 import ReviewCanvas from "./ReviewCanvas";
 import RevisionSubmitDialog from "./RevisionSubmitDialog";
 import AnnotationLayer from "./AnnotationLayer";
+import { incompleteDirections } from "../lib/review-direction";
 export default function Review({
   project,
   board,
@@ -29,6 +30,7 @@ export default function Review({
   const [uploading, setUploading] = useState(0);
   const [busy, setBusy] = useState(false);
   const obj = data.objects.find((o) => o.id === selected);
+  const incomplete = incompleteDirections(data.objects);
   function add(patch: Partial<BoardObject> = {}) {
     if (locked) return;
     const id = crypto.randomUUID();
@@ -269,7 +271,7 @@ export default function Review({
               <button
                 disabled={
                   busy || uploading > 0 ||
-                  !data.objects.length ||
+                  !data.objects.length || incomplete.length > 0 ||
                   project.phase === "REVISION_IN_PROGRESS" ||
                   project.revision_used >= project.revision_limit
                 }
@@ -277,6 +279,11 @@ export default function Review({
               >
                 Submit Revision
               </button>
+              {incomplete.length > 0 && (
+                <p role="status">
+                  Finish or delete {incomplete.length} empty Direction{incomplete.length === 1 ? "" : "s"} before submitting.
+                </p>
+              )}
               {project.phase === "REVISION_IN_PROGRESS" && (
                 <p>Your next batch can be drafted and saved while we work.</p>
               )}
