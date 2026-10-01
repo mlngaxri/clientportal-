@@ -33,7 +33,7 @@
     $('#initialDrop').hidden = initial.locked;
     $('#initialSendCopy').textContent = initial.locked ? 'The submitted Direction is preserved. Add new thoughts to additional notes.' : 'This preview saves in your browser. No team receives a submission.';
     $('#initialLifecycle').innerHTML = initial.sent ? (initial.locked ? '<span class="comm-state-label">Building · Initial Direction locked</span><button class="top-button" id="initialUnlock">Return to editable preview</button><button class="top-button" id="initialNextReview">Explore Review →</button>' : '<span class="comm-state-label">Sent · editable until building begins</span><button class="top-button" id="initialStartBuild">Preview building & locking →</button>') : '';
-    $('#initialStartBuild')?.addEventListener('click', () => { initial.locked = true;if(saveLocal()===false){initial.locked=false;markDirty();updateInitialStatus();return;}renderInitial(); notify('Example build started. Initial Direction is locked.'); });
+    $('#initialStartBuild')?.addEventListener('click', () => { if(recordingPending||mediaRecorder?.state==='recording'){notify('Stop the recording before starting the example build.');return;}initial.locked = true;if(saveLocal()===false){initial.locked=false;markDirty();updateInitialStatus();return;}renderInitial(); notify('Example build started. Initial Direction is locked.'); });
     $('#initialUnlock')?.addEventListener('click', () => { initial.locked = false;if(saveLocal()===false){initial.locked=true;markDirty();updateInitialStatus();return;}renderInitial(); });
     $('#initialNextReview')?.addEventListener('click', () => showView('review'));
   }
