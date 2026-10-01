@@ -15,3 +15,5 @@ Use Node.js 22+, `npm ci`, Supabase CLI and Docker. Run `supabase start`, copy `
 Use the existing Next.js Vercel project for this repository. Apply all migrations to a separate staging database first. Configure server secrets and exact authentication callbacks, then complete the provider acceptance steps in [ACTIVATION.md](docs/ACTIVATION.md). Turn on billing and the marketing customer funnel only after acceptance. A GitHub push by itself does not prove the existing Vercel projects are linked or deployed.
 
 [ARCHITECTURE.md](docs/ARCHITECTURE.md) describes the data model and invariants. [ACTIVATION.md](docs/ACTIVATION.md) gives deployment, service configuration, recovery and remaining production acceptance work.
+
+[RELEASE.md](docs/RELEASE.md) records the connected release scope and verification boundary.
