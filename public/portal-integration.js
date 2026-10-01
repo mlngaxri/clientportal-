@@ -7,18 +7,7 @@
   qs('#mobileContext').hidden=['settings'].includes(name);
  };
  showView(currentView);
- if(space){
-  document.documentElement.dataset.previewSpace=space.id;
-  qsa('#leftRail [data-view],#leftRail [data-stage]').forEach(button=>{button.hidden=!space.views.includes(button.dataset.view||button.dataset.stage);});
-  qsa('#leftRail [data-nav-group]').forEach(group=>{group.hidden=!qsa('button',group).some(button=>!button.hidden);});
-  const header=document.createElement('div');header.className='preview-space-heading';
-  const mark=document.createElement('span');mark.className='ff-frame-mark';mark.setAttribute('aria-hidden','true');
-  const title=document.createElement('strong');title.textContent=space.label;
-  const copy=document.createElement('p');copy.textContent='Explore freely. This space has its own saved draft.';
-  const link=document.createElement('a');link.href='index.html?view='+currentView;link.target='_blank';link.rel='noopener';link.textContent='Complete workspace ↗';
-  header.append(mark,title,copy,link);qs('#leftRail').prepend(header);
-  const summary=qs('.revision-summary');if(summary&&space.id!=='design')summary.hidden=true;
- }
+
 })();
 
 /* Keep project decisions, everyday website tools and account controls easy to find. */
@@ -65,7 +54,7 @@
  const open=view=>{if(allowed(view))showView(view);};
  addEventListener('message',event=>{if(event.source!==parent||event.origin!==location.origin||event.data?.type!=='fourthform:preview-view')return;open(event.data.view);});
  const requested=new URLSearchParams(location.search).get('view');
- open(allowed(requested)?requested:(space?.view||'review'));
+ open(allowed(requested)?requested:(space?.view||currentView));
  const previousShow=showView;
  showView=function(view){if(!allowed(view)){notify('This feature is in another preview space. Open the complete workspace to explore everything.');return;}previousShow(view);const url=new URL(location.href);url.searchParams.delete('stage');url.searchParams.set('view',view);history.replaceState(history.state,'',url);if(parent!==window)parent.postMessage({type:'fourthform:preview-active',view},location.origin);};
  addEventListener('popstate',()=>{const params=new URLSearchParams(location.search);open(params.get('view')||(params.get('stage')==='direction'?'direction':'review'));});
