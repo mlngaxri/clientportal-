@@ -56,7 +56,7 @@
  const requested=new URLSearchParams(location.search).get('view');
  open(allowed(requested)?requested:(space?.view||currentView));
  const previousShow=showView;
- showView=function(view){if(!allowed(view))return;if(space?.id==='content'&&view==='review')qs('[data-mode="Browse mode"]').click();previousShow(view);const url=new URL(location.href);url.searchParams.delete('stage');url.searchParams.set('view',view);history.replaceState(history.state,'',url);if(parent!==window)parent.postMessage({type:'fourthform:preview-active',view},location.origin);};
+ showView=function(view){if(!allowed(view))return;if(space?.id==='content'&&view==='review')qs('[data-mode="Browse mode"]').click();previousShow(view);const url=new URL(location.href);url.searchParams.delete('stage');url.searchParams.set('view',view);history.replaceState(history.state,'',url);const complete=qs('.preview-space-heading a');if(complete)complete.href='index.html?view='+view;if(parent!==window)parent.postMessage({type:'fourthform:preview-active',view},location.origin);};
  addEventListener('popstate',()=>{const params=new URLSearchParams(location.search);open(params.get('view')||(params.get('stage')==='direction'?'direction':'review'));});
  showView(currentView);
  if(space){
