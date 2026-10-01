@@ -8,3 +8,5 @@ Latest known portal work includes complete interactive preview flows plus subseq
 
 ## Handoff log
 No autonomous run recorded under the refined protocol yet.
+
+<!-- accessibility review pending -->
