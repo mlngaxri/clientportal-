@@ -13,10 +13,16 @@
     { id: 'feel', type: 'text', label: 'How it should feel', text: Array.isArray(onboarding.feels) ? onboarding.feels.join(' · ') : onboarding.feels || 'Warm, restrained, tactile. Timber, evening light, generous spacing and food photography.' },
     { id: 'ref', type: 'image', label: 'Atmosphere reference', text: 'Soft light, natural materials and a quieter room.', name: 'evening-room.jpg', src: 'mori/warm.webp' },
   ] };
-  if (onboarding.links) initial.objects.push({ id: 'links', type: 'text', label: 'Existing online presence', text: Array.isArray(onboarding.links) ? onboarding.links.join('\n') : String(onboarding.links) });
+  if (onboarding.links) initial.objects.push({ id: 'links', type: 'text', label: 'Online links and design references', text: Array.isArray(onboarding.links) ? onboarding.links.join('\n') : String(onboarding.links) });
   if (onboarding.note) initial.objects.push({ id: 'note', type: 'text', label: 'Additional note', text: String(onboarding.note) });
   const initialSeed = structuredClone(initial);
   if(validInitial(saved.initialDirection))initial=structuredClone(saved.initialDirection);
+  const portfolioReferences=[...new Set(String(onboarding.links||'').split(/\s+/).filter(value=>{try{const url=new URL(value);return url.protocol==='https:'&&url.hostname==='motionsites.ai'&&url.pathname==='/'&&/^[a-z0-9-]{1,80}$/.test(url.searchParams.get('prompt')||'');}catch{return false;}}))].slice(0,20);
+  const appliedReferences=Array.isArray(initial.appliedPortfolioReferences)?initial.appliedPortfolioReferences.filter(value=>typeof value==='string').slice(0,20):[];
+  const newReferences=portfolioReferences.filter(value=>!appliedReferences.includes(value)&&!initial.objects.some(object=>object.text.includes(value)||object.src===value));
+  const addedReferences=!initial.locked&&newReferences.length>0;
+  if(addedReferences){const existing=initial.objects.find(object=>object.id==='portfolio-links'&&object.type==='text');if(existing)existing.text=[existing.text,...newReferences].filter(Boolean).join('\n');else initial.objects.push({id:'portfolio-links',type:'text',label:'Selected design references',text:newReferences.join('\n')});}
+  if(!initial.locked)initial.appliedPortfolioReferences=[...new Set([...appliedReferences,...portfolioReferences])].slice(-20);
   let revisionSubmitted = !!saved.revisionSubmitted, revisionUsed = Number.isInteger(saved.revisionUsed)?Math.max(0,Math.min(3,saved.revisionUsed)):0, revisionHistory = Array.isArray(saved.revisionHistory)?saved.revisionHistory.filter(batch=>window.ffPortalModel.validDirections(batch)):[], editIndex = null;
   const ownFields = () => ({ initialDirection: initial, revisionSubmitted, revisionUsed, revisionHistory });
   window.ffCommunicationFields = ownFields;
@@ -203,6 +209,8 @@
   addEventListener('fourthform:restore',e=>{const value=e.detail||{};if(validInitial(value.initialDirection))initial=structuredClone(value.initialDirection);revisionSubmitted=!!value.revisionSubmitted;revisionUsed=Number.isInteger(value.revisionUsed)?Math.max(0,Math.min(3,value.revisionUsed)):0;revisionHistory=Array.isArray(value.revisionHistory)?value.revisionHistory.filter(batch=>window.ffPortalModel.validDirections(batch)):[];renderInitial();renderDirections();});
   const previousSnapshot = window.ffLocalSnapshot;
   window.ffLocalSnapshot = () => ({ ...(typeof previousSnapshot === "function" ? previousSnapshot() : {}), ...ownFields() });
+  if(addedReferences)initialChanged();
   renderInitial();renderDirections();
+  if(addedReferences)notify('Your design reference was added to the saved brief. Save to keep it on this device.');
   if(new URLSearchParams(location.search).get('stage')==='direction')showView('direction');
 })();
