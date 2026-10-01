@@ -74,6 +74,7 @@ export default function SettingsWorkspace({
       </header>
       {error && <p role="alert">{error}</p>}
       {notice && <p role="status">{notice}</p>}
+      {!settings && !error && <p role="status">Loading your saved {connections ? "connections" : "settings"}…</p>}
       {settings && (
         <fieldset className="connected-card" disabled={busy}>
           {connections ? (

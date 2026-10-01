@@ -13,7 +13,7 @@ type Message = {
 export default function InboxWorkspace({ projectId }: { projectId: string }) {
   const [messages, setMessages] = useState<Message[]>([]),
     [next, setNext] = useState<string | null>(null),
-    [busy, setBusy] = useState(false),
+    [busy, setBusy] = useState(true),
     [error, setError] = useState("");
   async function load(before?: string) {
     setBusy(true);
@@ -62,7 +62,8 @@ export default function InboxWorkspace({ projectId }: { projectId: string }) {
         </button>
       </header>
       {error && <p role="alert">{error}</p>}
-      {!messages.length && !busy && (
+      {busy && !messages.length && <p role="status">Loading your enquiries…</p>}
+      {!messages.length && !busy && !error && (
         <p className="connected-empty">
           No enquiries yet. Your published contact form sends messages here.
         </p>

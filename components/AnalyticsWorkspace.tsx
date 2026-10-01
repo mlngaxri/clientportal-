@@ -28,10 +28,12 @@ export default function AnalyticsWorkspace({
 }) {
   const [days, setDays] = useState(30),
     [data, setData] = useState<Stats | null>(null),
-    [error, setError] = useState("");
+    [error, setError] = useState(""),
+    [attempt, setAttempt] = useState(0);
   useEffect(() => {
     let active = true;
     setError("");
+    setData(null);
     void api<Stats>(`/api/projects/${projectId}/analytics?days=${days}`)
       .then((d) => {
         if (active) setData(d);
@@ -42,7 +44,7 @@ export default function AnalyticsWorkspace({
     return () => {
       active = false;
     };
-  }, [projectId, days]);
+  }, [projectId, days, attempt]);
   const maximum = Math.max(1, ...(data?.daily.map((d) => d.views) || []));
   return (
     <section className="direction-workspace">
@@ -64,7 +66,8 @@ export default function AnalyticsWorkspace({
           </button>
         ))}
       </div>
-      {error && <p role="alert">{error}</p>}
+      {error && <div role="alert"><p>{error}</p><button onClick={() => setAttempt((n) => n + 1)}>Reload report</button></div>}
+      {!data && !error && <p role="status">Loading your {days}-day report…</p>}
       {data && (
         <>
           <div className="connected-metrics">

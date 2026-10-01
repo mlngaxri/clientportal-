@@ -118,7 +118,9 @@ export default function Onboarding({
         next: returnTo,
       });
       if (r.confirmationRequired) {
-        setAuthNotice("Check your email to finish creating your account. Open the link in this browser.");
+        setAuthNotice(
+          "Check your email to finish creating your account. Open the link in this browser.",
+        );
       } else {
         window.location.assign(r.url || returnTo);
       }
@@ -304,7 +306,9 @@ export default function Onboarding({
                       : "Welcome back."}
                   </h2>
                 </div>
-                {authNotice && <p className="notice" role="status">{authNotice}</p>}
+                {authNotice && (
+                  <p className="notice" role="status">{authNotice}</p>
+                )}
                 <button
                   className="google-button"
                   disabled={busy || !configurationReady}

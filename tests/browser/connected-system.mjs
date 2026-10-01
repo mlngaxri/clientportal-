@@ -736,12 +736,24 @@ try {
       ]) {
         await ownerPage.goto(`${base}/projects/${id}/${section}`);
         await ownerPage.locator("h1").waitFor();
+        if (section === "analytics") await ownerPage.locator(".connected-metrics").waitFor();
+        if (section === "inbox") await ownerPage.getByRole("heading", { name: "Alex Visitor", exact: true }).waitFor();
+        if (section === "seo") await ownerPage.getByRole("button", { name: "Inspect the published page", exact: true }).waitFor();
+        if (section === "connections") await ownerPage.getByLabel("Booking page", { exact: true }).waitFor();
+        if (section === "domains") await ownerPage.locator(".connected-code").filter({ hasText: `/sites/${id}` }).waitFor();
+        if (section === "billing") await ownerPage.getByRole("cell", { name: "initial", exact: true }).waitFor();
+        if (section === "settings") {
+          await ownerPage.getByLabel("Business timezone", { exact: true }).waitFor();
+          await visual(ownerPage, "real-phone-settings");
+        }
+        if (section === "build") await ownerPage.getByText("Website launched", { exact: true }).waitFor();
         const overflow = await ownerPage.evaluate(
           () => document.documentElement.scrollWidth > innerWidth + 2,
         );
         assert.equal(overflow, false, section);
       }
-      await visual(ownerPage, "real-phone-settings");
+      await ownerPage.getByText("Website launched", { exact: true }).waitFor();
+      await visual(ownerPage, "real-phone-build");
     },
   );
   await check(

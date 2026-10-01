@@ -45,7 +45,7 @@
     if (e.data?.type === 'ff-mode') { enabled = e.data.enabled === true; clearTarget(); renderPins(); parent.postMessage({ type: 'ff-state', enabled }, origin); }
     if (e.data?.type === 'ff-pins' && Array.isArray(e.data.pins)) { pins = e.data.pins.slice(0, 500).filter(p => p && typeof p.id === 'string' && Number.isInteger(p.number)); renderPins(); }
     if (e.data?.type === 'ff-focus' && typeof e.data.selector === 'string' && e.data.selector.length < 2001 && e.data.page === location.pathname + location.search) {
-      try { document.querySelector(e.data.selector)?.scrollIntoView({ block: 'center', behavior: 'auto' }); } catch {}
+      try { document.querySelector(e.data.selector)?.scrollIntoView({ block: 'nearest', behavior: 'auto' }); } catch {}
     }
   });
   document.addEventListener('click', e => {

@@ -12,17 +12,31 @@ export default function BillingWorkspace({
 }) {
   const [receipts, setReceipts] = useState<Receipt[]>([]),
     [error, setError] = useState(""),
+    [loading, setLoading] = useState(true),
+    [attempt, setAttempt] = useState(0),
     [subscriptions, setSubscriptions] = useState<
       { id: string; status: string }[]
     >([]);
   useEffect(() => {
+    let active = true;
+    setLoading(true);
+    setError("");
     void api(`/api/projects/${project.id}/billing`)
       .then((r) => {
+        if (!active) return;
         setReceipts(r.payments);
         setSubscriptions(r.subscriptions);
       })
-      .catch((e) => setError(e.message));
-  }, [project.id]);
+      .catch((e) => {
+        if (active) setError(e.message);
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [project.id, attempt]);
   return (
     <section className="direction-workspace">
       <header className="workspace-heading">
@@ -35,7 +49,8 @@ export default function BillingWorkspace({
           </p>
         </div>
       </header>
-      {error && <p role="alert">{error}</p>}
+      {loading && <p role="status">Loading confirmed billing records…</p>}
+      {error && <div role="alert"><p>{error}</p><button onClick={() => setAttempt((n) => n + 1)}>Reload billing</button></div>}
       <div className="connected-grid">
         <div className="connected-card">
           <h2>Fourthform {project.package === "FIRST" ? "First" : "Site"}</h2>
@@ -66,12 +81,13 @@ export default function BillingWorkspace({
           <h2>{project.pro ? "Pro active" : "Core included"}</h2>
           <p>
             Core covers website editing, traffic reports, search metadata and
-            your enquiry inbox. Pro adds scheduled content.
+            your enquiry inbox. Pro adds scheduled content, longer reports,
+            comparisons and guidance across published pages.
           </p>
           {subscriptions.length > 0 && (
             <p>Subscription: {subscriptions[0].status.replaceAll("_", " ")}</p>
           )}
-          {subscriptions.length > 0 ? (
+          {!loading && !error && (subscriptions.length > 0 ? (
             <button
               onClick={() =>
                 void api<{ url: string }>("/api/billing", {
@@ -87,10 +103,10 @@ export default function BillingWorkspace({
             project.phase === "LIVE" && (
               <button onClick={() => onPay("pro")}>Add Pro · A$39/month</button>
             )
-          )}
+          ))}
         </div>
       </div>
-      {!project.pro &&
+      {!loading && !error && !project.pro &&
         subscriptions.length > 0 &&
         subscriptions.every((s) =>
           ["canceled", "incomplete_expired"].includes(s.status),
@@ -122,7 +138,7 @@ export default function BillingWorkspace({
           ))}
         </tbody>
       </table>
-      {!receipts.length && <p>No confirmed payments yet.</p>}
+      {!loading && !error && !receipts.length && <p>No confirmed payments yet.</p>}
     </section>
   );
 }

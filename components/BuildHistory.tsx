@@ -20,29 +20,50 @@ export default function BuildHistory({ projectId }: { projectId: string }) {
   const [events, setEvents] = useState<
       { id: string; type: string; created_at: string }[]
     >([]),
-    [error, setError] = useState("");
+    [error, setError] = useState(""),
+    [loading, setLoading] = useState(true),
+    [attempt, setAttempt] = useState(0);
   useEffect(() => {
+    let active = true;
+    setLoading(true);
+    setError("");
     void api(`/api/projects/${projectId}/history`)
-      .then((r) => setEvents(r.events))
-      .catch((e) => setError(e.message));
-  }, [projectId]);
+      .then((r) => {
+        if (active) setEvents(r.events);
+      })
+      .catch((e) => {
+        if (active) setError(e.message);
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [projectId, attempt]);
+  const milestones = events.filter((e) => labels[e.type]);
   return (
     <section className="direction-workspace">
       <span className="overline">Project / Build</span>
       <h1>The work, as it happens.</h1>
       <p>Confirmed project milestones from your account history.</p>
-      {error && <p role="alert">{error}</p>}
-      <ol className="connected-checks">
-        {events
-          .filter((e) => labels[e.type])
+      {loading && <p role="status">Loading your project history…</p>}
+      {error && (
+        <div role="alert">
+          <p>{error}</p>
+          <button onClick={() => setAttempt((n) => n + 1)}>Try again</button>
+        </div>
+      )}
+      {!loading && !error && <ol className="connected-checks">
+        {milestones
           .map((e) => (
             <li key={e.id}>
               <strong>{labels[e.type]}</strong>
               <span>{new Date(e.created_at).toLocaleString()}</span>
             </li>
           ))}
-      </ol>
-      {!events.length && <p>No recorded milestones yet.</p>}
+      </ol>}
+      {!loading && !error && !milestones.length && <p>No recorded milestones yet.</p>}
     </section>
   );
 }
