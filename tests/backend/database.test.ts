@@ -17,6 +17,57 @@ const owner = randomUUID(),
 await db.query("insert into auth.users(id) values($1),($2)", [owner, other]);
 await db.query("insert into projects(id,owner_id) values($1,$2)", [pid, owner]);
 await db.query("select set_config('test.uid',$1,false)", [owner]);
+const validStateData = {
+  states: [{
+    id: "lunch",
+    title: "Lunch",
+    enabled: true,
+    timezone: "Australia/Brisbane",
+    days: [1, 2, 3, 4, 5],
+    start: "11:00",
+    end: "15:00",
+    priority: 10,
+    overrides: { heading: "Lunch today" },
+  }],
+};
+const stateBoard = (
+  await db.query<any>(
+    "insert into boards(project_id,kind,data) values($1,'states',$2) returning id",
+    [pid, JSON.stringify(validStateData)],
+  )
+).rows[0];
+ok(Boolean(stateBoard.id));
+await assert.rejects(
+  () =>
+    db.query(
+      "update boards set data=$2 where id=$1",
+      [
+        stateBoard.id,
+        JSON.stringify({
+          states: [
+            ...validStateData.states,
+            { ...validStateData.states[0], title: "Duplicate id" },
+          ],
+        }),
+      ],
+    ),
+  /Invalid State schedule payload/,
+);
+checks++;
+await assert.rejects(
+  () =>
+    db.query(
+      "update boards set data=$2 where id=$1",
+      [
+        stateBoard.id,
+        JSON.stringify({
+          states: [{ ...validStateData.states[0], timezone: "Not/AZone" }],
+        }),
+      ],
+    ),
+  /Invalid State schedule payload/,
+);
+checks++;
 async function p() {
   return (await db.query<any>("select * from projects where id=$1", [pid]))
     .rows[0];
