@@ -4,67 +4,68 @@ This repository is the shared source of truth for the five Fourthform builders.
 
 ## Current baseline
 
-- The repository contains a polished interactive Fourthform client-portal preview.
-- The preview is intentionally browser-local today. `README.md` and `docs/LOCAL_ACCEPTANCE.md` define the current product boundary.
-- Production integrations such as Supabase, Google OAuth, Stripe, DNS mutation, analytics collection and customer-site publishing are not accepted merely because the preview simulates them.
+- Always derive the current product state from the latest `main`, `README.md`, architecture/activation/release docs, tests and recent commits. Do not assume an old milestone is still current.
+- The repository now contains both the independent browser-local preview and a connected Next.js customer application. Supabase-backed persistence/auth and provider adapters may exist in source; grade each capability only to the evidence actually available.
+- `docs/LOCAL_ACCEPTANCE.md` is historical/local-preview evidence, not the authoritative boundary for the connected app.
 - Canonical live targets:
   - Client portal: https://fourthform-client-portal.vercel.app/
   - Marketing: https://fourthform-marketing.vercel.app/
-- The marketing source repository is not currently identified in this repository. Do not invent or overwrite marketing source. Treat the marketing URL as a read-only acceptance surface until its source is explicitly connected.
+- Do not invent missing source, credentials, deployment identity or provider acceptance.
 
 ## Operating loop
 
 Every builder run must:
 
-1. Read the latest `main` commits, this protocol, `README.md`, `docs/LOCAL_ACCEPTANCE.md`, and its own handoff file.
-2. Inspect relevant handoffs from the other builders before editing shared areas.
-3. Choose one bounded, high-leverage task that can be completed and verified in the current run.
-4. Work from the latest `main`. Never revert another builder's work to simplify your own task.
-5. Implement the fix or improvement in source. Prefer small coherent changes over broad rewrites.
-6. Run the strongest available tests for the changed behavior. Add regression coverage when practical.
-7. Commit one cohesive change to `main` with a descriptive commit message.
-8. Check the canonical live target only when a deployment containing the commit exists or when the run is explicitly a live regression check.
-9. Update only your own handoff file with the commit SHA, evidence, blockers and next recommended work.
-10. If an external credential or service blocks one acceptance tier, record it and immediately continue with the highest-value unblocked work. Do not disable the recurring builder because an integration is unavailable.
+1. Read the latest `main` commits, this protocol, `README.md`, its own handoff, relevant architecture/release/activation docs, and relevant other handoffs.
+2. Inspect current CI/test status and recent failures when available.
+3. Select ONE bounded, high-leverage task that fits the builder's ownership and can materially improve source, tests, evidence or release quality.
+4. Work from the latest `main`. Never revert another builder's work merely to simplify your task.
+5. Implement the smallest coherent improvement and add regression coverage where practical.
+6. Run the strongest available validation for the changed behavior.
+7. Commit one cohesive change to `main` with a descriptive message when writes are available.
+8. Update only your own handoff with commit SHA, evidence tier, blockers and the next recommended action when writes are available.
+9. Check canonical live targets only when the run is release-focused or a deployment containing the relevant commit can be identified.
+10. Never disable or pause the recurring builder because work is blocked.
 
 ## Evidence tiers
 
-Never collapse these tiers:
-
 - **S0 — Source:** implementation exists in the repository.
-- **S1 — Automated:** relevant static/unit/integration tests pass.
+- **S1 — Automated:** relevant static/unit/integration checks pass.
 - **S2 — Local browser:** the interaction works in a local browser build.
-- **S3 — Live Vercel:** the deployed commit is verified on the canonical URL.
-- **S4 — External integration:** the real external service completed the operation and the result was verified.
+- **S3 — Live Vercel:** the deployed commit is identified and verified on the canonical URL.
+- **S4 — External integration:** the real external provider completed the operation and the result was verified.
 
-A simulation can reach S2 but never S4.
+Never promote evidence by inference. A simulation can reach S2 but never S4.
 
 ## Coordination rules
 
-- Builders 1–4 build. Builder 5 is the release/integration gate and may fix any cross-cutting defect.
-- Builders 1–4 must not spend an entire run repeatedly checking Vercel deployment plumbing. Commit verified source progress and leave deployment gating to Builder 5.
-- Pull/read the latest main state before each edit. If another builder changed the same file, preserve their behavior and integrate rather than overwrite.
-- Keep the current visual language unless there is concrete evidence that a change improves consistency, accessibility or product intent.
-- Do not migrate frameworks or replace major architecture merely for preference. Architecture changes need a concrete defect, migration path and regression evidence.
+- Builders 1–4 build within their specialist areas. Builder 5 is the release/integration gate and may fix cross-cutting defects.
+- Pull/read latest `main` before edits. Integrate parallel work; do not overwrite it.
+- Preserve the established visual/product language unless evidence supports a change.
+- Avoid framework or architecture rewrites for preference. Require a concrete defect, migration path and regression evidence.
 - Never commit secrets, production tokens, customer data or generated dependency folders.
-- Never claim payment, authentication, DNS, analytics, publishing, upload scanning or server persistence succeeded unless the real provider confirms it.
+- Never claim payment, authentication, DNS, analytics, publishing, malware scanning, storage, email or server persistence succeeded unless the appropriate real system confirms it.
+- Builders 1–4 should not burn a run repeatedly checking deployment plumbing; Builder 5 owns release identity and production evidence.
 
-## Current architectural direction
+## Infinite work ladder
 
-The preview currently stores state in the browser. Improve it incrementally rather than pretending it is already production-backed. Where production work is needed, introduce explicit provider/adaptor boundaries so the current preview continues working while future Supabase/Stripe/service implementations can replace the local providers without rewriting the UX.
+The system must remain productive regardless of repository maturity. At the start of each run, choose the highest-value available item from this ladder and skip anything already proven complete:
+
+1. **Red build / release blocker:** fix current typecheck, test, build, migration, browser or deployment failures.
+2. **Recently changed code without regression coverage:** add the smallest meaningful regression test.
+3. **Known handoff item:** complete an explicit next action that is still relevant.
+4. **Security / authorization / integrity:** inspect trust boundaries, RLS, input validation, idempotency, race conditions, secret leakage and unsafe provider assumptions.
+5. **Reliability:** stale writes, recovery, retries, transactionality, conflict handling, cleanup, error/empty/loading distinction and failure-state UX.
+6. **Accessibility / responsive UX:** keyboard, focus, semantics, touch, narrow/wide layouts, reduced motion, contrast, status announcements and error recovery.
+7. **Performance / maintainability:** remove duplication, tighten contracts, simplify code, reduce unnecessary client work, improve test speed and observability without speculative rewrites.
+8. **Evidence debt:** strengthen CI, release provenance, deployed-SHA verification, deterministic fixtures, browser coverage and acceptance documentation.
+9. **Product completeness:** compare actual implementation to current README/architecture/activation/release docs and close the highest-value truthful gap.
+10. **Exploratory defect discovery:** inspect one under-tested route, state transition, provider adapter or user journey and either fix a concrete defect or add a regression that proves the invariant.
+
+If source writes are temporarily rejected, DO NOT self-disable. Switch to read-only productive mode for that run: inspect current failures, review recent diffs, identify one concrete defect or missing invariant, produce an exact patch plan with file/function/test targets, and retry a write on the next scheduled cycle. Avoid repeating the same blocked patch on consecutive runs unless repository state changed.
+
+When a feature area is mature, move down the ladder into regression testing, security, accessibility, performance, simplification and evidence quality. Never invent fake features merely to stay busy.
 
 ## Release gate
 
-Builder 5 owns release readiness. A change is release-ready only when the relevant source tests pass and the deployed commit can be identified. Builder 5 maintains cross-cutting security, accessibility, deployment and regression quality and must downgrade any acceptance claim whose evidence is missing.
-
-## Self-sustaining behavior
-
-A builder must not stop itself because one task is blocked. It should:
-
-1. record the blocker once;
-2. choose another task within its ownership;
-3. prefer defects, missing regression tests and integration seams over cosmetic churn;
-4. avoid repeating work already recorded as complete;
-5. leave a precise next action for the following cycle.
-
-When a workstream is genuinely complete, switch from feature creation to regression testing, simplification, accessibility, performance and defect discovery instead of inventing new scope.
+Builder 5 owns release readiness. A release is not accepted unless relevant source validation passes and the deployed commit can be identified. Green workflow UI is not deployment evidence when build/deploy steps were skipped. Builder 5 must fail closed on missing provenance and downgrade unsupported claims rather than hiding uncertainty.
