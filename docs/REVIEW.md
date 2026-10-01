@@ -13,3 +13,9 @@ This pass covers the static client portal and the matching marketing embed. It p
 | Build integrity | Remove duplicate stylesheet loading; retain identical standalone and embedded portal assets. |
 
 Verification: Node model/build checks run locally. The marketing repository's GitHub validation runs a production build, the existing 26 browser checks, and the new isolated review regressions. Browser and Next build verification use CI because this local runtime cannot launch Chromium or finish the Next build.
+
+## Integration review follow-up
+
+Direct website edits now survive CMS history, navigation and reload. Restored and cross-tab snapshots paint their incoming content before capture. CMS saving writes one consistent page-and-fields snapshot and rolls it back on failure. Consent settings persist, sample integrations can disconnect/reconnect, and launch checks use current form/search readiness. Paid receipts and three-page analytics exports agree with the sample project. Onboarding reset preserves original references; stored briefs respect field limits; marketing responds to changes in the reduced-motion preference.
+
+Fourteen isolated integration regressions extend the existing 44 browser checks to 58. Node tests and TypeScript/structure checks run locally; production build and browser checks run in GitHub validation.

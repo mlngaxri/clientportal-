@@ -29,6 +29,7 @@
     launch: [true, false, false, false, false],
     connections: { reservations: false, forms: true, social: false },
     scheduled: true,
+    trackingConsent: true,
     stateName: "Evening service",
     stateHeading: "An evening, thoughtfully prepared.",
     stateStart: "17:00",
@@ -37,8 +38,10 @@
     savedAt: null,
   };
   const initialOperations = structuredClone(state);
+  let projectRecord=null;
   try {
-    const saved = JSON.parse(localStorage.getItem(key) || "null");
+    projectRecord=JSON.parse(localStorage.getItem(STORAGE_KEY)||"null");
+    const saved = projectRecord?.operations||JSON.parse(localStorage.getItem(key) || "null");
     if (saved && typeof saved === "object") state = model.normalizeOperations(initialOperations,saved);
   } catch {}
   state.cmsPages = state.cmsPages || {};
@@ -47,6 +50,13 @@
   if(state.cmsImage){const page=state.page||"Home";state.image=state.cmsImage;if(state.cmsPages[page])state.cmsPages[page].image=state.cmsImage;else state.cmsDrafts[page]={heading:state.heading,description:state.description,cta:state.cta,image:state.cmsImage,imageAlt:"Mori House dining room"};delete state.cmsImage;}
   function cmsDraft(){return {heading:state.heading,description:state.description,cta:state.cta,image:state.image||"",imageAlt:state.imageAlt||"Mori House dining room"};}
   function retainCmsDraft(){model.stageCms(state,state.page,cmsDraft());}
+  function pageFields(page){
+    const template=document.createElement('template');template.innerHTML=pageState[page]||defaultPages[page];
+    const h=template.content.querySelector('h1'),copy=h?.parentElement.querySelector('p'),img=template.content.querySelector('[data-edit-image] img');
+    return {...pageDefaults[page],heading:h?.textContent.replace(/\s+/g,' ').trim()||pageDefaults[page].heading,description:copy?.textContent||'',image:img?.getAttribute('src')||'',imageAlt:img?.getAttribute('alt')||'',cta:state.cmsPages[page]?.cta||pageDefaults[page].cta};
+  }
+  function loadPageFields(){Object.assign(state,pageFields(state.page),state.cmsDrafts[state.page]||{});}
+
 
   const previousSnapshot = window.ffLocalSnapshot;
   window.ffLocalSnapshot = () => ({
@@ -243,7 +253,7 @@
       `<div class="ops-tabs">${["Home", "Menu", "Visit"].map((p) => `<button data-page="${p}" aria-pressed="${state.page === p}">${p}</button>`).join("")}</div><div class="ops-grid"><div><div class="ops-box"><h3>${esc(state.page)} / Content</h3>${input("Main heading", "heading", "text", 'maxlength="120"')}<label class="ops-label">Introduction<textarea data-field="description" maxlength="1200">${esc(state.description)}</textarea></label>${input("Button label", "cta", "text", 'maxlength="80"')}${input("Image description", "imageAlt", "text", 'maxlength="180"')}<label class="ops-upload">Change the feature image<input type="file" accept="image/png,image/jpeg,image/webp" data-cms-image></label><div class="ops-actions">${button("Save changes", "save-cms", true)}${button("Open full preview", "open-site")}<small data-local-status>${state.savedAt ? "Saved locally" : "Ready to edit"}</small></div></div><p class="ops-notice">Your layout, spacing and typography are protected. For a bigger change, add a Direction.</p></div><div>${mini()}<p class="ops-notice">Content preview / Desktop</p></div></div></div>`
     );
   }
-  function analyticsReport(i){const visitors=[642,2481,7423][i],views=[1612,6204,18648][i];return {days:[7,30,90][i],visitors,views,reservations:[38,148,426][i],sources:model.distribute(visitors,[1126,682,421,252]),pages:model.distribute(views,[2942,1806,1021,435])};}
+  function analyticsReport(i){const visitors=[642,2481,7423][i],views=[1612,6204,18648][i];return {days:[7,30,90][i],visitors,views,reservations:[38,148,426][i],sources:model.distribute(visitors,[1126,682,421,252]),pages:model.distribute(views,[2942,1806,1456])};}
   function analytics() {
     return (
       intro(
@@ -275,8 +285,7 @@
         )}</tbody></table></div><div class="ops-box"><h3>What they explore</h3><table class="ops-table"><thead><tr><th data-report-kind="pages">Page</th><th>Views</th></tr></thead><tbody>${[
         ["Home", "2,942"],
         ["Menu", "1,806"],
-        ["Reservations", "1,021"],
-        ["About", "435"],
+        ["Visit", "1,456"],
       ]
         .map((v) => `<tr><td>${v[0]}</td><td>${v[1]}</td></tr>`)
         .join("")}</tbody></table></div></div></div>`
@@ -325,7 +334,7 @@
         )
         .join(
           "",
-        )}</div><div class="ops-grid" style="margin-top:24px"><div class="ops-box"><h3>Contact form</h3><p>Submissions arrive by email. Each includes the name, contact details and message your visitor leaves.</p>${button("Send a test enquiry", "test-form")}</div><div class="ops-box"><h3>Privacy and consent</h3><p>Visitors choose how their information is used. Essential measurement stays simple and respectful.</p><label class="ops-inline" style="font-size:11px"><input type="checkbox" checked> Show a consent notice for optional tracking</label></div></div></div>`
+        )}</div><div class="ops-grid" style="margin-top:24px"><div class="ops-box"><h3>Contact form</h3><p>Submissions arrive by email. Each includes the name, contact details and message your visitor leaves.</p>${button("Send a test enquiry", "test-form")}</div><div class="ops-box"><h3>Privacy and consent</h3><p>Visitors choose how their information is used. Essential measurement stays simple and respectful.</p><label class="ops-inline" style="font-size:11px"><input type="checkbox" data-setting="trackingConsent" ${state.trackingConsent?"checked":""}> Show a consent notice for optional tracking</label></div></div></div>`
     );
   }
   function states() {
@@ -421,6 +430,7 @@
     document.querySelector("#submitBtn").style.display = ops ? "none" : "";
     document.querySelector("#saveBtn").style.display =
       ops && !["pages", "seo", "states"].includes(name) ? "none" : "";
+    if(name==="pages"){capturePage();loadPageFields();render("pages");}
     if (ops) document.querySelector("#projectMeta").textContent = names[name];
     if (name === "analytics" && state.analyticsRange !== undefined)
       document.querySelector(`[data-range="${state.analyticsRange}"]`)?.click();
@@ -474,10 +484,22 @@
   renderPage = function (page) {
     originalRenderPage(page);
     document.querySelector("#reserveBtn").textContent=state.cmsPages[page]?.cta||pageDefaults[page].cta;
-    applyCms(page);
+  };
+  // Legacy CMS records are materialised once; subsequent direct edits own the page HTML.
+  Object.keys(state.cmsPages).filter(page=>typeof projectRecord?.pages?.[page]!=="string").forEach(applyCms);
+  const previousMarkDirty=markDirty;
+  markDirty=function(){
+    if(currentView==='review'&&currentMode==='Edit site'){
+      capturePage();state.cmsPages[currentPage]=pageFields(currentPage);
+      // Keep an existing CMS draft: it is a deliberate, separate pending change.
+    }
+    previousMarkDirty();
   };
   let cmsImageVersion=0;
   document.addEventListener("change", (e) => {
+    if(e.target.dataset.setting==='trackingConsent'){
+      const next=e.target.checked;if(!commitState(()=>{state.trackingConsent=next;},'Consent preference saved in this preview'))e.target.checked=state.trackingConsent;return;
+    }
     if (!e.target.matches("[data-cms-image]")) return;
     const file = e.target.files[0];
     if (!file) return;
@@ -540,6 +562,7 @@
     if (!field) return;
     state[field] = e.target.value;
     if(["heading","description","cta","imageAlt"].includes(field))retainCmsDraft();
+    if(["seoTitle","seoDescription"].includes(field))state.launch[4]=false;
     if(field === "domain"){state.domainChecked=false;state.launch[2]=false;document.querySelector("[data-domain-status]").textContent="Needs verification";}
     const cmsPreview=document.querySelector('[data-view-panel="pages"] .ops-mini-site');
     if(cmsPreview&&["heading","description","cta","imageAlt"].includes(field)){cmsPreview.querySelector('h2').textContent=state.heading;const copy=cmsPreview.querySelectorAll('p');copy[0].textContent=state.description;copy[1].textContent=state.cta+' ↗';cmsPreview.querySelector('img').alt=state.imageAlt;}
@@ -564,7 +587,7 @@
       state.page = el.dataset.page;
       Object.assign(
         state,
-        model.cmsFields(state,state.page,pageDefaults),
+        {...pageFields(state.page),...state.cmsDrafts[state.page]},
       );
       render("pages");
       markDirty();
@@ -649,7 +672,7 @@
               : "reservations") +
           ".",
         "Confirm the connection for this sample project. You can explore the connected state without leaving the preview.",
-        button("Confirm connection", "connect-" + id, true),
+        state.connections[id]?button("Disconnect sample connection","disconnect-"+id):button("Confirm connection", "connect-" + id, true),
       );
       return;
     }
@@ -659,6 +682,10 @@
       return;
     }
     if (!action) return;
+    if(action.startsWith('disconnect-')){
+      const id=action.slice(11);if(!commitState(()=>{state.connections[id]=false;if(id==='forms')state.launch[3]=false;},'Sample connection removed'))return;
+      render('connections');render('launch');closeOpsDialog();return;
+    }
     if (action.startsWith("connect-")) {
       if(!commitState(()=>{state.connections[action.slice(8)]=true;},"Connection saved locally"))return;
       render("connections");
@@ -673,10 +700,13 @@
       case "save-cms":
         const invalid=model.validateCms(cmsDraft());if(invalid){notify(invalid);break;}
         const change=model.prepareCms(state,state.page,cmsDraft());
-        if(!save()){model.rollbackCms(state,change);markDirty();break;}
-        delete state.cmsDrafts[state.page];
-        applyCms(state.page);
-        saveLocal();
+        const beforePage=pageState[state.page],beforeDraft=structuredClone(state.cmsDrafts[state.page]||cmsDraft());
+        applyCms(state.page);delete state.cmsDrafts[state.page];
+        if(!save()){
+          model.rollbackCms(state,change);state.cmsDrafts[state.page]=beforeDraft;pageState[state.page]=beforePage;
+          if(currentPage===state.page)renderPage(currentPage);
+          markDirty();break;
+        }
         render("pages");
         break;
       case "open-site":
@@ -777,7 +807,7 @@
       case "receipt":
         dialog(
           "Your initial payment.",
-          "Mori House / Site · A$200 · 18 September 2026. Remaining balance: A$1,300 after approval. This sample receipt is part of the product preview.",
+          state.launch[1]?"Mori House / Site · A$200 initial payment and A$1,300 balance paid. Total: A$1,500. No remaining balance. This sample receipt is part of the product preview.":"Mori House / Site · A$200 · 18 September 2026. Remaining balance: A$1,300 after approval. This sample receipt is part of the product preview.",
           button("Done", "close-dialog", true),
         );
         break;
@@ -812,10 +842,12 @@
         render("domains");
         break;
       case "verify-integrations":
+        if(!state.connections.forms){notify("Connect the enquiry form before checking integrations.");break;}
         if(!commitState(()=>{state.launch[3]=true;},"Sample integrations check complete"))break;
         render("launch");
         break;
       case "final-check":
+        if(!state.seoTitle.trim()||!state.seoDescription.trim()){notify("Add a search title and description before the final check.");break;}
         if(!commitState(()=>{state.launch[4]=true;},"Final preview check complete"))break;
         render("launch");
         break;
@@ -837,7 +869,7 @@
         break;
       case "export": {
         const report=analyticsReport(state.analyticsRange??1);
-        const csv=`Sample period,${report.days} days\nMetric,Value\nVisitors,${report.visitors}\nPage views,${report.views}\nReservations,${report.reservations}\n\nSource,Visitors\n`+["Google","Direct","Instagram","Other"].map((v,i)=>v+","+report.sources[i]).join("\n")+"\n\nPage,Views\n"+["Home","Menu","Reservations","About"].map((v,i)=>v+","+report.pages[i]).join("\n");
+        const csv=`Sample period,${report.days} days\nMetric,Value\nVisitors,${report.visitors}\nPage views,${report.views}\nReservations,${report.reservations}\n\nSource,Visitors\n`+["Google","Direct","Instagram","Other"].map((v,i)=>v+","+report.sources[i]).join("\n")+"\n\nPage,Views\n"+["Home","Menu","Visit"].map((v,i)=>v+","+report.pages[i]).join("\n");
         const blob = new Blob([csv], { type: "text/csv" });
         const a = document.createElement("a");
         a.href = URL.createObjectURL(blob);

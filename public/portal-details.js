@@ -30,7 +30,7 @@
  },true);
  const popovers=[[$('#projectBtn'),$('#projectPopover')],[$('#modeBtn'),$('#modePopover')]];
  const syncPopovers=()=>popovers.forEach(([button,panel])=>{button.setAttribute('aria-controls',panel.id);button.setAttribute('aria-expanded',String(panel.classList.contains('open')));});
- popovers.forEach(([button,panel])=>{new MutationObserver(syncPopovers).observe(panel,{attributes:true,attributeFilter:['class']});button.addEventListener('keydown',e=>{if(e.key==='ArrowDown'){e.preventDefault();if(!panel.classList.contains('open'))togglePopover(panel,button);panel.querySelector('button:not(:disabled)')?.focus();}});});
+ popovers.forEach(([button,panel])=>{new MutationObserver(syncPopovers).observe(panel,{attributes:true,attributeFilter:['class']});button.addEventListener('keydown',e=>{if(e.key==='ArrowDown'){e.preventDefault();if(!panel.classList.contains('open'))togglePopover(panel,button);requestAnimationFrame(()=>panel.querySelector('button:not(:disabled)')?.focus());}});});
  syncPopovers();
  document.addEventListener('keydown',e=>{if(e.key!=='Escape'||document.querySelector('.modal-backdrop.open'))return;const open=popovers.find(([,panel])=>panel.classList.contains('open'));if(open){e.preventDefault();e.stopImmediatePropagation();open[1].classList.remove('open');open[0].focus();}},true);
  const intent=$('#intentBtn'),intentPanel=$('#intentNote');intent.setAttribute('aria-controls','intentNote');const syncIntent=()=>intent.setAttribute('aria-expanded',String(intentPanel.classList.contains('open')));new MutationObserver(syncIntent).observe(intentPanel,{attributes:true,attributeFilter:['class']});syncIntent();

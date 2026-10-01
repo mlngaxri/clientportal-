@@ -13,8 +13,8 @@
     { id: 'feel', type: 'text', label: 'How it should feel', text: Array.isArray(onboarding.feels) ? onboarding.feels.join(' · ') : onboarding.feels || 'Warm, restrained, tactile. Timber, evening light, generous spacing and food photography.' },
     { id: 'ref', type: 'image', label: 'Atmosphere reference', text: 'Soft light, natural materials and a quieter room.', name: 'evening-room.jpg', src: 'mori/warm.webp' },
   ] };
-  if (!saved.initialDirection && onboarding.links) initial.objects.push({ id: 'links', type: 'text', label: 'Existing online presence', text: Array.isArray(onboarding.links) ? onboarding.links.join('\n') : String(onboarding.links) });
-  if (!saved.initialDirection && onboarding.note) initial.objects.push({ id: 'note', type: 'text', label: 'Additional note', text: String(onboarding.note) });
+  if (onboarding.links) initial.objects.push({ id: 'links', type: 'text', label: 'Existing online presence', text: Array.isArray(onboarding.links) ? onboarding.links.join('\n') : String(onboarding.links) });
+  if (onboarding.note) initial.objects.push({ id: 'note', type: 'text', label: 'Additional note', text: String(onboarding.note) });
   const initialSeed = structuredClone(initial);
   if(validInitial(saved.initialDirection))initial=structuredClone(saved.initialDirection);
   let revisionSubmitted = !!saved.revisionSubmitted, revisionUsed = Number.isInteger(saved.revisionUsed)?Math.max(0,Math.min(3,saved.revisionUsed)):0, revisionHistory = Array.isArray(saved.revisionHistory)?saved.revisionHistory.filter(batch=>window.ffPortalModel.validDirections(batch)):[], editIndex = null;

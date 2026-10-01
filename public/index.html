@@ -260,7 +260,7 @@ button.pill:hover{background:var(--surface);border-color:#c4c0b6;color:var(--ink
             <label class="settings-switch"><span><b>Revision updates</b><small>When a revised site is ready to review.</small></span><input name="revisionUpdates" type="checkbox" checked></label>
             <label class="settings-switch"><span><b>Launch updates</b><small>Steps required before the site goes live.</small></span><input name="launchUpdates" type="checkbox" checked></label>
           </div></div>
-          <div class="settings-actions"><span id="settingsStatus" aria-live="polite">Saved in this browser</span><button class="top-button primary" type="submit">Save preferences</button></div>
+          <div class="settings-actions"><span id="settingsStatus" aria-live="polite">Preview preferences</span><button class="top-button primary" type="submit">Save preferences</button></div>
         </form>
       </div>
     </section>
@@ -485,6 +485,7 @@ const settingsForm=qs('#settingsForm'),settingsKey='fourthform-mori-settings-v1'
 try{
   const savedSettings=JSON.parse(localStorage.getItem(settingsKey)||'null');
   if(savedSettings){
+    qs('#settingsStatus').textContent='Saved in this browser';
     if([...settingsForm.elements.timezone.options].some(option=>option.value===savedSettings.timezone))settingsForm.elements.timezone.value=savedSettings.timezone;
     ['buildUpdates','revisionUpdates','launchUpdates'].forEach(name=>{if(typeof savedSettings[name]==='boolean')settingsForm.elements[name].checked=savedSettings[name]});
   }

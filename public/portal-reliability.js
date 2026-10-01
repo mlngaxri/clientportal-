@@ -92,12 +92,10 @@
     directions = structuredClone(record.directions);
     if(["Review mode","Browse mode","Edit site"].includes(record.mode)){currentMode=record.mode;qs("#modeBtn").firstChild.textContent=currentMode+" ";}
     renderDirections();
-    if (["Home", "Menu", "Visit"].includes(record.page))
-      selectPage(record.page);
-    else renderPage(currentPage);
-    window.dispatchEvent(
-      new CustomEvent("fourthform:restore", { detail: record }),
-    );
+    window.dispatchEvent(new CustomEvent("fourthform:restore", { detail: record }));
+    if (["Home", "Menu", "Visit"].includes(record.page))currentPage=record.page;
+    // Paint the incoming page before selectPage captures it.
+    renderPage(currentPage);selectPage(currentPage);
   }
   function dismiss() {
     note?.remove();
@@ -163,7 +161,7 @@
         throw new Error("Save readback failed");
       savedAt = value.savedAt;
       localDirty = false;
-      localStorage.removeItem(DRAFT_KEY);
+      try{localStorage.removeItem(DRAFT_KEY);}catch{}
       notify("Saved on this device");
       return true;
     } catch {
