@@ -136,7 +136,7 @@ export async function middleware(request: NextRequest) {
   if (!expiry) {
     for (const c of request.cookies.getAll())
       if (
-        c.name.startsWith("sb-") ||
+        isAuthSessionCookie(c.name) ||
         c.name === "ff-session-until" ||
         c.name === "ff-remember"
       ) {

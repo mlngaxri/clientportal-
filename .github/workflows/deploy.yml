@@ -30,7 +30,7 @@ jobs:
             printf '%s\n' 'Vercel deployment is not configured. Add the repository VERCEL_TOKEN secret after staging acceptance.'
             exit 0
           fi
-          current=$(gh api "repos/$GITHUB_clientportalSITORY/git/ref/heads/main" --jq .object.sha)
+          current=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" --jq .object.sha)
           if [ "$current" != "$VERIFIED_SHA" ]; then
             printf '%s\n' 'A newer commit exists. Its validation will own the next deployment.'
             exit 0

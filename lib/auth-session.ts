@@ -75,3 +75,7 @@ export async function verifiedSessionExpiry(
     return null;
   }
 }
+
+export function isAuthSessionCookie(name: string) {
+  return name.startsWith("sb-") && !name.includes("code-verifier");
+}

@@ -733,6 +733,77 @@ try {
       assert.equal(r.status, 401);
     },
   );
+  await check(
+    "password recovery uses an actual local email and PKCE callback",
+    async () => {
+      await secondPage.goto(base + "/account/recover");
+      await secondPage.getByLabel("Email", { exact: true }).fill(email);
+      await secondPage
+        .getByRole("button", { name: "Send recovery link", exact: true })
+        .click();
+      await secondPage
+        .getByText(
+          "If this address has an account, a recovery link will arrive shortly. Open it in this browser.",
+          { exact: true },
+        )
+        .waitFor();
+      let link;
+      for (let attempt = 0; attempt < 20 && !link; attempt++) {
+        const inbox = await fetch(
+          "http://127.0.0.1:54324/api/v1/messages",
+        ).then((r) => r.json());
+        const message = inbox.messages?.find(
+          (m) =>
+            m.To?.some((to) => to.Address === email) &&
+            /reset|recover/i.test(m.Subject),
+        );
+        if (message) {
+          const detail = await fetch(
+            `http://127.0.0.1:54324/api/v1/message/${message.ID}`,
+          ).then((r) => r.json());
+          link = String(detail.HTML || detail.Text || "")
+            .match(/https?:[^"<>\s]+\/auth\/v1\/verify[^"<>\s]+/)?.[0]
+            ?.replaceAll("&amp;", "&");
+        }
+        if (!link) await new Promise((r) => setTimeout(r, 500));
+      }
+      assert.ok(link, "Local SMTP did not return the recovery link.");
+      await secondPage.goto(link);
+      await secondPage.getByLabel("New password", { exact: true }).waitFor();
+      const newPassword = `Fourthform-recovered-${randomUUID()}`;
+      await secondPage
+        .getByLabel("New password", { exact: true })
+        .fill(newPassword);
+      await secondPage
+        .getByLabel("Confirm password", { exact: true })
+        .fill(newPassword);
+      await secondPage
+        .getByRole("button", { name: "Save password", exact: true })
+        .click();
+      await secondPage
+        .getByText(
+          "Your password has been updated. You can return to your projects.",
+          { exact: true },
+        )
+        .waitFor();
+      const recovered = await page();
+      await signIn(recovered, email, newPassword);
+      assert.equal((await ok(recovered, `/api/projects/${id}`)).project.id, id);
+      const stale = await call(otherPage, "/api/auth", {
+        mode: "signin",
+        email,
+        password,
+      });
+      assert.ok(stale.status >= 400);
+      await recovered.context().clearCookies({ name: "ff-session-until" });
+      assert.equal(
+        (await call(recovered, `/api/projects/${id}`)).status,
+        401,
+        "An unsigned missing session lifetime cannot retain account access.",
+      );
+      await recovered.context().close();
+    },
+  );
   assert.deepEqual(errors, []);
   console.log(
     "Real Supabase Auth, Postgres, storage and browser flows passed. Stripe settlement used explicit test receipts; no provider payment is claimed.",

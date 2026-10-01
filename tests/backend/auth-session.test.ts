@@ -8,6 +8,7 @@ import {
   sessionCookieOptions,
   signSessionExpiry,
   verifiedSessionExpiry,
+  isAuthSessionCookie,
 } from "../../lib/auth-session";
 
 test("session expiry uses the selected lifetime from a stable clock", () => {
@@ -58,5 +59,13 @@ test("session lifetimes reject removed, forged, changed and expired proofs", asy
   assert.equal(
     await verifiedSessionExpiry(token, secret, Number(expiry)),
     null,
+  );
+});
+
+test("expired sessions clear credential cookies while preserving the PKCE recovery verifier", () => {
+  assert.equal(isAuthSessionCookie("sb-project-auth-token.0"), true);
+  assert.equal(
+    isAuthSessionCookie("sb-project-auth-token-code-verifier"),
+    false,
   );
 });

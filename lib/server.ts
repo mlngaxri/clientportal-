@@ -1,6 +1,10 @@
 import { RequestLimitError } from "./security/limits";
 import "server-only";
-import { verifiedSessionExpiry, sessionCookieOptions } from "./auth-session";
+import {
+  verifiedSessionExpiry,
+  sessionCookieOptions,
+  isAuthSessionCookie,
+} from "./auth-session";
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 import { createClient } from "@supabase/supabase-js";
@@ -28,7 +32,7 @@ export async function db() {
       cookies: {
         getAll: () =>
           !expiry
-            ? jar.getAll().filter((c) => !c.name.startsWith("sb-"))
+            ? jar.getAll().filter((c) => !isAuthSessionCookie(c.name))
             : jar.getAll(),
         setAll: (items) => {
           try {
