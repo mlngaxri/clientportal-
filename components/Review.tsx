@@ -8,6 +8,7 @@ import RecoveryNotice from "./RecoveryNotice";
 import ReviewCanvas from "./ReviewCanvas";
 import RevisionSubmitDialog from "./RevisionSubmitDialog";
 import AnnotationLayer from "./AnnotationLayer";
+import { incompleteDirections } from "../lib/review-direction";
 export default function Review({
   project,
   board,
@@ -29,6 +30,7 @@ export default function Review({
   const [uploading, setUploading] = useState(0);
   const [busy, setBusy] = useState(false);
   const obj = data.objects.find((o) => o.id === selected);
+  const incomplete = incompleteDirections(data.objects);
   function add(patch: Partial<BoardObject> = {}) {
     if (locked) return;
     const id = crypto.randomUUID();
@@ -43,41 +45,27 @@ export default function Review({
     setUploading((n) => n + 1);
     try {
       const asset = await uploadAsset(project.id, file);
-      add({
-        type: assetType(asset.mime),
-        text: target ? "Replace this image" : "",
-        name: asset.name,
-        url: asset.url,
-        assetId: asset.id,
-        target,
-      });
+      add({ type: assetType(asset.mime), text: target ? "Replace this image" : "", name: asset.name, url: asset.url, assetId: asset.id, target });
     } catch (e) {
-      setMessage(
-        `${(e as Error).message} Your existing Directions are preserved; choose the file again to retry.`,
-      );
-    } finally {
-      setUploading((n) => n - 1);
-    }
+      setMessage(`${(e as Error).message} Your existing Directions are preserved; choose the file again to retry.`);
+    } finally { setUploading((n) => n - 1); }
   }
 
   async function command(action: string) {
-    if (busy || uploading)
-      throw new Error("Wait for current uploads or submission to finish.");
+    if (busy || uploading) throw new Error("Wait for current uploads or submission to finish.");
     setBusy(true);
     try {
-      const b = locked ? board : await save();
-      if (!b) throw new Error("Save your Directions before submitting.");
-      await api(`/api/projects/${project.id}/command`, {
-        action,
-        payload: { boardId: board.id },
-        expected: b.version,
-        key: (keys.current[action] ||= crypto.randomUUID()),
-      });
-      delete keys.current[action];
-      onRefresh();
-    } finally {
-      setBusy(false);
-    }
+    const b = locked ? board : await save();
+    if (!b) throw new Error("Save your Directions before submitting.");
+    await api(`/api/projects/${project.id}/command`, {
+      action,
+      payload: { boardId: board.id },
+      expected: b.version,
+      key: keys.current[action] ||= crypto.randomUUID(),
+    });
+    delete keys.current[action];
+    onRefresh();
+    } finally { setBusy(false); }
   }
   return (
     <>
@@ -193,11 +181,7 @@ export default function Review({
             />
             {obj.type === "video" && <video controls src={obj.url} />}
             {obj.type === "audio" && <audio controls src={obj.url} />}
-            {obj.type === "file" && (
-              <a href={obj.url} target="_blank" rel="noreferrer">
-                Open {obj.name}
-              </a>
-            )}
+            {obj.type === "file" && <a href={obj.url} target="_blank" rel="noreferrer">Open {obj.name}</a>}
             {obj.type === "drawing" && (
               <AnnotationLayer
                 readOnly={locked}
@@ -286,9 +270,8 @@ export default function Review({
               <p>Saving preserves this batch. Only submitting uses a round.</p>
               <button
                 disabled={
-                  busy ||
-                  uploading > 0 ||
-                  !data.objects.length ||
+                  busy || uploading > 0 ||
+                  !data.objects.length || incomplete.length > 0 ||
                   project.phase === "REVISION_IN_PROGRESS" ||
                   project.revision_used >= project.revision_limit
                 }
@@ -296,6 +279,11 @@ export default function Review({
               >
                 Submit Revision
               </button>
+              {incomplete.length > 0 && (
+                <p role="status">
+                  Finish or delete {incomplete.length} empty Direction{incomplete.length === 1 ? "" : "s"} before submitting.
+                </p>
+              )}
               {project.phase === "REVISION_IN_PROGRESS" && (
                 <p>Your next batch can be drafted and saved while we work.</p>
               )}
