@@ -3,6 +3,11 @@ import { readFile, readdir } from "node:fs/promises";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 const db = new PGlite();
+let checks = 0;
+function ok(value: unknown) {
+  assert.ok(value);
+  checks++;
+}
 await db.exec(
   `create role anon;create role authenticated;create role service_role;create schema auth;create schema storage;grant usage on schema auth to authenticated;create table auth.users(id uuid primary key,email text);create function auth.uid() returns uuid language sql as $$select nullif(current_setting('test.uid',true),'')::uuid$$;create function auth.jwt() returns jsonb language sql as $$select jsonb_build_object('app_metadata',jsonb_build_object('role',current_setting('test.role',true)))$$;create table storage.buckets(id text primary key,name text,public boolean,file_size_limit bigint);`,
 );
@@ -98,11 +103,6 @@ async function cmd(
       key,
     ])
   ).rows[0].result;
-}
-let checks = 0;
-function ok(value: unknown) {
-  assert.ok(value);
-  checks++;
 }
 await cmd("save_business", {
   name: "Mori House",
