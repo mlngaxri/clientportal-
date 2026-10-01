@@ -5,6 +5,7 @@ import {
   evaluateStates,
   stateActive,
   validateState,
+  validateStates,
   type ScheduledState,
 } from "../../lib/states";
 
@@ -73,6 +74,13 @@ test("invalid schedules and prototype-like override keys are rejected", () => {
   );
 });
 
+test("State collection validation fails closed for malformed entries and duplicate IDs", () => {
+  assert.deepEqual(validateStates([dinner]), []);
+  assert.ok(validateStates(null).length);
+  assert.ok(validateStates([null]).length);
+  assert.ok(validateStates([dinner, { ...dinner, title: "Duplicate" }]).length);
+  assert.ok(validateStates(Array.from({ length: 101 }, (_, i) => ({ ...dinner, id: `state-${i}` }))).length);
+});
 
 test("database migration enforces the State payload contract", async () => {
   const sql = await readFile("supabase/migrations/011_states_contract.sql", "utf8");

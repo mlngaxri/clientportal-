@@ -59,6 +59,20 @@ export function validateState(s: ScheduledState): string[] {
     errors.push("Content overrides must be text under 10,000 characters.");
   return errors;
 }
+
+export function validateStates(value: unknown): string[] {
+  if (!Array.isArray(value)) return ["States must be a list."];
+  if (value.length > 100) return ["Keep State schedules to 100 or fewer."];
+  const errors = value.flatMap((state) => validateState(state as ScheduledState));
+  const ids = value.flatMap((state) =>
+    state && typeof state === "object" && typeof (state as { id?: unknown }).id === "string"
+      ? [(state as { id: string }).id]
+      : [],
+  );
+  if (new Set(ids).size !== ids.length) errors.push("State IDs must be unique.");
+  return errors;
+}
+
 export function stateActive(s: ScheduledState, at: Date): boolean {
   if (validateState(s).length || !s.enabled || !Number.isFinite(at.getTime()))
     return false;
