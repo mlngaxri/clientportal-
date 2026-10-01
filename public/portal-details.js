@@ -53,5 +53,6 @@
   document.querySelectorAll('.ops-table').forEach(t=>{if(!t.getAttribute('aria-label'))t.setAttribute('aria-label',t.closest('.ops-box')?.querySelector('h3')?.textContent||'Website details');});
  }
  new MutationObserver(()=>{if(scheduled)return;scheduled=true;requestAnimationFrame(()=>{scheduled=false;details();});}).observe($('.center'),{childList:true,subtree:true});
+ window.ffApplyDetails=details;
  details();showView(currentView);selectPage(currentPage);
 })();

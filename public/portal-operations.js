@@ -414,6 +414,7 @@
   function render(name) {
     document.querySelector(`[data-view-panel="${name}"]`).innerHTML =
       renderers[name]();
+    window.ffApplyDetails?.();
     document.querySelectorAll(".ops-mobile-select").forEach(
       (s) =>
         (s.onchange = () => {
