@@ -144,7 +144,7 @@ button.pill:hover{background:var(--surface);border-color:#c4c0b6;color:var(--ink
       <button class="mobile-context" id="mobileContext" aria-label="Open contextual panel">•••</button>
     </div>
     <div class="top-actions">
-      <span class="saved" id="saveState" aria-live="polite">Demo project</span>
+      <span class="saved" id="saveState" aria-live="polite">Example project</span>
       <button class="top-button" id="saveBtn" type="button">Save</button>
       <button class="top-button primary" id="submitBtn" type="button">Submit revision</button>
     </div>
@@ -168,14 +168,14 @@ button.pill:hover{background:var(--surface);border-color:#c4c0b6;color:var(--ink
         <button type="button" data-stage="launch">Launch</button>
       </div>
     </div>
-    <div class="revision-summary"><b>Revision 01 / 03</b><p>Draft changes can be saved freely. A revision is only used when submitted.</p></div>
+    <div class="revision-summary"><b>Revision 01 / 03</b><p>Save drafts as often as you like. Submit all your Directions together to use one revision round.</p></div>
   </aside>
 
   <main class="center">
     <section class="view" data-view-panel="overview">
       <div class="panel-head"><h1>Overview</h1><span>Review stage</span></div>
       <div class="overview-body">
-        <div class="hero-summary"><div class="kicker">Mori House</div><h2>Your website is ready for review.</h2><p>Review the real site, add Directions directly to the page, then submit them together when the revision is ready.</p></div>
+        <div class="hero-summary"><div class="kicker">Mori House</div><h2>Your website is ready for review.</h2><p>Explore the working website. A Direction is a note about a change you want. Collect your Directions, then submit them together as one revision round.</p></div>
         <div class="lifecycle">
           <div class="life-step"><span>01</span><b>Direction</b><p>Received 18 Sep</p></div>
           <div class="life-step"><span>02</span><b>Build</b><p>Internal check complete</p></div>
@@ -198,7 +198,7 @@ button.pill:hover{background:var(--surface);border-color:#c4c0b6;color:var(--ink
           <button class="pill" type="button" data-page="Visit">Visit</button>
         </div>
         <div class="rightbits">
-          <button class="pill" id="sendBtn" type="button">Send preview</button>
+          <button class="pill" id="sendBtn" type="button">Share preview</button>
         </div>
       </div>
       <div class="stage">
@@ -248,7 +248,7 @@ button.pill:hover{background:var(--surface);border-color:#c4c0b6;color:var(--ink
     <section class="view" data-view-panel="settings">
       <div class="panel-head"><h1>Settings</h1><span>Project preferences</span></div>
       <div class="settings-body">
-        <div class="settings-intro"><div class="kicker">Form / Settings</div><h2>Project settings.</h2><p>Choose how you receive updates about this website. Demo preferences are saved in this browser.</p></div>
+        <div class="settings-intro"><div class="kicker">Form / Settings</div><h2>Project settings.</h2><p>Choose how you receive updates about this website. Preview preferences stay on this device.</p></div>
         <form id="settingsForm" class="settings-form">
           <div class="settings-block"><div><h3>Project</h3><p>The details attached to this preview.</p></div><div class="settings-fields">
             <label>Project name<input value="Mori House" readonly></label>
@@ -318,7 +318,7 @@ button.pill:hover{background:var(--surface);border-color:#c4c0b6;color:var(--ink
   <aside class="context" id="contextRail">
     <div class="context-view active" data-context="review">
       <div class="context-title"><h2>Directions</h2><span class="draft-count">2 draft</span></div>
-      <p class="sub">Select text or an image to add feedback.</p><button class="upload" id="addDirection" type="button">Add Direction</button>
+      <p class="sub">A Direction describes a change you want. Click text or an image on the website to attach your feedback to that place.</p><button class="upload" id="addDirection" type="button">Add Direction</button>
       <div class="direction-list">
         <button class="direction-row active" type="button" data-direction-focus="image"><small>HOME · HERO IMAGE</small><b>Use the evening room image here.</b><span>Draft · Image replacement</span></button>
         <button class="direction-row" type="button" data-direction-focus="heading"><small>HOME · HEADING</small><b>Make this feel quieter.</b><span>Draft · Text direction</span></button>
@@ -332,7 +332,7 @@ button.pill:hover{background:var(--surface);border-color:#c4c0b6;color:var(--ink
     </div>
     <div class="context-view" data-context="overview"><h2>Project status</h2><p class="sub">Mori House is currently in Review.</p><div class="quiet-card"><div class="status-row"><span>Current stage</span><span>Review</span></div><div class="status-row"><span>Revision</span><span>01 / 03</span></div><div class="status-row"><span>Directions</span><span>2 draft</span></div></div></div>
     <div class="context-view" data-context="pages"><h2>Pages</h2><p class="sub">Home, Menu and Visit are ready for review.</p><div class="context-mini"><span>01</span><b>Home</b><small>Introduction</small></div><div class="context-mini"><span>02</span><b>Menu</b><small>Food and pricing</small></div><div class="context-mini"><span>03</span><b>Visit</b><small>Hours and booking</small></div></div>
-    <div class="context-view" data-context="settings"><h2>Settings</h2><p class="sub">These demo preferences are stored locally in this browser.</p><div class="quiet-card"><h3>Project access</h3><p>The preview can be viewed from its link. No live restaurant account or billing is connected.</p></div></div>
+    <div class="context-view" data-context="settings"><h2>Settings</h2><p class="sub">These preview preferences stay on this device.</p><div class="quiet-card"><h3>Project access</h3><p>The preview can be viewed from its link. No live restaurant account or billing is connected.</p></div></div>
     <div class="context-view" data-context="direction"><h2>Direction</h2><p class="sub">The example brief used to shape the Mori House preview.</p><div class="context-mini"><span>GOAL</span><b>Reservations first</b></div><div class="context-mini"><span>PAGES</span><b>Home, Menu, Visit</b></div><div class="context-mini"><span>TONE</span><b>Warm and restrained</b></div></div>
     <div class="context-view" data-context="build"><h2>Build record</h2><p class="sub">Five sample milestones from the initial brief to review.</p><div class="quiet-card"><h3>Internal check</h3><p>Navigation, responsive layouts, menu content and review controls are represented in the sample check.</p></div></div>
     <div class="context-view" data-context="launch"><h2>Launch</h2><p class="sub">Launch steps become available after approval in a live project.</p></div>
@@ -341,8 +341,8 @@ button.pill:hover{background:var(--surface);border-color:#c4c0b6;color:var(--ink
 
 <div class="mobile-dock" id="mobileDock"><button data-view="overview">Overview</button><button class="active" data-view="review">Review</button><button data-view="pages">Pages</button></div>
 
-<div class="popover" id="projectPopover"><button type="button"><b>Mori House</b><span>Fixed demo project</span></button><button type="button" id="projectInfoBtn"><b>Preview mode</b><span>Demo project</span></button><button type="button" id="resetLocalBtn"><b>Reset local edits</b><span>Restore Mori House</span></button></div>
-<div class="popover" id="modePopover"><button type="button" data-mode="Review mode"><b>Review mode</b><span>Create Directions</span></button><button type="button" data-mode="Edit site"><b>Edit site</b><span>Edit this demo locally</span></button><button type="button" data-mode="Browse mode"><b>Browse mode</b><span>Use the site normally</span></button></div>
+<div class="popover" id="projectPopover"><button type="button"><b>Mori House</b><span>Fixed demo project</span></button><button type="button" id="projectInfoBtn"><b>Preview mode</b><span>Example project</span></button><button type="button" id="resetLocalBtn"><b>Reset local edits</b><span>Restore Mori House</span></button></div>
+<div class="popover" id="modePopover"><button type="button" data-mode="Review mode"><b>Review mode</b><span>Leave feedback on the website</span></button><button type="button" data-mode="Edit site"><b>Edit site</b><span>Update words and images</span></button><button type="button" data-mode="Browse mode"><b>Browse mode</b><span>Explore as a visitor</span></button></div>
 
 <div class="modal-backdrop" id="submitModal" role="dialog" aria-modal="true" aria-labelledby="submitTitle">
   <div class="modal">

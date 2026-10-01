@@ -47,3 +47,8 @@ input,textarea,select{accent-color:var(--detail-focus)}
  .ops-table td,.ops-table th{overflow-wrap:anywhere}
  .ops-table td:last-child{white-space:normal}
 }
+
+.review-guide{flex:none;padding:15px 26px;border-bottom:1px solid var(--line);background:var(--surface)}
+.review-guide b{display:block;font-size:12px;font-weight:500;line-height:1.5}
+.review-guide p{font-size:11px;line-height:1.6;color:var(--muted);margin:4px 0 0;max-width:74ch}
+@media(max-width:640px){.review-guide{padding:11px 14px}.review-guide p{font-size:11px}}

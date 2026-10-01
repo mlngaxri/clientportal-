@@ -20,7 +20,7 @@
     description:
       "Seasonal Japanese dining, shaped by the coast. An intimate room in the heart of Brisbane.",
     cta: "Reserve a table",
-    seoTitle: "Mori House — Seasonal Japanese dining in Brisbane",
+    seoTitle: "Mori House | Seasonal Japanese dining in Brisbane",
     seoDescription:
       "A considered Japanese dining experience in Brisbane. Seasonal produce, a warm room and an evening worth slowing down for.",
     domain: "morihouse.com.au",
@@ -190,7 +190,7 @@
     ],
     billing: [
       "Ownership stays simple.",
-      "Your Core website remains included. Pro is an optional monthly subscription, with no change to the design you own.",
+      "Core is included after launch for content updates, basic analytics, search details and domain management. Pro is optional at A$39 / month.",
       "A considered upgrade.",
       "Explore the capabilities before deciding. This preview never collects payment information.",
     ],
@@ -207,7 +207,7 @@
   });
   const badge = document.createElement("span");
   badge.className = "ops-top-preview";
-  badge.textContent = "Interactive preview · Sample project";
+  badge.textContent = "Interactive preview · Example project";
   document.querySelector("#leftRail").append(badge);
   function save(message = "Changes saved in this browser") {
     let previousRecord=null;const previousTime=state.savedAt;
@@ -248,19 +248,19 @@
   function pages() {
     return (
       intro(
-        "A little change. Still your website.",
-        "Update the words and details. The design stays beautifully intact.",
+        "Keep your website current.",
+        "Update headings, photos and button labels. Preview each change before saving. Your layout and typography stay intact.",
         "pages",
       ) +
-      `<div class="ops-tabs">${["Home", "Menu", "Visit"].map((p) => `<button data-page="${p}" aria-pressed="${state.page === p}">${p}</button>`).join("")}</div><div class="ops-grid"><div><div class="ops-box"><h3>${esc(state.page)} / Content</h3>${input("Main heading", "heading", "text", 'maxlength="120"')}<label class="ops-label">Introduction<textarea data-field="description" maxlength="1200">${esc(state.description)}</textarea></label>${input("Button label", "cta", "text", 'maxlength="80"')}${input("Image description", "imageAlt", "text", 'maxlength="180"')}<label class="ops-upload">Change the feature image<input type="file" accept="image/png,image/jpeg,image/webp" data-cms-image></label><div class="ops-actions">${button("Save changes", "save-cms", true)}${button("Open full preview", "open-site")}<small data-local-status>${state.savedAt ? "Saved locally" : "Ready to edit"}</small></div></div><p class="ops-notice">Your layout, spacing and typography are protected. For a bigger change, add a Direction.</p></div><div>${mini()}<p class="ops-notice">Content preview / Desktop</p></div></div></div>`
+      `<div class="ops-tabs">${["Home", "Menu", "Visit"].map((p) => `<button data-page="${p}" aria-pressed="${state.page === p}">${p}</button>`).join("")}</div><div class="ops-grid"><div><div class="ops-box"><h3>${esc(state.page)} / Content</h3>${input("Main heading", "heading", "text", 'maxlength="120"')}<label class="ops-label">Introduction<textarea data-field="description" maxlength="1200">${esc(state.description)}</textarea></label>${input("Button label", "cta", "text", 'maxlength="80"')}${input("Image description", "imageAlt", "text", 'maxlength="180"')}<label class="ops-upload">Change the feature image<input type="file" accept="image/png,image/jpeg,image/webp" data-cms-image></label><div class="ops-actions">${button("Save changes", "save-cms", true)}${button("Open full preview", "open-site")}<small data-local-status>${state.savedAt ? "Saved locally" : "Ready to edit"}</small></div></div><p class="ops-notice">Save applies your content changes to the example website. For a change to the design, add a Direction in Review.</p></div><div>${mini()}<p class="ops-notice">Content preview / Desktop</p></div></div></div>`
     );
   }
   function analyticsReport(i){const visitors=[642,2481,7423][i],views=[1612,6204,18648][i];return {days:[7,30,90][i],visitors,views,reservations:[38,148,426][i],sources:model.distribute(visitors,[1126,682,421,252]),pages:model.distribute(views,[2942,1806,1456])};}
   function analytics() {
     return (
       intro(
-        "A clear picture of your audience.",
-        "The useful details, without the noise. See how people find you and what brings them closer.",
+        "Understand your visitors.",
+        "See where people come from, which pages they explore and how often they reserve. These example figures show how the reporting works.",
         "analytics",
       ) +
       `<div class="ops-tabs">${["7 days", "30 days", "90 days"].map((p, i) => `<button data-range="${i}" aria-pressed="${i === 1}">${p}</button>`).join("")}<button data-ops="export">Export report ↗</button></div><div class="ops-metrics">${[
@@ -296,8 +296,8 @@
   function seo() {
     return (
       intro(
-        "Make a good first impression.",
-        "Shape the way your website appears in search, and give people a clear reason to visit.",
+        "Give people a reason to visit.",
+        "Edit the title and description people may see in search. Inspect their length and completeness before you save.",
         "seo",
       ) +
       `<div class="ops-grid"><div class="ops-box"><h3>Home / Search appearance</h3>${input("Page title", "seoTitle", "text", 'maxlength="160"')}<label class="ops-label">Description<textarea data-field="seoDescription" maxlength="500">${esc(state.seoDescription)}</textarea></label><div class="ops-actions">${button("Save search details", "save", true)}${button("Inspect page", "inspect-seo")}</div><div class="ops-line"><span>Page indexing</span><span class="ops-status">Visible to search engines</span></div><div class="ops-line"><span>Canonical URL</span><span>${esc(state.domain)}/</span></div></div><div><div class="ops-search-result"><small>${esc(state.domain)} ›</small><h3 data-search-title>${esc(state.seoTitle)}</h3><p data-search-description>${esc(state.seoDescription)}</p></div><p class="ops-notice">Search preview. Search engines may adjust the title and description they show.</p><div class="ops-box"><h3>Page health</h3><div class="ops-line"><span>Search title</span><span class="ops-status" data-search-health>${state.seoTitle.trim() ? "Present" : "Missing title"}</span></div><div class="ops-line"><span>Social sharing image</span><span class="ops-status">Ready</span></div><div class="ops-line"><span>Structured restaurant details</span><span class="ops-status">Complete</span></div></div></div></div></div>`
@@ -306,8 +306,8 @@
   function domains() {
     return (
       intro(
-        "Your address on the web.",
-        "Bring your own domain. We’ll keep the connection clear and the certificate taken care of.",
+        "Connect your domain.",
+        "Use your own website address. Follow the DNS instructions, then check the connection. Checks in this preview are simulated.",
         "domains",
       ) +
       `<div class="ops-grid"><div class="ops-box"><h3>Primary domain</h3>${input("Domain name", "domain", "text", 'placeholder="yourbusiness.com.au"')}<div class="ops-actions">${button("Check connection", "check-domain", true)}</div><div class="ops-line"><span>Domain status</span><span class="ops-status" data-domain-status>${state.domainChecked ? "Connected" : "Ready for verification"}</span></div><div class="ops-line"><span>Security certificate</span><span>${state.domainChecked ? "Active · HTTPS" : "Issued after connection"}</span></div><div class="ops-line"><span>www redirect</span><span>Redirects to your primary domain</span></div></div><div class="ops-box"><h3>DNS records</h3><p>Add these records with your domain provider, then check the connection.</p><table class="ops-table"><thead><tr><th>Type / Name</th><th>Value</th></tr></thead><tbody><tr><td>A / @</td><td>76.76.21.21</td></tr><tr><td>CNAME / www</td><td>cname.vercel-dns.com</td></tr></tbody></table><div class="ops-actions">${button("Copy records", "copy-dns")}</div><p>The sample records illustrate the connection flow. Domain settings are preserved in this browser.</p></div></div></div>`
@@ -316,8 +316,8 @@
   function connections() {
     return (
       intro(
-        "Everything, quietly connected.",
-        "Let enquiries reach the right place and give your visitors a direct path to your business.",
+        "Make the next step easy.",
+        "Connect your booking destination, enquiry form and social profile so visitors can reach the right place.",
         "connections",
       ) +
       `<div class="ops-box">${[
@@ -342,21 +342,21 @@
   function states() {
     return (
       intro(
-        "The right website. At the right moment.",
-        "A lunch menu at midday. A different welcome in the evening. Schedule content that follows your business.",
+        "Schedule content for the moment.",
+        "A State is a scheduled version of selected website content. Choose the days and times; your usual content returns afterwards. States are part of Pro.",
         "states",
       ) +
-      `<div class="ops-grid"><div><div class="ops-box"><h3>${esc(state.stateName)} <span style="float:right" class="ops-status">${state.scheduled ? "Scheduled" : "Paused"}</span></h3>${input("State name", "stateName")}${input("Alternate heading", "stateHeading")}<div class="ops-tabs">${["S", "M", "T", "W", "T", "F", "S"].map((d, i) => `<button data-day="${i}" aria-label="${["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][i]}" aria-pressed="${state.stateDays.includes(i)}">${d}</button>`).join("")}</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">${input("From", "stateStart", "time")}${input("Until", "stateEnd", "time")}</div><p>Australia / Brisbane · End time is exclusive. Overnight schedules belong to the day they begin.</p><div class="ops-actions">${button("Save schedule", "save-state", true)}${button(state.scheduled ? "Pause State" : "Resume State", "toggle-state")}</div></div><div class="ops-state-card"><h3>Your usual website</h3><p>Always the fallback. Nothing is lost when a State finishes.</p></div></div><div>${mini(state.statePreview==="base"?siteContent().heading:state.stateHeading,siteContent())}<div class="ops-tabs" style="margin-top:18px"><button data-state-preview="base" aria-pressed="${state.statePreview==='base'}">Usual content</button><button data-state-preview="state" aria-pressed="${state.statePreview!=='base'}">${esc(state.stateName)}</button></div><p class="ops-notice">State preview / Wednesday, 6:00pm. Scheduled content inherits your website’s design.</p></div></div></div>`
+      `<div class="ops-grid"><div><div class="ops-box"><h3>${esc(state.stateName)} <span style="float:right" class="ops-status">${state.scheduled ? "Scheduled" : "Paused"}</span></h3>${input("State name", "stateName")}${input("Alternate heading", "stateHeading")}<div class="ops-tabs">${["S", "M", "T", "W", "T", "F", "S"].map((d, i) => `<button data-day="${i}" aria-label="${["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][i]}" aria-pressed="${state.stateDays.includes(i)}">${d}</button>`).join("")}</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">${input("From", "stateStart", "time")}${input("Until", "stateEnd", "time")}</div><p>Australia / Brisbane · End time is exclusive. Overnight schedules belong to the day they begin.</p><div class="ops-actions">${button("Save schedule", "save-state", true)}${button(state.scheduled ? "Pause State" : "Resume State", "toggle-state")}</div></div><div class="ops-state-card"><h3>Your usual website</h3><p>Your usual content returns when the scheduled period ends. A State keeps the same layout and typography.</p></div></div><div>${mini(state.statePreview==="base"?siteContent().heading:state.stateHeading,siteContent())}<div class="ops-tabs" style="margin-top:18px"><button data-state-preview="base" aria-pressed="${state.statePreview==='base'}">Usual content</button><button data-state-preview="state" aria-pressed="${state.statePreview!=='base'}">${esc(state.stateName)}</button></div><p class="ops-notice">State preview / Wednesday, 6:00pm. Scheduled content inherits your website’s design.</p></div></div></div>`
     );
   }
   function billing() {
     return (
       intro(
-        "Simple from the start.",
-        "Your website is yours. Core stays included. Pro adds a little more capability when you need it.",
+        "Your plan and payments.",
+        "Site is A$1,500, with A$200 to start and A$1,300 on approval. Core stays included after launch. Pro is an optional A$39 / month upgrade.",
         "billing",
       ) +
-      `<div class="ops-grid"><div class="ops-box"><h3>${state.pro ? "Fourthform Pro" : "Fourthform Core"} <span class="ops-status" style="float:right">${state.pro ? "Active" : "Included"}</span></h3><div class="ops-plan-price">${state.pro ? "A$39" : "A$0"}<small> / month</small></div><p>${state.pro ? "Scheduled States. Advanced insights. Search intelligence. Your existing website, more capable." : "Safe content updates, basic analytics, search details and domain management. Included with your website."}</p><div class="ops-actions">${button(state.pro ? "Manage subscription" : "Explore Pro", state.pro ? "manage-pro" : "upgrade-pro", true)}</div><div class="ops-line"><span>Payment method</span><span>Visa ending 4242</span></div><div class="ops-line"><span>Billing email</span><span>hello@morihouse.com.au</span></div>${button("Update billing details", "billing-details")}</div><div class="ops-box"><h3>Website payments</h3><table class="ops-table"><tbody><tr><td>Initial payment · 18 Sep</td><td>A$200 · Paid</td></tr><tr><td>Remaining balance</td><td>A$1,300 · ${state.launch[1] ? "Paid" : "After approval"}</td></tr><tr><td>Included revision rounds</td><td>3</td></tr><tr><td>Additional revision</td><td>A$150 / round</td></tr></tbody></table><div class="ops-actions">${button(state.launch[1]?"View payment summary":"View initial receipt", "receipt")}</div><p>All prices are in Australian dollars.</p></div></div></div>`
+      `<div class="ops-grid"><div class="ops-box"><h3>${state.pro ? "Fourthform Pro" : "Fourthform Core"} <span class="ops-status" style="float:right">${state.pro ? "Active" : "Included"}</span></h3><div class="ops-plan-price">${state.pro ? "A$39" : "A$0"}<small> / month</small></div><p>${state.pro ? "Scheduled States, deeper analytics and search insights. An optional upgrade to your everyday toolkit." : "Content updates, basic analytics, search details and domain management. Included after launch."}</p><div class="ops-actions">${button(state.pro ? "Manage subscription" : "Explore Pro", state.pro ? "manage-pro" : "upgrade-pro", true)}</div><div class="ops-line"><span>Payment method</span><span>Visa ending 4242</span></div><div class="ops-line"><span>Billing email</span><span>hello@morihouse.com.au</span></div>${button("Update billing details", "billing-details")}</div><div class="ops-box"><h3>Website payments</h3><table class="ops-table"><tbody><tr><td>Initial payment · 18 Sep</td><td>A$200 · Paid</td></tr><tr><td>Remaining balance</td><td>A$1,300 · ${state.launch[1] ? "Paid" : "After approval"}</td></tr><tr><td>Included revision rounds</td><td>3</td></tr><tr><td>Additional revision</td><td>A$150 / round</td></tr></tbody></table><div class="ops-actions">${button(state.launch[1]?"View payment summary":"View initial receipt", "receipt")}</div><p>All prices are in Australian dollars.</p></div></div></div>`
     );
   }
   function launch() {
@@ -364,7 +364,7 @@
     return (
       intro(
         count === 5 ? "A new beginning." : "Bring it live.",
-        "One considered last check. Your website, ready to meet the world.",
+        "Approve the website, complete the balance and check the domain, connections and search details. Each step is simulated in this preview.",
         "launch",
       ) +
       `<div class="ops-grid"><div><div class="ops-progress"><span style="width:${count * 20}%"></span></div><p class="ops-notice">${count} of 5 essentials ready</p>${[
@@ -784,7 +784,7 @@
       case "upgrade-pro":
         dialog(
           "The same website. More possibility.",
-          "Scheduled States, deeper analytics and search intelligence. A$39 a month. Explore the Pro experience in this preview; no payment is taken.",
+          "Scheduled States, deeper analytics and search insights. A$39 / month. Try the Pro concept in this preview. No payment is taken.",
           button("Explore Pro experience", "confirm-pro", true),
         );
         break;
