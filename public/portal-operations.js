@@ -354,7 +354,7 @@
         "Your website is yours. Core stays included. Pro adds a little more capability when you need it.",
         "billing",
       ) +
-      `<div class="ops-grid"><div class="ops-box"><h3>${state.pro ? "Fourthform Pro" : "Fourthform Core"} <span class="ops-status" style="float:right">${state.pro ? "Active" : "Included"}</span></h3><div class="ops-plan-price">${state.pro ? "A$39" : "A$0"}<small> / month</small></div><p>${state.pro ? "Scheduled States. Advanced insights. Search intelligence. Your existing website, more capable." : "Safe content updates, basic analytics, search details and domain management. Included with your website."}</p><div class="ops-actions">${button(state.pro ? "Manage subscription" : "Explore Pro", state.pro ? "manage-pro" : "upgrade-pro", true)}</div><div class="ops-line"><span>Payment method</span><span>Visa ending 4242</span></div><div class="ops-line"><span>Billing email</span><span>hello@morihouse.com.au</span></div>${button("Update billing details", "billing-details")}</div><div class="ops-box"><h3>Website payments</h3><table class="ops-table"><tbody><tr><td>Initial payment · 18 Sep</td><td>A$200 · Paid</td></tr><tr><td>Remaining balance</td><td>A$1,300 · ${state.launch[1] ? "Paid" : "After approval"}</td></tr><tr><td>Included revision rounds</td><td>3</td></tr><tr><td>Additional revision</td><td>A$150 / round</td></tr></tbody></table><div class="ops-actions">${button("View initial receipt", "receipt")}</div><p>All prices are in Australian dollars.</p></div></div></div>`
+      `<div class="ops-grid"><div class="ops-box"><h3>${state.pro ? "Fourthform Pro" : "Fourthform Core"} <span class="ops-status" style="float:right">${state.pro ? "Active" : "Included"}</span></h3><div class="ops-plan-price">${state.pro ? "A$39" : "A$0"}<small> / month</small></div><p>${state.pro ? "Scheduled States. Advanced insights. Search intelligence. Your existing website, more capable." : "Safe content updates, basic analytics, search details and domain management. Included with your website."}</p><div class="ops-actions">${button(state.pro ? "Manage subscription" : "Explore Pro", state.pro ? "manage-pro" : "upgrade-pro", true)}</div><div class="ops-line"><span>Payment method</span><span>Visa ending 4242</span></div><div class="ops-line"><span>Billing email</span><span>hello@morihouse.com.au</span></div>${button("Update billing details", "billing-details")}</div><div class="ops-box"><h3>Website payments</h3><table class="ops-table"><tbody><tr><td>Initial payment · 18 Sep</td><td>A$200 · Paid</td></tr><tr><td>Remaining balance</td><td>A$1,300 · ${state.launch[1] ? "Paid" : "After approval"}</td></tr><tr><td>Included revision rounds</td><td>3</td></tr><tr><td>Additional revision</td><td>A$150 / round</td></tr></tbody></table><div class="ops-actions">${button(state.launch[1]?"View payment summary":"View initial receipt", "receipt")}</div><p>All prices are in Australian dollars.</p></div></div></div>`
     );
   }
   function launch() {
@@ -431,6 +431,7 @@
     document.querySelector("#saveBtn").style.display =
       ops && !["pages", "seo", "states"].includes(name) ? "none" : "";
     if(name==="pages"){capturePage();loadPageFields();render("pages");}
+    else if(ops)render(name);
     if (ops) document.querySelector("#projectMeta").textContent = names[name];
     if (name === "analytics" && state.analyticsRange !== undefined)
       document.querySelector(`[data-range="${state.analyticsRange}"]`)?.click();
@@ -490,7 +491,7 @@
   const previousMarkDirty=markDirty;
   markDirty=function(){
     if(currentView==='review'&&currentMode==='Edit site'){
-      capturePage();state.cmsPages[currentPage]=pageFields(currentPage);
+      capturePage();state.cmsPages[currentPage]=pageFields(currentPage);state.launch[0]=false;state.launch[4]=false;
       // Keep an existing CMS draft: it is a deliberate, separate pending change.
     }
     previousMarkDirty();
@@ -582,6 +583,7 @@
       "[data-ops],[data-day],[data-page],[data-range],[data-state-preview],[data-connect]",
     );
     if (!el) return;
+    if (el.dataset.page&&!el.closest('[data-view-panel="pages"]'))return;
     if (el.dataset.page) {
       retainCmsDraft();
       state.page = el.dataset.page;
@@ -700,10 +702,11 @@
       case "save-cms":
         const invalid=model.validateCms(cmsDraft());if(invalid){notify(invalid);break;}
         const change=model.prepareCms(state,state.page,cmsDraft());
+        const beforeLaunch=[...state.launch];state.launch[0]=false;state.launch[4]=false;
         const beforePage=pageState[state.page],beforeDraft=structuredClone(state.cmsDrafts[state.page]||cmsDraft());
         applyCms(state.page);delete state.cmsDrafts[state.page];
         if(!save()){
-          model.rollbackCms(state,change);state.cmsDrafts[state.page]=beforeDraft;pageState[state.page]=beforePage;
+          model.rollbackCms(state,change);state.launch=beforeLaunch;state.cmsDrafts[state.page]=beforeDraft;pageState[state.page]=beforePage;
           if(currentPage===state.page)renderPage(currentPage);
           markDirty();break;
         }
@@ -806,7 +809,7 @@
         break;
       case "receipt":
         dialog(
-          "Your initial payment.",
+          state.launch[1]?"Your website payments.":"Your initial payment.",
           state.launch[1]?"Mori House / Site · A$200 initial payment and A$1,300 balance paid. Total: A$1,500. No remaining balance. This sample receipt is part of the product preview.":"Mori House / Site · A$200 · 18 September 2026. Remaining balance: A$1,300 after approval. This sample receipt is part of the product preview.",
           button("Done", "close-dialog", true),
         );
