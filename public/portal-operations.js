@@ -488,6 +488,7 @@
   };
   // Legacy CMS records are materialised once; subsequent direct edits own the page HTML.
   Object.keys(state.cmsPages).filter(page=>typeof projectRecord?.pages?.[page]!=="string").forEach(applyCms);
+  document.querySelector("#reserveBtn").textContent=state.cmsPages[currentPage]?.cta||pageDefaults[currentPage].cta;
   const previousMarkDirty=markDirty;
   markDirty=function(){
     if(currentView==='review'&&currentMode==='Edit site'){
@@ -502,7 +503,7 @@
       const next=e.target.checked;if(!commitState(()=>{state.trackingConsent=next;},'Consent preference saved in this preview'))e.target.checked=state.trackingConsent;return;
     }
     if (!e.target.matches("[data-cms-image]")) return;
-    const file = e.target.files[0];
+    const file = e.target.files[0];e.target.value='';
     if (!file) return;
     if (
       !["image/jpeg", "image/png", "image/webp"].includes(file.type) ||

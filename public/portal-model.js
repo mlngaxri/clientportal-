@@ -9,6 +9,11 @@
  function validSchedule(state){const time=v=>/^\d{2}:\d{2}$/.test(v)&&Number(v.slice(0,2))<24&&Number(v.slice(3))<60;return typeof state.stateName==='string'&&!!state.stateName.trim()&&Array.isArray(state.stateDays)&&state.stateDays.length>0&&state.stateDays.every(d=>Number.isInteger(d)&&d>=0&&d<=6)&&time(state.stateStart)&&time(state.stateEnd)&&state.stateStart!==state.stateEnd;}
  function distribute(total,weights){const sum=weights.reduce((a,b)=>a+b,0),exact=weights.map(w=>total*w/sum),values=exact.map(Math.floor);const order=exact.map((v,i)=>({i,part:v-values[i]})).sort((a,b)=>b.part-a.part||a.i-b.i);for(let n=total-values.reduce((a,b)=>a+b,0),i=0;i<n;i++)values[order[i].i]++;return values;}
  function validDirections(items){return Array.isArray(items)&&items.length>0&&items.every(d=>d&&typeof d.text==='string'&&!!d.text.trim());}
+ function cleanStrokes(value){
+  if(!Array.isArray(value))return [];
+  return value.filter(s=>s&&['pen','arrow','rect','text'].includes(s.tool)&&Array.isArray(s.points)).map(s=>({tool:s.tool,text:typeof s.text==='string'?s.text.slice(0,500):'',points:s.points.filter(p=>p&&Number.isFinite(p.x)&&Number.isFinite(p.y)).map(p=>({x:Math.max(0,Math.min(1000,p.x)),y:Math.max(0,Math.min(600,p.y))}))})).filter(s=>s.points.length>0&&(s.tool!=='text'||s.text.trim()));
+ }
+ function meaningfulInitial(items){return Array.isArray(items)&&items.some(o=>o&&((typeof o.text==='string'&&o.text.trim())||(typeof o.src==='string'&&o.src.trim())||cleanStrokes(o.strokes).length));}
  function normalizeOperations(defaults,value){
   const out=clone(defaults);if(!value||typeof value!=='object'||Array.isArray(value))return out;
   for(const key of Object.keys(defaults)){const v=value[key],d=defaults[key];if(Array.isArray(d)){if(Array.isArray(v)&&v.length===d.length&&v.every(x=>typeof x==='boolean'))out[key]=clone(v);}else if(d&&typeof d==='object'){if(v&&typeof v==='object')for(const sub of Object.keys(d))if(typeof v[sub]===typeof d[sub])out[key][sub]=v[sub];}else if(typeof v===typeof d)out[key]=v;}
@@ -21,7 +26,7 @@
   if(typeof value.savedAt==='string')out.savedAt=value.savedAt;
   return out;
  }
- const api={validDirections,normalizeOperations,cmsFields,stageCms,validateCms,prepareCms,rollbackCms,validSchedule,distribute};
+ const api={cleanStrokes,meaningfulInitial,validDirections,normalizeOperations,cmsFields,stageCms,validateCms,prepareCms,rollbackCms,validSchedule,distribute};
  if(typeof module!=='undefined'&&module.exports)module.exports=api;
  root.ffPortalModel=api;
 })(typeof globalThis!=='undefined'?globalThis:this);
