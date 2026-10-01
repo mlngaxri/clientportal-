@@ -50,13 +50,13 @@
  }
  const previousRender=renderDirections;renderDirections=function(){previousRender();updateOverview();};updateOverview();
  const space=window.ffPreviewSpace;
- const allowed=view=>views.includes(view)&&(!space||space.views.includes(view)||space.extraViews?.includes(view));
+ const allowed=view=>views.includes(view);
  const open=view=>{if(allowed(view))showView(view);};
  addEventListener('message',event=>{if(event.source!==parent||event.origin!==location.origin||event.data?.type!=='fourthform:preview-view')return;open(event.data.view);});
  const requested=new URLSearchParams(location.search).get('view');
  open(allowed(requested)?requested:(space?.view||currentView));
  const previousShow=showView;
- showView=function(view){if(!allowed(view)){notify('This feature is in another preview space. Open the complete workspace to explore everything.');return;}if(space?.id==='content'&&view==='review')qs('[data-mode="Browse mode"]').click();previousShow(view);const url=new URL(location.href);url.searchParams.delete('stage');url.searchParams.set('view',view);history.replaceState(history.state,'',url);if(parent!==window)parent.postMessage({type:'fourthform:preview-active',view},location.origin);};
+ showView=function(view){if(!allowed(view))return;if(space?.id==='content'&&view==='review')qs('[data-mode="Browse mode"]').click();previousShow(view);const url=new URL(location.href);url.searchParams.delete('stage');url.searchParams.set('view',view);history.replaceState(history.state,'',url);if(parent!==window)parent.postMessage({type:'fourthform:preview-active',view},location.origin);};
  addEventListener('popstate',()=>{const params=new URLSearchParams(location.search);open(params.get('view')||(params.get('stage')==='direction'?'direction':'review'));});
  showView(currentView);
  if(space){

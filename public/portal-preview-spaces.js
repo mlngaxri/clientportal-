@@ -2,9 +2,9 @@
 (()=>{
  const spaces={
   design:{label:'Design & feedback',view:'review',views:['overview','direction','build','review']},
-  content:{label:'Content & States',view:'pages',views:['pages','states','settings'],extraViews:['review']},
+  content:{label:'Content & States',view:'pages',views:['pages','states','settings']},
   insight:{label:'Audience & search',view:'analytics',views:['analytics','seo','connections','settings']},
-  launch:{label:'Launch & account',view:'launch',views:['launch','domains','billing','settings'],extraViews:['overview']},
+  launch:{label:'Launch & account',view:'launch',views:['launch','domains','billing','settings']},
  };
  const id=new URLSearchParams(location.search).get('space');
  window.ffPreviewSpace=Object.hasOwn(spaces,id)?{id,...spaces[id]}:null;
