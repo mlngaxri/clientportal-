@@ -155,3 +155,14 @@ export function validSiteUrl(value: string) {
     return false;
   }
 }
+
+/** Match Next.js slash normalization on platform paths and keep custom domain roots canonical. */
+export function sitePageUrl(base: string, path: string) {
+  const origin = new URL(base, "https://fourthform.invalid");
+  const suffix = path.replace(/\/+$/, "");
+  return (
+    base.replace(/\/+$/, "") +
+    suffix +
+    (!suffix && origin.pathname === "/" ? "/" : "")
+  );
+}

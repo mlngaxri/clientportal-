@@ -1,0 +1,62 @@
+name: Deploy verified Fourthform release
+on:
+  workflow_run:
+    workflows: [Validate Fourthform system]
+    types: [completed]
+    branches: [main]
+permissions:
+  contents: read
+concurrency:
+  group: fourthform-production-clientportal
+  cancel-in-progress: false
+jobs:
+  deploy:
+    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push' && github.event.workflow_run.head_branch == 'main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: team_CGpuPPobiY1sG5d7RhVa7Qsh
+      VERCEL_PROJECT_ID: prj_eroqPitRgT4h6JRDB6cc8PpFlERS
+      NEXT_TELEMETRY_DISABLED: '1'
+    steps:
+      - name: Check configured deployment credentials and current commit
+        id: gate
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERIFIED_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          if [ -z "$VERCEL_TOKEN" ]; then
+            printf '%s\n' 'Vercel deployment is not configured. Add the repository VERCEL_TOKEN secret after staging acceptance.'
+            exit 0
+          fi
+          current=$(gh api "repos/$GITHUB_clientportalSITORY/git/ref/heads/main" --jq .object.sha)
+          if [ "$current" != "$VERIFIED_SHA" ]; then
+            printf '%s\n' 'A newer commit exists. Its validation will own the next deployment.'
+            exit 0
+          fi
+          printf '%s\n' 'ready=true' >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@v4
+        if: steps.gate.outputs.ready == 'true'
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+      - uses: actions/setup-node@v4
+        if: steps.gate.outputs.ready == 'true'
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install pinned deployment CLI
+        if: steps.gate.outputs.ready == 'true'
+        run: npm install --global vercel@54.15.1
+      - name: Pull production configuration
+        if: steps.gate.outputs.ready == 'true'
+        run: vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
+      - name: Validate connected production configuration
+        if: steps.gate.outputs.ready == 'true'
+        run: node scripts/check-environment.mjs .vercel/.env.production.local
+      - name: Build the verified release using production configuration
+        if: steps.gate.outputs.ready == 'true'
+        run: vercel build --prod --token="$VERCEL_TOKEN"
+      - name: Deploy the exact built release
+        if: steps.gate.outputs.ready == 'true'
+        run: vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN"

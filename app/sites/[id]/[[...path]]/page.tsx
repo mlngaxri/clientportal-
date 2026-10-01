@@ -1,3 +1,4 @@
+import { sitePageUrl } from "../../../../lib/site/service";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { loadSite } from "../../../../lib/site/public";
@@ -19,12 +20,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: seo.title,
     description: seo.description,
-    alternates: { canonical: site.base + page.path },
+    alternates: { canonical: sitePageUrl(site.base, page.path) },
     robots: { index: !seo.noindex, follow: !seo.noindex },
     openGraph: {
       title: seo.title,
       description: seo.description,
-      url: site.base + page.path,
+      url: sitePageUrl(site.base, page.path),
     },
   };
 }

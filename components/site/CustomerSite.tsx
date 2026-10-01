@@ -1,3 +1,4 @@
+import { sitePageUrl } from "../../lib/site/service";
 import type { CSSProperties } from "react";
 import Script from "next/script";
 import type { loadSite } from "../../lib/site/public";
@@ -28,7 +29,9 @@ export default function CustomerSite({
   const image = value("image"),
     link = value("action-link") || "#contact";
   const linkUrl =
-    link.startsWith("/") && !link.startsWith("//") ? site.base + link : link;
+    link.startsWith("/") && !link.startsWith("//")
+      ? sitePageUrl(site.base, link)
+      : link;
   return (
     <main
       className={`customer-site customer-${theme.layout}`}
@@ -50,14 +53,14 @@ export default function CustomerSite({
         </div>
       )}
       <nav className="customer-nav" aria-label="Website navigation">
-        <a className="customer-brand" href={site.base + "/"}>
+        <a className="customer-brand" href={sitePageUrl(site.base, "/")}>
           {theme.name}
         </a>
         <div>
           {manifest.pages.map((p) => (
             <a
               key={p.id}
-              href={site.base + p.path}
+              href={sitePageUrl(site.base, p.path)}
               aria-current={p.id === pageId ? "page" : undefined}
             >
               {p.title}

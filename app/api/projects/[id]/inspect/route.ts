@@ -1,3 +1,4 @@
+import { sitePageUrl } from "../../../../../lib/site/service";
 import { searchInsights } from "../../../../../lib/services/insights";
 import { ownedProject, failure } from "../../../../../lib/server";
 import { loadSite } from "../../../../../lib/site/public";
@@ -21,7 +22,7 @@ export async function GET(
       new URL(req.url).searchParams.get("page") || site.manifest.pages[0].id;
     const page = site.manifest.pages.find((p) => p.id === pageId);
     if (!page) throw new Error("Unknown website page.");
-    const url = site.base + page.path;
+    const url = sitePageUrl(site.base, page.path);
     let r;
     if (
       process.env.APP_ENV === "development" &&

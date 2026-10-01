@@ -74,6 +74,8 @@ async function ok(p, path, data) {
   return r.value;
 }
 async function visual(p, name) {
+  await p.locator(".route-state").waitFor({ state: "hidden" });
+  await p.evaluate(() => document.fonts.ready);
   await p.screenshot({ path: `test-results/${name}.png` });
   console.log(
     `FF_SYSTEM_VISUAL_${name}=${(await p.screenshot({ type: "jpeg", quality: 55 })).toString("base64")}`,
@@ -252,18 +254,15 @@ try {
   await check(
     "uploads go directly to private storage and finalize after byte validation",
     async () => {
-      const bytes = Buffer.from(
-        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aK9sAAAAASUVORK5CYII=",
-        "base64",
-      );
+      const bytes = await readFile("public/mori/interior.webp");
       const reserved = await ok(ownerPage, `/api/projects/${id}/upload`, {
-        name: "cedar.png",
+        name: "cedar.webp",
         size: bytes.length,
-        mime: "image/png",
+        mime: "image/webp",
       });
       const uploaded = await fetch(reserved.signedUrl, {
         method: "PUT",
-        headers: { "Content-Type": "image/png", "x-upsert": "false" },
+        headers: { "Content-Type": "image/webp", "x-upsert": "false" },
         body: bytes,
       });
       assert.ok(uploaded.ok, "Signed upload failed");
@@ -281,7 +280,7 @@ try {
       assert.equal(result.status, 200, result.value.error);
       asset = result.value.id;
       const anonymous = await fetch(
-        `${env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/project-assets/${id}/${asset}.png`,
+        `${env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/project-assets/${id}/${asset}.webp`,
       );
       assert.ok(!anonymous.ok);
     },
@@ -532,7 +531,7 @@ try {
       assert.equal(await live.title(), "Cedar Workshop | Handmade furniture");
       assert.equal(
         await live.locator('link[rel="canonical"]').getAttribute("href"),
-        `${base}/sites/${id}/`,
+        `${base}/sites/${id}`,
       );
       assert.ok((await fetch(`${base}/sites/${id}/sitemap.xml`)).ok);
       await visual(live, "real-customer-site");

@@ -29,7 +29,7 @@ export function inspectEnvironment(env) {
   )
     required.push("STRIPE_SECRET_KEY", "STRIPE_WEBHOOK_SECRET");
   if (env.VERCEL_TOKEN || env.VERCEL_PROJECT_ID || env.VERCEL_TEAM_ID)
-    required.push("VERCEL_TOKEN", "VERCEL_PROJECT_ID", "VERCEL_TEAM_ID");
+    required.push("VERCEL_TOKEN", "VERCEL_PROJECT_ID");
   if (env.RESEND_API_KEY || env.RESEND_WEBHOOK_SECRET || env.EMAIL_FROM)
     required.push("RESEND_API_KEY", "RESEND_WEBHOOK_SECRET", "EMAIL_FROM");
   if (env.FILE_SCAN_URL || env.FILE_SCAN_TOKEN)

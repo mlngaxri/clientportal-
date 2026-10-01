@@ -1,3 +1,4 @@
+import { sitePageUrl } from "../../lib/site/service";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createHmac } from "node:crypto";
@@ -88,4 +89,16 @@ test("search inspection reports the delivered HTML rather than invented scores",
       (c) => c.label === "Canonical address" && c.status === "fail",
     ),
   );
+});
+
+test("public page addresses match platform slash handling and domain roots", () => {
+  assert.equal(
+    sitePageUrl("https://portal.example.com/sites/id", "/"),
+    "https://portal.example.com/sites/id",
+  );
+  assert.equal(
+    sitePageUrl("https://cedar.example.com", "/"),
+    "https://cedar.example.com/",
+  );
+  assert.equal(sitePageUrl("/review/id", "/about/"), "/review/id/about");
 });

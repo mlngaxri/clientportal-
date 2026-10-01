@@ -14,7 +14,7 @@ Use the Supabase administrator interface or an audited server-only script to set
 
 ## 2. Portal hosting
 
-Connect this repository to the existing `fourthform-client-portal` Vercel project with Next.js detection. Clear an obsolete static `dist` output override if it exists. Configure the environment before building, since public Supabase variables are compiled into the client bundle. Rebuild after public configuration changes.
+Connect this repository to the existing `fourthform-client-portal` Vercel project with Next.js detection. Clear an obsolete static `dist` output override if it exists. Configure the environment before building, since public Supabase variables are compiled into the client bundle. Rebuild after public configuration changes. Alternatively, add a scoped `VERCEL_TOKEN` repository secret after staging acceptance. The deployment workflow waits for successful validation of the exact current main commit, pulls production configuration, builds with that configuration and deploys the built artifact. Without the secret it reports an unconfigured deployment and performs no mutation. The marketing repository has the same validated deployment path.
 
 Configure independent random secrets of at least 32 characters for `ANALYTICS_SIGNING_SECRET`, `SITE_ADAPTER_SIGNING_SECRET`, `CRON_SECRET` and `HEALTHCHECK_TOKEN`. Separate `RATE_LIMIT_SECRET` and `SESSION_SIGNING_SECRET` values are supported. A session proof defaults to the server key when no independent session secret is supplied; rotating that key signs users out. Run `npm run check:environment -- <private-environment-file>` for shape validation. This command never prints credential values and does not substitute for service acceptance.
 
