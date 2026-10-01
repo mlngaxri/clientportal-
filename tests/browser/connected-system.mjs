@@ -346,6 +346,12 @@ try {
                   label: "Action destination",
                   maxLength: 2000,
                 },
+                {
+                  id: "more-information",
+                  kind: "link",
+                  label: "Explore the workshop",
+                  maxLength: 2000,
+                },
               ],
             },
           ],
@@ -358,6 +364,7 @@ try {
             "hero-alt": "Workshop image",
             "action-label": "Start a conversation",
             "action-link": "#contact",
+            "more-information": "/#contact",
           },
           seo: {
             home: {
@@ -529,6 +536,7 @@ try {
         "Handmade furniture, shaped around your home.",
       );
       assert.equal(await live.title(), "Cedar Workshop | Handmade furniture");
+      assert.equal(await live.getByRole("link", {name: "Explore the workshop"}).getAttribute("href"), `${base}/sites/${id}#contact`);
       assert.equal(
         await live.locator('link[rel="canonical"]').getAttribute("href"),
         `${base}/sites/${id}`,

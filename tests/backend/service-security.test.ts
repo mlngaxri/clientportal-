@@ -101,4 +101,6 @@ test("public page addresses match platform slash handling and domain roots", () 
     "https://cedar.example.com/",
   );
   assert.equal(sitePageUrl("/review/id", "/about/"), "/review/id/about");
+  assert.equal(sitePageUrl("/review/id", "/?source=review#contact"), "/review/id?source=review#contact");
+  assert.equal(sitePageUrl("https://cedar.example.com", "/#contact"), "https://cedar.example.com/#contact");
 });

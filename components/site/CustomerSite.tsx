@@ -28,10 +28,11 @@ export default function CustomerSite({
     page.fields.find((f) => f.role === role)?.id;
   const image = value("image"),
     link = value("action-link") || "#contact";
-  const linkUrl =
-    link.startsWith("/") && !link.startsWith("//")
-      ? sitePageUrl(site.base, link)
-      : link;
+  const resolveLink = (href: string) =>
+    href.startsWith("/") && !href.startsWith("//")
+      ? sitePageUrl(site.base, href)
+      : href;
+  const linkUrl = resolveLink(link);
   return (
     <main
       className={`customer-site customer-${theme.layout}`}
@@ -112,7 +113,7 @@ export default function CustomerSite({
             ) : f.kind === "link" ? (
               <a
                 data-fourthform-id={f.id}
-                href={content.fields[f.id] || "#contact"}
+                href={resolveLink(content.fields[f.id] || "#contact")}
               >
                 {f.label} ↗
               </a>
