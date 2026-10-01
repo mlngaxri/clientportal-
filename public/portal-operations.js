@@ -12,6 +12,12 @@
           "'": "&#39;",
         })[c],
     );
+  const readableHeading = (node) => {
+    if (!node) return "";
+    const copy = node.cloneNode(true);
+    copy.querySelectorAll("br").forEach(line => line.replaceWith(document.createTextNode(" ")));
+    return copy.textContent.replace(/\s+/g, " ").trim();
+  };
   const model=window.ffPortalModel;
   const key = "fourthform-operations-preview-v1";
   let state = {
@@ -53,7 +59,7 @@
   function pageFields(page){
     const template=document.createElement('template');template.innerHTML=pageState[page]||defaultPages[page];
     const h=template.content.querySelector('h1'),copy=h?.parentElement.querySelector('p'),img=template.content.querySelector('[data-edit-image] img');
-    return {...pageDefaults[page],heading:h?.textContent.replace(/\s+/g,' ').trim()||pageDefaults[page].heading,description:copy?.textContent||'',image:img?.getAttribute('src')||'',imageAlt:img?.getAttribute('alt')||'',cta:state.cmsPages[page]?.cta||pageDefaults[page].cta};
+    return {...pageDefaults[page],heading:readableHeading(h)||pageDefaults[page].heading,description:copy?.textContent||'',image:img?.getAttribute('src')||'',imageAlt:img?.getAttribute('alt')||'',cta:state.cmsPages[page]?.cta||pageDefaults[page].cta};
   }
   function loadPageFields(){Object.assign(state,pageFields(state.page),state.cmsDrafts[state.page]||{});}
 
@@ -102,7 +108,7 @@
     const heading=template.content.querySelector("h1");
     const copy=heading?.parentElement.querySelector("p");
     const image=template.content.querySelector("[data-edit-image] img");
-    pageDefaults[page]={...pageDefaults[page],cta:document.querySelector("#reserveBtn").textContent,heading:heading?.textContent.replace(/\s+/g," ").trim()||pageDefaults[page].heading,description:copy?.textContent||pageDefaults[page].description,image:image?.getAttribute("src")||"",imageAlt:image?.getAttribute("alt")||"Mori House dining room"};
+    pageDefaults[page]={...pageDefaults[page],cta:document.querySelector("#reserveBtn").textContent,heading:readableHeading(heading)||pageDefaults[page].heading,description:copy?.textContent||pageDefaults[page].description,image:image?.getAttribute("src")||"",imageAlt:image?.getAttribute("alt")||"Mori House dining room"};
   });
   if(!state.savedAt&&!Object.keys(state.cmsDrafts).length)Object.assign(state,pageDefaults[state.page]||pageDefaults.Home);
   Object.assign(initialOperations,pageDefaults.Home);
