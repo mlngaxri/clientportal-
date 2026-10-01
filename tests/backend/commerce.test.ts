@@ -79,6 +79,13 @@ test("payments and subscriptions require owner reservations and replay exactly o
     ).rows[0].revision_limit,
     4,
   );
+  await db.query("update projects set revision_used=4 where id=$1",[pid]);
+  await db.query("select rotate_checkout($1,'revision',$2)",[pid,revision.key]);
+  const second=(await db.query<any>("select reserve_checkout($1,'revision') r",[pid])).rows[0].r;
+  await db.query("select bind_checkout($1,'revision',$2,'cs_revision_second')",[pid,second.key]);
+  await db.query("select record_payment('rev2','cs_revision_second',$1,'revision',15000,'aud')",[pid]);
+  await db.query("select record_payment('late_replay','cs_revision',$1,'revision',15000,'aud')",[pid]);
+  assert.equal((await db.query<any>('select revision_limit from projects where id=$1',[pid])).rows[0].revision_limit,5);
   await db.query("update projects set phase='LIVE' where id=$1", [pid]);
   await assert.rejects(
     () => db.query("select record_subscription('sub',$1,'active',1)", [pid]),

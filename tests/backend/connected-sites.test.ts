@@ -459,5 +459,29 @@ test("persistent sites, permission boundaries, publishing, rollback, enquiries a
       );
     },
   );
+  await t.test("public availability reveals neither drafts nor private routes",async()=>{
+    assert.equal((await db.query<any>("select public_site_available($1,'/') r",[id])).rows[0].r,true);
+    assert.equal((await db.query<any>("select public_site_available($1,'/private') r",[id])).rows[0].r,false);
+    assert.equal((await db.query<any>("select public_site_available($1,'/') r",[foreign])).rows[0].r,false);
+  });
+  await t.test("delivery receipts wait for acknowledgement and reject stale updates",async()=>{
+    const outbox=(await db.query<any>("select id from notification_outbox where kind='form' limit 1")).rows[0];
+    await assert.rejects(()=>db.query("select record_email_event('event-delivered','email-test','delivered',now())"),/pending/);
+    await db.query("update notification_outbox set provider_id='email-test' where id=$1",[outbox.id]);
+    await db.query("select record_email_event('event-delivered','email-test','delivered','2026-10-01T12:00:00Z')");
+    await db.query("select record_email_event('event-old','email-test','failed','2026-10-01T11:00:00Z')");
+    await db.query("select record_email_event('event-delivered','email-test','failed','2026-10-01T13:00:00Z')");
+    assert.equal((await db.query<any>("select delivery_status from notification_outbox where id=$1",[outbox.id])).rows[0].delivery_status,'delivered');
+  });
+  await t.test("First eligibility is enforced transactionally without changing an invalid brief",async()=>{
+    const pid=randomUUID();await identity();await db.query("insert into projects(id,owner_id) values($1,$2)",[pid,owner]);
+    const payload={name:'New business',package:'FIRST',brief:{openedOn:'2000-01-01'},objects:[]};
+    await assert.rejects(()=>db.query("select project_command($1,'save_business',$2,0,$3)",[pid,JSON.stringify(payload),randomUUID()]),/six months/);
+    assert.equal((await db.query<any>("select package from projects where id=$1",[pid])).rows[0].package,'SITE');
+    payload.brief.openedOn=(await db.query<any>("select current_date::text d")).rows[0].d;
+    await db.query("select project_command($1,'save_business',$2,0,$3)",[pid,JSON.stringify(payload),randomUUID()]);
+    const project=(await db.query<any>("select package,revision_limit from projects where id=$1",[pid])).rows[0];
+    assert.equal(project.package,'FIRST');assert.equal(project.revision_limit,1);
+  });
   await db.close();
 });

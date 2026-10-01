@@ -1,6 +1,6 @@
 import { RequestLimitError } from "./security/limits";
 import "server-only";
-import { sessionExpired, sessionCookieOptions } from "./auth-session";
+import { verifiedSessionExpiry, sessionCookieOptions } from "./auth-session";
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 import { createClient } from "@supabase/supabase-js";
@@ -17,6 +17,9 @@ export async function db() {
       "Account services are not configured yet. Your work has not been saved.",
     );
   const jar = await cookies();
+  const expiry = await verifiedSessionExpiry(
+    jar.get("ff-session-until")?.value,
+  );
   const remember = jar.get("ff-remember")?.value === "yes";
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -24,7 +27,7 @@ export async function db() {
     {
       cookies: {
         getAll: () =>
-          sessionExpired(jar.get("ff-session-until")?.value)
+          !expiry
             ? jar.getAll().filter((c) => !c.name.startsWith("sb-"))
             : jar.getAll(),
         setAll: (items) => {
@@ -32,10 +35,7 @@ export async function db() {
             items.forEach(({ name, value, options }) =>
               jar.set(name, value, {
                 ...options,
-                ...sessionCookieOptions(
-                  remember,
-                  jar.get("ff-session-until")?.value,
-                ),
+                ...sessionCookieOptions(remember, expiry || undefined),
                 ...(value ? {} : { maxAge: 0 }),
               }),
             );

@@ -8,6 +8,7 @@ import {
   REMEMBER_SECONDS,
   SESSION_SECONDS,
   sessionCookieOptions,
+  signSessionExpiry,
 } from "../../../lib/auth-session";
 const input = z.object({
   mode: z.enum(["signup", "signin", "google", "logout"]),
@@ -30,7 +31,7 @@ export async function POST(req: Request) {
       );
       const options = sessionCookieOptions(body.remember, expiry);
       jar.set("ff-remember", body.remember ? "yes" : "no", options);
-      jar.set("ff-session-until", expiry, options);
+      jar.set("ff-session-until", await signSessionExpiry(expiry), options);
     }
     const client = await db();
     if (body.mode === "logout") {

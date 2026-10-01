@@ -84,6 +84,7 @@ export function inspectEnvironment(env) {
     "CRON_SECRET",
     "HEALTHCHECK_TOKEN",
     "RATE_LIMIT_SECRET",
+    "SESSION_SIGNING_SECRET",
   ])
     if (env[key] && env[key].length < 32)
       failures.push(`${key} must contain at least 32 characters.`);

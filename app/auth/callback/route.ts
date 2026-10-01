@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import {
   sessionCookieOptions,
+  signSessionExpiry,
   REMEMBER_SECONDS,
   SESSION_SECONDS,
 } from "../../../lib/auth-session";
@@ -13,14 +14,14 @@ export async function GET(req: Request) {
   try {
     if (code) {
       const jar = await cookies();
-      if (!jar.get("ff-session-until")) {
+      {
         const remember = jar.get("ff-remember")?.value === "yes";
         const expiry = String(
           Date.now() + (remember ? REMEMBER_SECONDS : SESSION_SECONDS) * 1000,
         );
         jar.set(
           "ff-session-until",
-          expiry,
+          await signSessionExpiry(expiry),
           sessionCookieOptions(remember, expiry),
         );
       }

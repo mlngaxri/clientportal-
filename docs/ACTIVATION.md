@@ -16,7 +16,7 @@ Use the Supabase administrator interface or an audited server-only script to set
 
 Connect this repository to the existing `fourthform-client-portal` Vercel project with Next.js detection. Clear an obsolete static `dist` output override if it exists. Configure the environment before building, since public Supabase variables are compiled into the client bundle. Rebuild after public configuration changes.
 
-Configure independent random secrets of at least 32 characters for `ANALYTICS_SIGNING_SECRET`, `SITE_ADAPTER_SIGNING_SECRET`, `CRON_SECRET` and `HEALTHCHECK_TOKEN`. A separate `RATE_LIMIT_SECRET` is supported. Run `npm run check:environment -- <private-environment-file>` for shape validation. This command never prints credential values and does not substitute for service acceptance.
+Configure independent random secrets of at least 32 characters for `ANALYTICS_SIGNING_SECRET`, `SITE_ADAPTER_SIGNING_SECRET`, `CRON_SECRET` and `HEALTHCHECK_TOKEN`. Separate `RATE_LIMIT_SECRET` and `SESSION_SIGNING_SECRET` values are supported. A session proof defaults to the server key when no independent session secret is supplied; rotating that key signs users out. Run `npm run check:environment -- <private-environment-file>` for shape validation. This command never prints credential values and does not substitute for service acceptance.
 
 Probe `/api/health` with the health bearer token from a trusted monitor. No anonymous health response reveals the database. The daily `/api/jobs/maintenance` cron uses `CRON_SECRET`. Customer actions also process queued notifications. Daily retries can take up to 24 hours after an outage; higher-volume operations should use a durable worker or a more frequent paid cron schedule.
 

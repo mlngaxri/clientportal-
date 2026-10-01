@@ -1,6 +1,9 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
-import { sessionExpired, sessionCookieOptions } from "./lib/auth-session";
+import {
+  verifiedSessionExpiry,
+  sessionCookieOptions,
+} from "./lib/auth-session";
 function canonicalHost(host: string) {
   const hosts = [
     process.env.APP_URL,
@@ -127,10 +130,10 @@ export async function middleware(request: NextRequest) {
     !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
   )
     return response;
-  const expired = sessionExpired(
+  const expiry = await verifiedSessionExpiry(
     request.cookies.get("ff-session-until")?.value,
   );
-  if (expired) {
+  if (!expiry) {
     for (const c of request.cookies.getAll())
       if (
         c.name.startsWith("sb-") ||
@@ -155,10 +158,7 @@ export async function middleware(request: NextRequest) {
           items.forEach(({ name, value, options }) =>
             response.cookies.set(name, value, {
               ...options,
-              ...sessionCookieOptions(
-                remember,
-                request.cookies.get("ff-session-until")?.value,
-              ),
+              ...sessionCookieOptions(remember, expiry),
               ...(value ? {} : { maxAge: 0 }),
             }),
           );
