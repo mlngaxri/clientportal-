@@ -1,3 +1,4 @@
+import { readFile } from "node:fs/promises";
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
@@ -70,4 +71,13 @@ test("invalid schedules and prototype-like override keys are rejected", () => {
       overrides: Object.fromEntries([["constructor", "unsafe"]]),
     }).length,
   );
+});
+
+
+test("database migration enforces the State payload contract", async () => {
+  const sql = await readFile("supabase/migrations/011_states_contract.sql", "utf8");
+  assert.match(sql, /create trigger boards_states_contract/i);
+  assert.match(sql, /valid_states_payload/);
+  assert.match(sql, /jsonb_array_length\(doc->'states'\) > 100/);
+  assert.match(sql, /Invalid State schedule payload/);
 });
