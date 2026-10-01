@@ -64,6 +64,7 @@
     operations: structuredClone(state),
   });
   addEventListener("fourthform:restore", (e) => {
+    cmsImageVersion++;
     if (e.detail.operations) {
       state = model.normalizeOperations(initialOperations,e.detail.operations);
       views.forEach(render);
@@ -71,6 +72,7 @@
     }
   });
   addEventListener("fourthform:reset", () => {
+    cmsImageVersion++;
     state = { ...structuredClone(initialOperations), cmsPages: {},cmsDrafts: {} };
     try{localStorage.removeItem(key);}catch{notify("Device storage could not be cleared.");}
     views.forEach(render);
@@ -298,7 +300,7 @@
         "Shape the way your website appears in search, and give people a clear reason to visit.",
         "seo",
       ) +
-      `<div class="ops-grid"><div class="ops-box"><h3>Home / Search appearance</h3>${input("Page title", "seoTitle", "text", 'maxlength="160"')}<label class="ops-label">Description<textarea data-field="seoDescription" maxlength="500">${esc(state.seoDescription)}</textarea></label><div class="ops-actions">${button("Save search details", "save", true)}${button("Inspect page", "inspect-seo")}</div><div class="ops-line"><span>Page indexing</span><span class="ops-status">Visible to search engines</span></div><div class="ops-line"><span>Canonical URL</span><span>morihouse.com.au/</span></div></div><div><div class="ops-search-result"><small>morihouse.com.au ›</small><h3 data-search-title>${esc(state.seoTitle)}</h3><p data-search-description>${esc(state.seoDescription)}</p></div><p class="ops-notice">Search preview. Search engines may adjust the title and description they show.</p><div class="ops-box"><h3>Page health</h3><div class="ops-line"><span>Search title</span><span class="ops-status" data-search-health>${state.seoTitle.trim() ? "Present" : "Missing title"}</span></div><div class="ops-line"><span>Social sharing image</span><span class="ops-status">Ready</span></div><div class="ops-line"><span>Structured restaurant details</span><span class="ops-status">Complete</span></div></div></div></div></div>`
+      `<div class="ops-grid"><div class="ops-box"><h3>Home / Search appearance</h3>${input("Page title", "seoTitle", "text", 'maxlength="160"')}<label class="ops-label">Description<textarea data-field="seoDescription" maxlength="500">${esc(state.seoDescription)}</textarea></label><div class="ops-actions">${button("Save search details", "save", true)}${button("Inspect page", "inspect-seo")}</div><div class="ops-line"><span>Page indexing</span><span class="ops-status">Visible to search engines</span></div><div class="ops-line"><span>Canonical URL</span><span>${esc(state.domain)}/</span></div></div><div><div class="ops-search-result"><small>${esc(state.domain)} ›</small><h3 data-search-title>${esc(state.seoTitle)}</h3><p data-search-description>${esc(state.seoDescription)}</p></div><p class="ops-notice">Search preview. Search engines may adjust the title and description they show.</p><div class="ops-box"><h3>Page health</h3><div class="ops-line"><span>Search title</span><span class="ops-status" data-search-health>${state.seoTitle.trim() ? "Present" : "Missing title"}</span></div><div class="ops-line"><span>Social sharing image</span><span class="ops-status">Ready</span></div><div class="ops-line"><span>Structured restaurant details</span><span class="ops-status">Complete</span></div></div></div></div></div>`
     );
   }
   function domains() {
@@ -504,6 +506,7 @@
       const next=e.target.checked;if(!commitState(()=>{state.trackingConsent=next;},'Consent preference saved in this preview'))e.target.checked=state.trackingConsent;return;
     }
     if (!e.target.matches("[data-cms-image]")) return;
+    const version=++cmsImageVersion;
     const file = e.target.files[0];e.target.value='';
     if (!file) return;
     if (
@@ -513,7 +516,6 @@
       notify("Choose a JPG, PNG or WebP under 1.5 MB for this local preview.");
       return;
     }
-    const version=++cmsImageVersion;
     const reader = new FileReader();
     const selectedPage=state.page;
     reader.onload = () => {
@@ -729,6 +731,7 @@
         render("states");
         break;
       case "toggle-state":
+        if(!state.scheduled&&!model.validSchedule(state)){notify("Fix the schedule name, days and times before resuming.");break;}
         if(!commitState(()=>{state.scheduled=!state.scheduled;},state.scheduled?"State paused":"State resumed"))break;
         render("states");
         break;
@@ -817,6 +820,7 @@
         );
         break;
       case "test-form":
+        if(!state.connections.forms){notify("Connect the enquiry form before sending a test.");break;}
         dialog(
           "Your enquiry reaches you.",
           "From: Sam Taylor · sam@example.test. “We’d love to reserve a table for four this Friday.” The preview shows how an enquiry appears; no email is sent.",

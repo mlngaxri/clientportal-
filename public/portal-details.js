@@ -20,7 +20,7 @@
  for(const rail of [$('#leftRail'),$('#contextRail')])new MutationObserver(updateDrawers).observe(rail,{attributes:true,attributeFilter:['class']});
  updateDrawers();
  addEventListener('keydown',e=>{
-  if(e.key==='Escape'&&($('#leftRail').classList.contains('open')||$('#contextRail').classList.contains('open'))){e.preventDefault();e.stopImmediatePropagation();closeDrawers();drawerTrigger?.focus();}
+  if(e.key==='Escape'&&!document.querySelector('.modal-backdrop.open')&&($('#leftRail').classList.contains('open')||$('#contextRail').classList.contains('open'))){e.preventDefault();e.stopImmediatePropagation();closeDrawers();drawerTrigger?.focus();}
   if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='s'){
    e.preventDefault();if(document.querySelector('.modal-backdrop.open'))return;
    if(currentView==='settings'){$('#settingsForm').requestSubmit();return;}

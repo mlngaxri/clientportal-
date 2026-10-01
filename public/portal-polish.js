@@ -17,12 +17,22 @@ qs('#addDirection').onclick=()=>composeDirection(null);qs('#cancelDirection').on
 qs('#saveDirection').onclick=()=>{const value=qs('#directionText').value.trim();if(!value){qs('#directionText').focus();return}directions.push({page:currentPage,target:feedbackTarget?.dataset.editImage||(feedbackTarget?'heading':'Page'),text:value});renderDirections();markDirty();closeModal('#directionModal');notify('Direction added')};
 moriPage.addEventListener('click',e=>{if(currentMode!=='Review mode'||e.target.closest('button,.plate-track'))return;const target=e.target.closest('[data-edit-text],[data-edit-image]');if(target)composeDirection(target)});
 moriSite.addEventListener('keydown',e=>{if(currentMode==='Edit site'&&e.target.matches('[data-edit-image]')&&['Enter',' '].includes(e.key)){e.preventDefault();pendingImageTarget=e.target;fileInput.click()}});
-// One focus boundary for each dialog, with keyboard and Escape support.
+// Closed dialogs leave the keyboard and accessibility trees immediately.
 const originalOpen=openModal,originalClose=closeModal;
-openModal=function(id){lastFocus=document.activeElement;originalOpen(id);qs('.shell').inert=true;qs('#mobileDock').inert=true;const m=qs(id);requestAnimationFrame(()=>m.querySelector('textarea,input,button')?.focus())};
-closeModal=function(id){cancelHold();originalClose(id);qs('.shell').inert=false;qs('#mobileDock').inert=false;if(lastFocus?.isConnected)lastFocus.focus();else qs('.view.active button:not(:disabled)')?.focus()};
+const dialogFocus=new WeakMap();
+const focusableIn=m=>qsa('button:not(:disabled),textarea:not(:disabled),input:not(:disabled),select:not(:disabled),a[href],audio[controls],video[controls],[tabindex]:not([tabindex="-1"])',m).filter(el=>!el.closest('[inert]')&&el.getClientRects().length);
+function syncDialogs(){
+  const open=qs('.modal-backdrop.open');
+  qsa('.modal-backdrop').forEach(m=>{const visible=m.classList.contains('open');m.inert=!visible;if(visible)m.removeAttribute('aria-hidden');else m.setAttribute('aria-hidden','true');});
+  qs('.shell').inert=!!open;qs('#mobileDock').inert=!!open;
+}
+openModal=function(id){const m=qs(id);dialogFocus.set(m,document.activeElement);originalOpen(id);syncDialogs();focusableIn(m)[0]?.focus()};
+closeModal=function(id){const m=qs(id);if(!m)return;cancelHold();originalClose(id);syncDialogs();const focus=dialogFocus.get(m);if(focus?.isConnected&&!focus.closest('[inert]')&&!focus.disabled)focus.focus();else if(!qs('.modal-backdrop.open'))qs('.view.active button:not(:disabled)')?.focus()};
 qsa('.modal-backdrop').forEach(m=>{if(!m.hasAttribute('aria-labelledby')){const title=qs('h2',m);title.id=m.id+'Title';m.setAttribute('aria-labelledby',title.id)}m.addEventListener('click',e=>{if(e.target===m)closeModal('#'+m.id)})});
-document.addEventListener('keydown',e=>{const m=qs('.modal-backdrop.open');if(e.key==='Escape'){if(m)closeModal('#'+m.id);qsa('.popover').forEach(p=>p.classList.remove('open'));closeDrawers();return}if(e.key==='Tab'&&m){const focusable=qsa('button:not([disabled]),textarea,input,a[href]',m).filter(el=>el.getClientRects().length);const first=focusable[0],last=focusable.at(-1);if(e.shiftKey&&document.activeElement===first){e.preventDefault();last?.focus()}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first?.focus()}}});
+new MutationObserver(syncDialogs).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['class']});syncDialogs();
+const originalModalStep=setModalStep;
+setModalStep=function(n){originalModalStep(n);const title=qs('#submitModal .modal-step.active h2');if(!title.id)title.id='submitStep'+n+'Title';qs('#submitModal').setAttribute('aria-labelledby',title.id)};
+document.addEventListener('keydown',e=>{const m=qs('.modal-backdrop.open');if(e.key==='Escape'){if(m){e.preventDefault();closeModal('#'+m.id);}qsa('.popover').forEach(p=>p.classList.remove('open'));closeDrawers();return}if(e.key==='Tab'&&m){const focusable=focusableIn(m),first=focusable[0],last=focusable.at(-1);if(!first){e.preventDefault();return;}if(!m.contains(document.activeElement)||e.shiftKey&&document.activeElement===first){e.preventDefault();(e.shiftKey?last:first).focus()}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus()}}});
 hold.addEventListener('keydown',e=>{if([' ','Enter'].includes(e.key)&&!e.repeat){e.preventDefault();startHold()}});hold.addEventListener('keyup',e=>{if([' ','Enter'].includes(e.key)){e.preventDefault();cancelHold()}});hold.addEventListener('blur',cancelHold);
 qsa('[data-next-modal],[data-prev-modal]').forEach(b=>b.addEventListener('click',()=>qs('.modal-step.active button',qs('#submitModal'))?.focus()));
 const syncPanels=()=>{qsa('.view,.context-view').forEach(p=>p.inert=!p.classList.contains('active'));qsa('.popover').forEach(p=>p.inert=!p.classList.contains('open'));qs('#projectBtn').setAttribute('aria-expanded',qs('#projectPopover').classList.contains('open'));};

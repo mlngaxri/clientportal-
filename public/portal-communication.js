@@ -67,13 +67,17 @@
   $('#initialUpload').onclick = () => $('#initialFiles').click();
   async function addFiles(files) {
     if (initial.locked) return;
+    const direction=initial;
     for (const file of files) {
       if (file.size > 8 * 1024 * 1024) { $('#initialUploadStatus').textContent = 'For this local preview, choose files under 8 MB. Large file storage belongs to the connected release.'; continue; }
       if (!/^(image\/(png|jpeg|webp|gif)|audio\/|video\/|application\/pdf|text\/)/.test(file.type) && !/\.(docx|xlsx|pptx|zip)$/i.test(file.name)) { $('#initialUploadStatus').textContent = 'Choose an image, recording, PDF, document or text file.'; continue; }
       $('#initialUploadStatus').textContent = `Opening ${file.name}…`;
       try {
         const src = await new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(reader.result); reader.onerror = reject; reader.readAsDataURL(file); });
+        if(initial!==direction){$('#initialUploadStatus').textContent='The Direction changed while the file opened. Choose the file again.';return;}
         const type = file.type.startsWith('image/') ? 'image' : file.type.startsWith('audio/') ? 'audio' : file.type.startsWith('video/') ? 'video' : 'file';
+        if(type==='image')await new Promise((resolve,reject)=>{const image=new Image();image.onload=resolve;image.onerror=reject;image.src=src;});
+        if(initial!==direction){$('#initialUploadStatus').textContent='The Direction changed while the file opened. Choose the file again.';return;}
         if(initial.locked){$('#initialUploadStatus').textContent='The Direction was locked while the file opened. Return to editing to add it.';return;}
         initial.objects.push({ id: uid(), type, label: 'Supplied reference', text: '', name: file.name, src, size: `${(file.size/1024).toFixed(0)} KB` });
         initialChanged(); renderInitial(); $('#initialUploadStatus').textContent = `${file.name} added. Save to preserve it in this browser.`;
@@ -164,7 +168,7 @@
   const originalCompose = composeDirection;
   composeDirection = function(target) { if(revisionSubmitted){notify('Withdraw the submitted batch before editing.');return;} originalCompose(target); };
   replaceTargetImage = function(target, imageUrl) {
-    if (!target || !imageUrl)return;
+    if (!target || !imageUrl||currentMode==='Browse mode'||!moriPage.contains(target))return;
     if(currentMode==='Edit site') { const img=$('img',target);if(img){img.src=imageUrl;target.dataset.localImage='true';capturePage();markDirty();}return; }
     if(revisionSubmitted){notify('Withdraw the submitted batch before adding a replacement.');return;}
     directions.push({page:currentPage,target:target.dataset.editImage||'Image',text:'Replace this image with the supplied reference.',replacement:imageUrl});
