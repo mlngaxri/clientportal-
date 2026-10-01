@@ -1,5 +1,8 @@
 export const REMEMBER_SECONDS = 30 * 86400;
 export const SESSION_SECONDS = 8 * 3600;
+export function sessionExpiry(remember: boolean, now = Date.now()) {
+  return String(now + (remember ? REMEMBER_SECONDS : SESSION_SECONDS) * 1000);
+}
 export function sessionExpired(expiry: string | undefined, now = Date.now()) {
   return expiry !== undefined && (!/^\d+$/.test(expiry) || Number(expiry) <= now);
 }
