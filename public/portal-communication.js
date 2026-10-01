@@ -4,8 +4,11 @@
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
   const esc = (value) => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const read = () => { try { const value=JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');return value&&typeof value==='object'&&!Array.isArray(value)?value:{}; } catch { return {}; } };
+  const designIds=new Set(['monolith-hero','oyla','keel','playful-idea','nature-ritual','performance-eyewear','velorah-hero','prisma-landing','custom-spaces','obsidian','human-machine','veyra-electric','vintage-care','nature-portfolio','anchor-ai','vectrus-energy','golden-portal','digital-epoch-hero','peakline-redshift','orla-fashion']);
+  const canonicalLinks=value=>String(value).replace(/https?:\/\/[^\s]+/g,link=>{try{const url=new URL(link),id=url.searchParams.get('prompt');return url.hostname.endsWith('.ai')&&url.pathname==='/'&&designIds.has(id)?'https://fourthform-marketing.vercel.app/work/'+id:link;}catch{return link;}});
   let saved = read(), onboarding = {};
   try { onboarding = (window.ffPreviewSpace?{}:JSON.parse(localStorage.getItem('ff-preview-onboarding-v1') || '{}')); onboarding = onboarding?.brief || onboarding || {};if(typeof onboarding!=='object'||Array.isArray(onboarding))onboarding={}; } catch {}
+  if(typeof onboarding.links==='string')onboarding.links=canonicalLinks(onboarding.links);
   const validInitial=value=>value&&Array.isArray(value.objects)&&value.objects.every(o=>o&&typeof o.id==='string'&&typeof o.type==='string'&&typeof o.text==='string'&&['name','src','label','size'].every(k=>o[k]===undefined||typeof o[k]==='string')&&(!o.notes||Array.isArray(o.notes)&&o.notes.every(n=>n&&typeof n.text==='string'&&Number.isFinite(n.time)&&n.time>=0)));
   let initial = { sent: false, locked: false, objects: [
     { id: 'business', type: 'text', label: 'Your business', text: onboarding.description || 'Mori House is a small Japanese dining room in Brisbane. Seasonal cooking, an intimate room and a calm evening pace.' },
@@ -17,6 +20,8 @@
   if (onboarding.note) initial.objects.push({ id: 'note', type: 'text', label: 'Additional note', text: String(onboarding.note) });
   const initialSeed = structuredClone(initial);
   if(validInitial(saved.initialDirection))initial=structuredClone(saved.initialDirection);
+  initial.objects.forEach(object=>{object.text=canonicalLinks(object.text);if(object.src)object.src=canonicalLinks(object.src);});
+  if(Array.isArray(initial.appliedPortfolioReferences))initial.appliedPortfolioReferences=initial.appliedPortfolioReferences.map(canonicalLinks);
   const portfolioReferences=[...new Set(String(onboarding.links||'').split(/\s+/).filter(value=>{try{const url=new URL(value);return url.protocol==='https:'&&url.hostname==='fourthform-marketing.vercel.app'&&/^\/work\/[a-z0-9-]{1,80}$/.test(url.pathname);}catch{return false;}}))].slice(0,20);
   const appliedReferences=Array.isArray(initial.appliedPortfolioReferences)?initial.appliedPortfolioReferences.filter(value=>typeof value==='string').slice(0,20):[];
   const newReferences=portfolioReferences.filter(value=>!appliedReferences.includes(value)&&!initial.objects.some(object=>object.text.includes(value)||object.src===value));
