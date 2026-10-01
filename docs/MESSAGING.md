@@ -24,3 +24,7 @@ Site is A$1,500 for up to 5 custom pages and 3 revision rounds. A$200 starts the
 Use clear words, specific actions and short paragraphs. Explain a product term when it first matters. Keep the editorial headlines, but support them with plain descriptions. Use no em dashes, fabricated testimonials, invented results or claims of awards.
 
 Mori House is a website concept and example project. The portal is an interactive preview with edits saved on the device. Accounts, team submissions, payments and publishing are simulated. Onboarding carries the visitor’s brief into the Mori House Site example workspace.
+
+## Decision points
+
+Keep a next action beside the Site and First scope. Preserve the chosen package through the brief and example checkout. Link the States story directly to its working preview. Use the same Mori House opening headline and Evening service State in marketing and the portal. Explain a Direction as a note for the designer before asking a visitor to add one.

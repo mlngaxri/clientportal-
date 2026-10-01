@@ -16,7 +16,7 @@
  const panel=qs('[data-view-panel="review"]');panel.insertBefore(guide,qs('.stage',panel));
  function updateGuide(){
   const copy={
-   'Review mode':['Collect the changes you want.','Click text or an image to add a Direction. Submit your Directions together when the whole round is ready.'],
+   'Review mode':['Collect the changes you want.','Click text or an image to add a Direction, a note for your designer. Submit your Directions together when the whole round is ready.'],
    'Edit site':['Update words and images directly.','Click text to edit it, or an image to replace it. Save to keep your changes on this device.'],
    'Browse mode':['See the website as a visitor.','Use the pages and navigation to explore the website. Switch to Review mode to add feedback.'],
   }[currentMode];
