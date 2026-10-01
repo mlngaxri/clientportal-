@@ -1,14 +1,17 @@
-name: Validate client portal preview
+name: Validate Fourthform system
 on:
   push:
     branches: [main]
   pull_request:
 permissions:
   contents: read
+concurrency:
+  group: fourthform-portal-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   portal:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -16,5 +19,31 @@ jobs:
           node-version: '22'
           cache: npm
       - run: npm ci
+      - run: npm run typecheck
       - run: npm test
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Start isolated real Supabase
+        run: supabase start -x studio,imgproxy,edge-runtime,logflare,vector,supavisor > /tmp/fourthform-supabase.log
+      - name: Configure disposable integration environment
+        run: node scripts/ci-environment.mjs
       - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - name: Start connected production application
+        run: |
+          set -a
+          source .env.local
+          set +a
+          npm start > /tmp/fourthform-system.log 2>&1 &
+          for i in {1..40}; do curl -fsS http://localhost:4173/start >/dev/null && break; sleep 2; done
+      - name: Exercise real accounts, storage, CMS and customer workflows
+        run: node tests/browser/connected-system.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: connected-system-evidence
+          path: test-results/
+      - name: Stop disposable services
+        if: always()
+        run: supabase stop --no-backup

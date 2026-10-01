@@ -1,0 +1,2 @@
+import { ownedProject,failure } from "../../../../../lib/server";
+export async function GET(_req:Request,{params}:{params:Promise<{id:string}>}){try{const {id}=await params;const {client}=await ownedProject(id);const {data,error}=await client.from("payments").select("id,kind,amount,currency,paid_at").eq("project_id",id).order("paid_at",{ascending:false});if(error)throw error;return Response.json({payments:data||[]});}catch(e){return failure(e);}}

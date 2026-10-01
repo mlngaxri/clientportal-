@@ -1,0 +1,2 @@
+import { ownedProject,failure } from "../../../../../lib/server";
+export async function GET(req:Request,{params}:{params:Promise<{id:string}>}){try{const {id}=await params;const {client}=await ownedProject(id);const days=Number(new URL(req.url).searchParams.get("days")||30);if(![7,30,90].includes(days))throw new Error("Invalid analytics range.");const {data,error}=await client.rpc("analytics_summary",{pid:id,days});if(error)throw error;return Response.json({...data,days},{headers:{"Cache-Control":"private, no-store"}});}catch(e){return failure(e);}}

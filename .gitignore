@@ -1,4 +1,4 @@
-node_modules
+node_modules/
 .next/
 dist/
 .env*
@@ -7,3 +7,4 @@ dist/
 *.tsbuildinfo
 test-results/
 playwright-report/
+supabase/.temp/
