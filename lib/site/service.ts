@@ -4,13 +4,20 @@ export type ContentField = {
   kind: "text" | "image" | "link";
   label: string;
   maxLength?: number;
-  role?: "heading" | "body" | "action-label" | "action-link" | "image" | "image-alt";
+  role?:
+    "heading" | "body" | "action-label" | "action-link" | "image" | "image-alt";
 };
 export type SiteManifest = {
   siteId: string;
   revision: string;
   pages: { id: string; path: string; title: string; fields: ContentField[] }[];
-  theme?: { layout: "editorial" | "immersive" | "product" | "expressive"; background: string; ink: string; accent: string; name: string };
+  theme?: {
+    layout: "editorial" | "immersive" | "product" | "expressive";
+    background: string;
+    ink: string;
+    accent: string;
+    name: string;
+  };
 };
 export type SiteContent = {
   fields: Record<string, string>;
@@ -36,7 +43,16 @@ export interface SiteAdapter {
 }
 export function validateContent(manifest: SiteManifest, content: SiteContent) {
   const issues: string[] = [];
-  if (!content || !content.fields || typeof content.fields !== "object" || Array.isArray(content.fields) || !content.seo || typeof content.seo !== "object" || Array.isArray(content.seo)) return ["Invalid website content."];
+  if (
+    !content ||
+    !content.fields ||
+    typeof content.fields !== "object" ||
+    Array.isArray(content.fields) ||
+    !content.seo ||
+    typeof content.seo !== "object" ||
+    Array.isArray(content.seo)
+  )
+    return ["Invalid website content."];
   const fields = new Map(
     manifest.pages.flatMap((p) => p.fields.map((f) => [f.id, f] as const)),
   );
@@ -57,7 +73,8 @@ export function validateContent(manifest: SiteManifest, content: SiteContent) {
         if (!["https:", "mailto:", "tel:"].includes(u.protocol))
           issues.push(`Unsafe link: ${id}`);
       } catch {
-        if (!/^\/(?!\/)/.test(value) && !/^#[a-zA-Z0-9_-]+$/.test(value)) issues.push(`Invalid link: ${id}`);
+        if (!/^\/(?!\/)/.test(value) && !/^#[a-zA-Z0-9_-]+$/.test(value))
+          issues.push(`Invalid link: ${id}`);
       }
     }
     // Image references are private, ownership-checked asset IDs resolved by the adapter.
@@ -67,7 +84,10 @@ export function validateContent(manifest: SiteManifest, content: SiteContent) {
   for (const [id, seo] of Object.entries(content.seo)) {
     if (!pages.has(id)) issues.push(`Unknown page: ${id}`);
     if (
-      !seo || typeof seo.title !== "string" || typeof seo.description !== "string" || !seo.title.trim() ||
+      !seo ||
+      typeof seo.title !== "string" ||
+      typeof seo.description !== "string" ||
+      !seo.title.trim() ||
       seo.title.length > 160 ||
       seo.description.length > 500 ||
       typeof seo.noindex !== "boolean"
@@ -100,7 +120,8 @@ export class SiteService {
     });
     if (
       result.projectId !== projectId ||
-      !result.id || !result.adapterReceipt ||
+      !result.id ||
+      !result.adapterReceipt ||
       !Number.isFinite(Date.parse(result.deployedAt)) ||
       !validSiteUrl(result.url)
     )
@@ -122,5 +143,15 @@ export class SiteService {
   }
 }
 export function validSiteUrl(value: string) {
-  try { const u = new URL(value); return u.protocol === "https:" || (process.env.APP_ENV === "development" && u.protocol === "http:" && ["localhost", "127.0.0.1"].includes(u.hostname)); } catch { return false; }
+  try {
+    const u = new URL(value);
+    return (
+      u.protocol === "https:" ||
+      (process.env.APP_ENV === "development" &&
+        u.protocol === "http:" &&
+        ["localhost", "127.0.0.1"].includes(u.hostname))
+    );
+  } catch {
+    return false;
+  }
 }

@@ -29,7 +29,20 @@ export async function POST(req: Request) {
         (event.data.object as Stripe.Checkout.Session).id,
       );
       if (session.payment_status === "paid" && session.mode === "payment") {
-        const bound = await db.rpc("bind_checkout", { pid: session.metadata?.projectId, payment_kind: session.metadata?.kind, reservation_key: session.metadata?.reservationKey, session_id: session.id });
+        const receipt = await db
+          .from("payments")
+          .select("id")
+          .eq("id", session.id)
+          .maybeSingle();
+        if (receipt.error) throw receipt.error;
+        const bound = receipt.data
+          ? { error: null }
+          : await db.rpc("bind_checkout", {
+              pid: session.metadata?.projectId,
+              payment_kind: session.metadata?.kind,
+              reservation_key: session.metadata?.reservationKey,
+              session_id: session.id,
+            });
         if (bound.error) throw bound.error;
         const { error } = await db.rpc("record_payment", {
           event_id: event.id,
@@ -51,16 +64,42 @@ export async function POST(req: Request) {
     ) {
       const incoming = event.data.object as Stripe.Subscription;
       const current = await s.subscriptions.retrieve(incoming.id);
-      const prior = await db.from("subscriptions").select("project_id").eq("id", current.id).maybeSingle();
+      const prior = await db
+        .from("subscriptions")
+        .select("project_id")
+        .eq("id", current.id)
+        .maybeSingle();
       if (prior.error) throw prior.error;
       if (!prior.data) {
-        const sessions = await s.checkout.sessions.list({ subscription: current.id, limit: 2 });
-        const session = sessions.data.find((item) => item.status === "complete" && item.metadata?.kind === "pro" && item.metadata?.projectId === current.metadata.projectId);
+        const sessions = await s.checkout.sessions.list({
+          subscription: current.id,
+          limit: 2,
+        });
+        const session = sessions.data.find(
+          (item) =>
+            item.status === "complete" &&
+            item.metadata?.kind === "pro" &&
+            item.metadata?.projectId === current.metadata.projectId,
+        );
         if (!session) throw new Error("Subscription checkout not confirmed");
-        const bound = await db.rpc("bind_checkout", { pid: current.metadata.projectId, payment_kind: "pro", reservation_key: session.metadata?.reservationKey, session_id: session.id, subscription_id: current.id });
+        const bound = await db.rpc("bind_checkout", {
+          pid: current.metadata.projectId,
+          payment_kind: "pro",
+          reservation_key: session.metadata?.reservationKey,
+          session_id: session.id,
+          subscription_id: current.id,
+        });
         if (bound.error) throw bound.error;
       }
-      if (current.items.data.length !== 1 || current.items.data[0].quantity !== 1 || current.items.data[0].price.currency !== "aud" || current.items.data[0].price.unit_amount !== 3900 || current.items.data[0].price.recurring?.interval !== "month" || current.items.data[0].price.recurring?.interval_count !== 1) throw new Error("Subscription price mismatch");
+      if (
+        current.items.data.length !== 1 ||
+        current.items.data[0].quantity !== 1 ||
+        current.items.data[0].price.currency !== "aud" ||
+        current.items.data[0].price.unit_amount !== 3900 ||
+        current.items.data[0].price.recurring?.interval !== "month" ||
+        current.items.data[0].price.recurring?.interval_count !== 1
+      )
+        throw new Error("Subscription price mismatch");
       const { error } = await db.rpc("record_subscription", {
         sid: current.id,
         pid: current.metadata.projectId,

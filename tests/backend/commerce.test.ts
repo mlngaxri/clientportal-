@@ -4,34 +4,105 @@ import { PGlite } from "@electric-sql/pglite";
 import { readFile } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
 test("payments and subscriptions require owner reservations and replay exactly once", async () => {
- const db = new PGlite();
- await db.exec(`create role anon;create role authenticated;create role service_role;create schema auth;create schema storage;create table auth.users(id uuid primary key,email text);create function auth.uid() returns uuid language sql as $$select nullif(current_setting('test.uid',true),'')::uuid$$;create function auth.jwt() returns jsonb language sql as $$select '{}'::jsonb$$;create table storage.buckets(id text primary key,name text,public boolean,file_size_limit bigint);`);
- for(const file of ['001_fourthform.sql','004_commerce_hardening.sql']) await db.exec(await readFile('supabase/migrations/'+file,'utf8'));
- const owner=randomUUID(),pid=randomUUID(),foreign=randomUUID();
- await db.query('insert into auth.users(id) values($1)',[owner]);
- await db.query("insert into projects(id,owner_id,phase) values($1,$2,'AWAITING_INITIAL_PAYMENT'),($3,$2,'AWAITING_INITIAL_PAYMENT')",[pid,owner,foreign]);
- await db.query("select set_config('test.uid',$1,false)",[owner]);
- await assert.rejects(()=>db.query("select record_payment('e','cs',$1,'initial',20000,'aud')",[pid]),/Unreserved/);
- const reservation=(await db.query<any>("select reserve_checkout($1,'initial') r",[pid])).rows[0].r;
- await db.query("select bind_checkout($1,'initial',$2,'cs')",[pid,reservation.key]);
- await db.query("select record_payment('e','cs',$1,'initial',20000,'aud')",[pid]);
- await db.query("select record_payment('retry','cs',$1,'initial',20000,'aud')",[pid]);
- assert.equal((await db.query<any>('select count(*)::int n from payments')).rows[0].n,1);
- await assert.rejects(()=>db.query("select record_payment('foreign','cs',$1,'initial',20000,'aud')",[foreign]),/mismatch/);
- await db.query("update projects set phase='REVIEW',revision_used=3 where id=$1",[pid]);
- const revision=(await db.query<any>("select reserve_checkout($1,'revision') r",[pid])).rows[0].r;
- await db.query("select bind_checkout($1,'revision',$2,'cs_revision')",[pid,revision.key]);
- await db.query("select record_payment('rev','cs_revision',$1,'revision',15000,'aud')",[pid]);
- await db.query("select record_payment('rev_retry','cs_revision',$1,'revision',15000,'aud')",[pid]);
- assert.equal((await db.query<any>('select revision_limit from projects where id=$1',[pid])).rows[0].revision_limit,4);
- await db.query("update projects set phase='LIVE' where id=$1",[pid]);
- await assert.rejects(()=>db.query("select record_subscription('sub',$1,'active',1)",[pid]),/Unreserved/);
- const pro=(await db.query<any>("select reserve_checkout($1,'pro') r",[pid])).rows[0].r;
- await db.query("select bind_checkout($1,'pro',$2,'cs_pro','sub')",[pid,pro.key]);
- await db.query("select record_subscription('sub',$1,'active',2)",[pid]);
- assert.equal((await db.query<any>('select pro from projects where id=$1',[pid])).rows[0].pro,true);
- await db.query("select record_subscription('sub',$1,'past_due',3)",[pid]);
- await db.query("select record_subscription('sub',$1,'active',1)",[pid]);
- assert.equal((await db.query<any>('select pro from projects where id=$1',[pid])).rows[0].pro,false);
- await db.close();
+  const db = new PGlite();
+  await db.exec(
+    `create role anon;create role authenticated;create role service_role;create schema auth;create schema storage;create table auth.users(id uuid primary key,email text);create function auth.uid() returns uuid language sql as $$select nullif(current_setting('test.uid',true),'')::uuid$$;create function auth.jwt() returns jsonb language sql as $$select '{}'::jsonb$$;create table storage.buckets(id text primary key,name text,public boolean,file_size_limit bigint);`,
+  );
+  for (const file of ["001_fourthform.sql", "004_commerce_hardening.sql"])
+    await db.exec(await readFile("supabase/migrations/" + file, "utf8"));
+  const owner = randomUUID(),
+    pid = randomUUID(),
+    foreign = randomUUID();
+  await db.query("insert into auth.users(id) values($1)", [owner]);
+  await db.query(
+    "insert into projects(id,owner_id,phase) values($1,$2,'AWAITING_INITIAL_PAYMENT'),($3,$2,'AWAITING_INITIAL_PAYMENT')",
+    [pid, owner, foreign],
+  );
+  await db.query("select set_config('test.uid',$1,false)", [owner]);
+  await assert.rejects(
+    () =>
+      db.query("select record_payment('e','cs',$1,'initial',20000,'aud')", [
+        pid,
+      ]),
+    /Unreserved/,
+  );
+  const reservation = (
+    await db.query<any>("select reserve_checkout($1,'initial') r", [pid])
+  ).rows[0].r;
+  await db.query("select bind_checkout($1,'initial',$2,'cs')", [
+    pid,
+    reservation.key,
+  ]);
+  await db.query("select record_payment('e','cs',$1,'initial',20000,'aud')", [
+    pid,
+  ]);
+  await db.query(
+    "select record_payment('retry','cs',$1,'initial',20000,'aud')",
+    [pid],
+  );
+  assert.equal(
+    (await db.query<any>("select count(*)::int n from payments")).rows[0].n,
+    1,
+  );
+  await assert.rejects(
+    () =>
+      db.query(
+        "select record_payment('foreign','cs',$1,'initial',20000,'aud')",
+        [foreign],
+      ),
+    /mismatch/,
+  );
+  await db.query(
+    "update projects set phase='REVIEW',revision_used=3 where id=$1",
+    [pid],
+  );
+  const revision = (
+    await db.query<any>("select reserve_checkout($1,'revision') r", [pid])
+  ).rows[0].r;
+  await db.query("select bind_checkout($1,'revision',$2,'cs_revision')", [
+    pid,
+    revision.key,
+  ]);
+  await db.query(
+    "select record_payment('rev','cs_revision',$1,'revision',15000,'aud')",
+    [pid],
+  );
+  await db.query(
+    "select record_payment('rev_retry','cs_revision',$1,'revision',15000,'aud')",
+    [pid],
+  );
+  assert.equal(
+    (
+      await db.query<any>("select revision_limit from projects where id=$1", [
+        pid,
+      ])
+    ).rows[0].revision_limit,
+    4,
+  );
+  await db.query("update projects set phase='LIVE' where id=$1", [pid]);
+  await assert.rejects(
+    () => db.query("select record_subscription('sub',$1,'active',1)", [pid]),
+    /Unreserved/,
+  );
+  const pro = (
+    await db.query<any>("select reserve_checkout($1,'pro') r", [pid])
+  ).rows[0].r;
+  await db.query("select bind_checkout($1,'pro',$2,'cs_pro','sub')", [
+    pid,
+    pro.key,
+  ]);
+  await db.query("select record_subscription('sub',$1,'active',2)", [pid]);
+  assert.equal(
+    (await db.query<any>("select pro from projects where id=$1", [pid])).rows[0]
+      .pro,
+    true,
+  );
+  await db.query("select record_subscription('sub',$1,'past_due',3)", [pid]);
+  await db.query("select record_subscription('sub',$1,'active',1)", [pid]);
+  assert.equal(
+    (await db.query<any>("select pro from projects where id=$1", [pid])).rows[0]
+      .pro,
+    false,
+  );
+  await db.close();
 });

@@ -1,5 +1,105 @@
 "use client";
-import { useEffect,useState } from "react";
+import { useEffect, useState } from "react";
 import { api } from "../lib/client";
-type Message={id:string;name:string;email:string;message:string;page_id:string;status:string;created_at:string};
-export default function InboxWorkspace({projectId}:{projectId:string}){const [messages,setMessages]=useState<Message[]>([]),[next,setNext]=useState<string|null>(null),[busy,setBusy]=useState(false),[error,setError]=useState("");async function load(before?:string){setBusy(true);try{const r=await api(`/api/projects/${projectId}/forms${before?`?before=${encodeURIComponent(before)}`:""}`);setMessages(m=>before?[...m,...r.messages]:r.messages);setNext(r.next);setError("");}catch(e){setError((e as Error).message);}finally{setBusy(false);}}useEffect(()=>{void load();},[projectId]);async function status(id:string,value:string){setBusy(true);try{await api(`/api/projects/${projectId}/forms`,{id,status:value});setMessages(m=>m.map(item=>item.id===id?{...item,status:value}:item));}catch(e){setError((e as Error).message);}finally{setBusy(false);}}return <section className="direction-workspace connected-inbox"><header className="workspace-heading"><div><span className="overline">Website / Inbox</span><h1>Every enquiry, in one place.</h1><p>Messages are saved to your account when the website confirms receipt. Email notifications are an additional delivery channel.</p></div><button disabled={busy} onClick={()=>void load()}>Refresh inbox</button></header>{error&&<p role="alert">{error}</p>}{!messages.length&&!busy&&<p className="connected-empty">No enquiries yet. Your published contact form sends messages here.</p>}{messages.map(m=><article className={`connected-card ${m.status}`} key={m.id}><span className="overline">{m.status} · {new Date(m.created_at).toLocaleString()}</span><h2>{m.name}</h2><a href={`mailto:${m.email}`}>{m.email}</a><p>{m.message}</p><div className="connected-actions"><button disabled={busy} onClick={()=>void status(m.id,m.status==="read"?"new":"read")}>{m.status==="read"?"Mark unread":"Mark read"}</button><button disabled={busy} onClick={()=>void status(m.id,m.status==="archived"?"new":"archived")}>{m.status==="archived"?"Restore":"Archive"}</button></div></article>)}{next&&<button disabled={busy} onClick={()=>void load(next)}>Load older messages</button>}</section>;}
+type Message = {
+  id: string;
+  name: string;
+  email: string;
+  message: string;
+  page_id: string;
+  status: string;
+  created_at: string;
+};
+export default function InboxWorkspace({ projectId }: { projectId: string }) {
+  const [messages, setMessages] = useState<Message[]>([]),
+    [next, setNext] = useState<string | null>(null),
+    [busy, setBusy] = useState(false),
+    [error, setError] = useState("");
+  async function load(before?: string) {
+    setBusy(true);
+    try {
+      const r = await api(
+        `/api/projects/${projectId}/forms${before ? `?before=${encodeURIComponent(before)}` : ""}`,
+      );
+      setMessages((m) => (before ? [...m, ...r.messages] : r.messages));
+      setNext(r.next);
+      setError("");
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+  useEffect(() => {
+    void load();
+  }, [projectId]);
+  async function status(id: string, value: string) {
+    setBusy(true);
+    try {
+      await api(`/api/projects/${projectId}/forms`, { id, status: value });
+      setMessages((m) =>
+        m.map((item) => (item.id === id ? { ...item, status: value } : item)),
+      );
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <section className="direction-workspace connected-inbox">
+      <header className="workspace-heading">
+        <div>
+          <span className="overline">Website / Inbox</span>
+          <h1>Every enquiry, in one place.</h1>
+          <p>
+            Messages are saved to your account when the website confirms
+            receipt. Email notifications are an additional delivery channel.
+          </p>
+        </div>
+        <button disabled={busy} onClick={() => void load()}>
+          Refresh inbox
+        </button>
+      </header>
+      {error && <p role="alert">{error}</p>}
+      {!messages.length && !busy && (
+        <p className="connected-empty">
+          No enquiries yet. Your published contact form sends messages here.
+        </p>
+      )}
+      {messages.map((m) => (
+        <article className={`connected-card ${m.status}`} key={m.id}>
+          <span className="overline">
+            {m.status} · {new Date(m.created_at).toLocaleString()}
+          </span>
+          <h2>{m.name}</h2>
+          <a href={`mailto:${m.email}`}>{m.email}</a>
+          <p>{m.message}</p>
+          <div className="connected-actions">
+            <button
+              disabled={busy}
+              onClick={() =>
+                void status(m.id, m.status === "read" ? "new" : "read")
+              }
+            >
+              {m.status === "read" ? "Mark unread" : "Mark read"}
+            </button>
+            <button
+              disabled={busy}
+              onClick={() =>
+                void status(m.id, m.status === "archived" ? "new" : "archived")
+              }
+            >
+              {m.status === "archived" ? "Restore" : "Archive"}
+            </button>
+          </div>
+        </article>
+      ))}
+      {next && (
+        <button disabled={busy} onClick={() => void load(next)}>
+          Load older messages
+        </button>
+      )}
+    </section>
+  );
+}

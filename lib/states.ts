@@ -13,15 +13,32 @@ const clock = /^(?:[01]\d|2[0-3]):[0-5]\d$/;
 const minutes = (s: string) => Number(s.slice(0, 2)) * 60 + Number(s.slice(3));
 export function validateState(s: ScheduledState): string[] {
   const errors: string[] = [];
-  if (!s || typeof s.id !== "string" || typeof s.title !== "string" || typeof s.timezone !== "string" || !Array.isArray(s.days) || typeof s.start !== "string" || typeof s.end !== "string" || typeof s.enabled !== "boolean" || !s.overrides || typeof s.overrides !== "object" || Array.isArray(s.overrides)) return ["This State has invalid data. Remove it and create a new schedule."];
-  if (s.id.length > 100 || s.title.length > 160 || !s.id || !s.title.trim()) errors.push("Give this State a name.");
+  if (
+    !s ||
+    typeof s.id !== "string" ||
+    typeof s.title !== "string" ||
+    typeof s.timezone !== "string" ||
+    !Array.isArray(s.days) ||
+    typeof s.start !== "string" ||
+    typeof s.end !== "string" ||
+    typeof s.enabled !== "boolean" ||
+    !s.overrides ||
+    typeof s.overrides !== "object" ||
+    Array.isArray(s.overrides)
+  )
+    return [
+      "This State has invalid data. Remove it and create a new schedule.",
+    ];
+  if (s.id.length > 100 || s.title.length > 160 || !s.id || !s.title.trim())
+    errors.push("Give this State a name.");
   try {
     new Intl.DateTimeFormat("en", { timeZone: s.timezone }).format();
   } catch {
     errors.push("Choose a valid timezone.");
   }
   if (
-    !s.days.length || new Set(s.days).size !== s.days.length ||
+    !s.days.length ||
+    new Set(s.days).size !== s.days.length ||
     s.days.some((d) => !Number.isInteger(d) || d < 0 || d > 6)
   )
     errors.push("Choose at least one day.");
@@ -30,7 +47,11 @@ export function validateState(s: ScheduledState): string[] {
   if (!Number.isSafeInteger(s.priority) || s.priority < 0 || s.priority > 100)
     errors.push("Priority must be between 0 and 100.");
   if (
-    Object.keys(s.overrides).some((key) => !/^[a-zA-Z0-9][a-zA-Z0-9._-]{0,199}$/.test(key) || ["__proto__", "constructor", "prototype"].includes(key)) ||
+    Object.keys(s.overrides).some(
+      (key) =>
+        !/^[a-zA-Z0-9][a-zA-Z0-9._-]{0,199}$/.test(key) ||
+        ["__proto__", "constructor", "prototype"].includes(key),
+    ) ||
     Object.values(s.overrides).some(
       (v) => typeof v !== "string" || v.length > 10000,
     )

@@ -17,7 +17,13 @@ export default async function ProjectPage({
   const { client, project, user } = result;
   if (["DRAFT_ONBOARDING", "AWAITING_INITIAL_PAYMENT"].includes(project.phase))
     redirect(`/start?next=${encodeURIComponent(`/projects/${id}/${section}`)}`);
-  if (!projectSections(project.phase as Phase,user.app_metadata?.role === "operator").includes(section)) notFound();
+  if (
+    !projectSections(
+      project.phase as Phase,
+      user.app_metadata?.role === "operator",
+    ).includes(section)
+  )
+    notFound();
   const { data: boards, error } = await client
     .from("boards")
     .select("*")

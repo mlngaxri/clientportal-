@@ -90,7 +90,13 @@ export function useSave(board: Board, readOnly = false) {
               key: pending.current!.key,
             },
           );
-          verifySaveReceipt(r.board, board.project_id, board.id, version.current, snapshot);
+          verifySaveReceipt(
+            r.board,
+            board.project_id,
+            board.id,
+            version.current,
+            snapshot,
+          );
           pending.current = null;
           version.current = r.board.version;
           saved.current = JSON.stringify(snapshot);
@@ -120,7 +126,10 @@ export function useSave(board: Board, readOnly = false) {
                 `/api/projects/${board.project_id}`,
               );
               const found = result.boards.find((b) => b.id === board.id);
-              const remote = found?.locked_at && found.submitted_data ? { ...found, data: found.submitted_data } : found;
+              const remote =
+                found?.locked_at && found.submitted_data
+                  ? { ...found, data: found.submitted_data }
+                  : found;
               if (remote) {
                 const merged = mergeDocuments(
                   base.current,
@@ -210,7 +219,10 @@ export function useSave(board: Board, readOnly = false) {
     setState("dirty");
     setRecovery(null);
     if (r.version !== board.version || readOnly) {
-      const remote = board.locked_at && board.submitted_data ? { ...board, data: board.submitted_data } : board;
+      const remote =
+        board.locked_at && board.submitted_data
+          ? { ...board, data: board.submitted_data }
+          : board;
       const merged = mergeDocuments(r.base, r.data, remote.data);
       setConflict({
         remote,
@@ -289,7 +301,9 @@ export function SaveControl({
   return (
     <div className="save-control">
       <span role="status" aria-live="polite">
-        {state === "saved" && savedAt ? `Saved at ${new Date(savedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}` : labels[state]}
+        {state === "saved" && savedAt
+          ? `Saved at ${new Date(savedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
+          : labels[state]}
       </span>
       <button
         className={state === "dirty" ? "accent" : ""}

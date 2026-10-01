@@ -11,6 +11,11 @@ export function limitBucket(scope: string, subject: string, secret: string) {
 }
 // Vercel overwrites x-forwarded-for. On other hosts, do not trust a client IP
 // header: a deployment-wide bucket is conservative until a trusted proxy is set.
-export function requestSubject(req: Request, vercel = process.env.VERCEL === "1") {
-  return vercel ? (req.headers.get("x-forwarded-for")?.split(",")[0].trim() || "unknown") : "deployment";
+export function requestSubject(
+  req: Request,
+  vercel = process.env.VERCEL === "1",
+) {
+  return vercel
+    ? req.headers.get("x-forwarded-for")?.split(",")[0].trim() || "unknown"
+    : "deployment";
 }

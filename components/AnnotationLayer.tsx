@@ -17,8 +17,14 @@ export default function AnnotationLayer({
   function point(e: React.PointerEvent<SVGSVGElement>): Point {
     const r = e.currentTarget.getBoundingClientRect();
     return {
-      x: Math.max(0, Math.min(1000, ((e.clientX - r.left) / Math.max(1, r.width)) * 1000)),
-      y: Math.max(0, Math.min(600, ((e.clientY - r.top) / Math.max(1, r.height)) * 600)),
+      x: Math.max(
+        0,
+        Math.min(1000, ((e.clientX - r.left) / Math.max(1, r.width)) * 1000),
+      ),
+      y: Math.max(
+        0,
+        Math.min(600, ((e.clientY - r.top) / Math.max(1, r.height)) * 600),
+      ),
     };
   }
   function down(e: React.PointerEvent<SVGSVGElement>) {

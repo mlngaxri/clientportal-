@@ -6,7 +6,9 @@ const db = new PGlite();
 await db.exec(
   `create role anon;create role authenticated;create role service_role;create schema auth;create schema storage;grant usage on schema auth to authenticated;create table auth.users(id uuid primary key,email text);create function auth.uid() returns uuid language sql as $$select nullif(current_setting('test.uid',true),'')::uuid$$;create function auth.jwt() returns jsonb language sql as $$select jsonb_build_object('app_metadata',jsonb_build_object('role',current_setting('test.role',true)))$$;create table storage.buckets(id text primary key,name text,public boolean,file_size_limit bigint);`,
 );
-for (const migration of (await readdir("supabase/migrations")).filter(name => name.endsWith(".sql")).sort()) {
+for (const migration of (await readdir("supabase/migrations"))
+  .filter((name) => name.endsWith(".sql"))
+  .sort()) {
   await db.exec(await readFile(`supabase/migrations/${migration}`, "utf8"));
 }
 const owner = randomUUID(),
@@ -57,13 +59,26 @@ await cmd("save_business", {
   objects: [{ id: "intro", type: "text", text: "Dinner" }],
 });
 ok((await p()).phase === "AWAITING_INITIAL_PAYMENT");
-const intent1=(await db.query<any>('select reserve_checkout($1,$2) as r',[pid,'initial'])).rows[0].r;
-const intent2=(await db.query<any>('select reserve_checkout($1,$2) as r',[pid,'initial'])).rows[0].r;
-ok(intent1.key===intent2.key);
-await assert.rejects(()=>db.query('select reserve_checkout($1,$2)',[pid,'final']),/unavailable/);checks++;
+const intent1 = (
+  await db.query<any>("select reserve_checkout($1,$2) as r", [pid, "initial"])
+).rows[0].r;
+const intent2 = (
+  await db.query<any>("select reserve_checkout($1,$2) as r", [pid, "initial"])
+).rows[0].r;
+ok(intent1.key === intent2.key);
+await assert.rejects(
+  () => db.query("select reserve_checkout($1,$2)", [pid, "final"]),
+  /unavailable/,
+);
+checks++;
 await assert.rejects(() => cmd("begin_build"));
 checks++;
-await db.query("select bind_checkout($1, $2, $3, $4)", [pid, "initial", intent1.key, "cs_1"]);
+await db.query("select bind_checkout($1, $2, $3, $4)", [
+  pid,
+  "initial",
+  intent1.key,
+  "cs_1",
+]);
 await db.query("select record_payment($1,$2,$3,$4,$5,$6)", [
   "evt_1",
   "cs_1",
@@ -74,7 +89,28 @@ await db.query("select record_payment($1,$2,$3,$4,$5,$6)", [
 ]);
 ok((await p()).phase === "DIRECTION");
 let initial = await b();
-await assert.rejects(()=>cmd('save_board',{boardId:initial.id,data:{objects:[{id:'x',type:'link',url:'javascript:alert(1)',text:'unsafe'}]}},initial.version),/HTTP/);checks++;
+await assert.rejects(
+  () =>
+    cmd(
+      "save_board",
+      {
+        boardId: initial.id,
+        data: {
+          objects: [
+            {
+              id: "x",
+              type: "link",
+              url: "javascript:alert(1)",
+              text: "unsafe",
+            },
+          ],
+        },
+      },
+      initial.version,
+    ),
+  /HTTP/,
+);
+checks++;
 await cmd(
   "save_board",
   {
@@ -155,8 +191,15 @@ await assert.rejects(() =>
   ]),
 );
 checks++;
-const finalIntent=(await db.query<any>("select reserve_checkout($1,$2) as r",[pid,"final"])).rows[0].r;
-await db.query("select bind_checkout($1,$2,$3,$4)",[pid,"final",finalIntent.key,"cs_2"]);
+const finalIntent = (
+  await db.query<any>("select reserve_checkout($1,$2) as r", [pid, "final"])
+).rows[0].r;
+await db.query("select bind_checkout($1,$2,$3,$4)", [
+  pid,
+  "final",
+  finalIntent.key,
+  "cs_2",
+]);
 await db.query("select record_payment($1,$2,$3,$4,$5,$6)", [
   "evt_2",
   "cs_2",

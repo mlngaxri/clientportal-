@@ -170,10 +170,28 @@ test("authentication redirects cannot leave the app", () => {
   assert.equal(safeReturnPath("/projects/123/review"), "/projects/123/review");
 });
 
-import { assertCheckoutEnabled } from '../../lib/release';
-test('unfinished products and live payments stay closed by default', () => {
-  assert.throws(() => assertCheckoutEnabled({ package: 'SITE', kind: 'initial' }, { STRIPE_SECRET_KEY: 'sk_live_fixture' }), /not open/);
-  assert.doesNotThrow(() => assertCheckoutEnabled({ package: 'SITE', kind: 'initial' }, { STRIPE_SECRET_KEY: 'sk_test_fixture' }));
-  assert.throws(() => assertCheckoutEnabled({ package: 'FIRST', kind: 'initial' }, {}), /not open/);
-  assert.throws(() => assertCheckoutEnabled({ package: 'SITE', kind: 'pro' }, {}), /not open/);
+import { assertCheckoutEnabled } from "../../lib/release";
+test("unfinished products and live payments stay closed by default", () => {
+  assert.throws(
+    () =>
+      assertCheckoutEnabled(
+        { package: "SITE", kind: "initial" },
+        { STRIPE_SECRET_KEY: "sk_live_fixture" },
+      ),
+    /not open/,
+  );
+  assert.doesNotThrow(() =>
+    assertCheckoutEnabled(
+      { package: "SITE", kind: "initial" },
+      { STRIPE_SECRET_KEY: "sk_test_fixture" },
+    ),
+  );
+  assert.throws(
+    () => assertCheckoutEnabled({ package: "FIRST", kind: "initial" }, {}),
+    /not open/,
+  );
+  assert.throws(
+    () => assertCheckoutEnabled({ package: "SITE", kind: "pro" }, {}),
+    /not open/,
+  );
 });

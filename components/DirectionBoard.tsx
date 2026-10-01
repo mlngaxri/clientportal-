@@ -57,11 +57,25 @@ export default function DirectionBoard({
       { name: file.name, progress: 0, file },
     ]);
     try {
-      const asset = await uploadAsset(board.project_id, file, (progress) => setUploads((items) => items.map((item) => item.file === file ? { ...item, progress } : item)));
-      add(assetType(asset.mime), "", { assetId: asset.id, name: asset.name, url: asset.url });
+      const asset = await uploadAsset(board.project_id, file, (progress) =>
+        setUploads((items) =>
+          items.map((item) =>
+            item.file === file ? { ...item, progress } : item,
+          ),
+        ),
+      );
+      add(assetType(asset.mime), "", {
+        assetId: asset.id,
+        name: asset.name,
+        url: asset.url,
+      });
       setUploads((items) => items.filter((item) => item.file !== file));
     } catch (e) {
-      setUploads((items) => items.map((item) => item.file === file ? { ...item, error: (e as Error).message } : item));
+      setUploads((items) =>
+        items.map((item) =>
+          item.file === file ? { ...item, error: (e as Error).message } : item,
+        ),
+      );
     }
   }
 
@@ -122,7 +136,7 @@ export default function DirectionBoard({
         action: "send_initial",
         payload: { boardId: board.id },
         expected: b.version,
-        key: sendKey.current ||= crypto.randomUUID(),
+        key: (sendKey.current ||= crypto.randomUUID()),
       });
       sendKey.current = null;
       setSend(false);
@@ -305,7 +319,16 @@ export default function DirectionBoard({
                 )}
                 {o.notes?.map((n, j) => (
                   <p key={j}>
-                    <button className="mono" aria-label={`Play video at ${Math.floor(n.time)} seconds`} onClick={(e) => { const v = e.currentTarget.closest("article")?.querySelector("video"); if (v) v.currentTime = n.time; }}>
+                    <button
+                      className="mono"
+                      aria-label={`Play video at ${Math.floor(n.time)} seconds`}
+                      onClick={(e) => {
+                        const v = e.currentTarget
+                          .closest("article")
+                          ?.querySelector("video");
+                        if (v) v.currentTime = n.time;
+                      }}
+                    >
                       {Math.floor(n.time / 60)}:
                       {String(Math.floor(n.time % 60)).padStart(2, "0")}
                     </button>{" "}
@@ -317,8 +340,16 @@ export default function DirectionBoard({
             {o.type === "audio" && <audio controls src={o.url} />}
             {o.type === "file" && (
               <div>
-                {o.name?.toLowerCase().endsWith(".pdf") && <iframe title={o.name} src={o.url} style={{ width: "100%", height: 420 }} />}
-                <a href={o.url} target="_blank" rel="noreferrer">{o.name} ↗</a>
+                {o.name?.toLowerCase().endsWith(".pdf") && (
+                  <iframe
+                    title={o.name}
+                    src={o.url}
+                    style={{ width: "100%", height: 420 }}
+                  />
+                )}
+                <a href={o.url} target="_blank" rel="noreferrer">
+                  {o.name} ↗
+                </a>
               </div>
             )}
             {o.type === "link" && (
@@ -367,10 +398,25 @@ export default function DirectionBoard({
             <>
               <span role="alert">{u.error}</span>
               <button onClick={() => void upload(u.file)}>Try again</button>
-              <button onClick={() => setUploads((items) => items.filter((item) => item !== u))}>Remove</button>
+              <button
+                onClick={() =>
+                  setUploads((items) => items.filter((item) => item !== u))
+                }
+              >
+                Remove
+              </button>
             </>
           ) : (
-            <><progress aria-label={`Uploading ${u.name}`} max={100} value={u.progress} /><span>{u.progress >= 95 ? "Validating upload…" : `${u.progress}%`}</span></>
+            <>
+              <progress
+                aria-label={`Uploading ${u.name}`}
+                max={100}
+                value={u.progress}
+              />
+              <span>
+                {u.progress >= 95 ? "Validating upload…" : `${u.progress}%`}
+              </span>
+            </>
           )}
         </div>
       ))}

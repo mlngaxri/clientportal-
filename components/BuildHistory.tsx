@@ -1,5 +1,48 @@
 "use client";
-import { useEffect,useState } from "react";
+import { useEffect, useState } from "react";
 import { api } from "../lib/client";
-const labels:Record<string,string>={save_business:"Business information saved",send_initial:"Initial Direction sent",begin_build:"Build started",internal_check:"Internal review",deliver:"Website delivered for review",submit_revision:"Revision submitted",withdraw_revision:"Revision withdrawn",start_revision:"Revision started",complete_revision:"Revision delivered",approve:"Website approved",launch:"Website launched",website_publish:"Website content published",website_rollback:"Website content restored"};
-export default function BuildHistory({projectId}:{projectId:string}){const [events,setEvents]=useState<{id:string;type:string;created_at:string}[]>([]),[error,setError]=useState("");useEffect(()=>{void api(`/api/projects/${projectId}/history`).then(r=>setEvents(r.events)).catch(e=>setError(e.message));},[projectId]);return <section className="direction-workspace"><span className="overline">Project / Build</span><h1>The work, as it happens.</h1><p>Confirmed project milestones from your account history.</p>{error&&<p role="alert">{error}</p>}<ol className="connected-checks">{events.filter(e=>labels[e.type]).map(e=><li key={e.id}><strong>{labels[e.type]}</strong><span>{new Date(e.created_at).toLocaleString()}</span></li>)}</ol>{!events.length&&<p>No recorded milestones yet.</p>}</section>;}
+const labels: Record<string, string> = {
+  save_business: "Business information saved",
+  send_initial: "Initial Direction sent",
+  begin_build: "Build started",
+  internal_check: "Internal review",
+  deliver: "Website delivered for review",
+  submit_revision: "Revision submitted",
+  withdraw_revision: "Revision withdrawn",
+  start_revision: "Revision started",
+  complete_revision: "Revision delivered",
+  approve: "Website approved",
+  launch: "Website launched",
+  website_publish: "Website content published",
+  website_rollback: "Website content restored",
+};
+export default function BuildHistory({ projectId }: { projectId: string }) {
+  const [events, setEvents] = useState<
+      { id: string; type: string; created_at: string }[]
+    >([]),
+    [error, setError] = useState("");
+  useEffect(() => {
+    void api(`/api/projects/${projectId}/history`)
+      .then((r) => setEvents(r.events))
+      .catch((e) => setError(e.message));
+  }, [projectId]);
+  return (
+    <section className="direction-workspace">
+      <span className="overline">Project / Build</span>
+      <h1>The work, as it happens.</h1>
+      <p>Confirmed project milestones from your account history.</p>
+      {error && <p role="alert">{error}</p>}
+      <ol className="connected-checks">
+        {events
+          .filter((e) => labels[e.type])
+          .map((e) => (
+            <li key={e.id}>
+              <strong>{labels[e.type]}</strong>
+              <span>{new Date(e.created_at).toLocaleString()}</span>
+            </li>
+          ))}
+      </ol>
+      {!events.length && <p>No recorded milestones yet.</p>}
+    </section>
+  );
+}

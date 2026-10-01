@@ -40,8 +40,21 @@ export default function ReviewCanvas({
     return () => observer.disconnect();
   }, []);
   function syncBridge() {
-    frame.current?.contentWindow?.postMessage({ type: "ff-mode", enabled: enabled && !readOnly }, origin);
-    frame.current?.contentWindow?.postMessage({ type: "ff-pins", pins: directions.map((o, i) => ({ id: o.id, target: o.target, number: i + 1 })) }, origin);
+    frame.current?.contentWindow?.postMessage(
+      { type: "ff-mode", enabled: enabled && !readOnly },
+      origin,
+    );
+    frame.current?.contentWindow?.postMessage(
+      {
+        type: "ff-pins",
+        pins: directions.map((o, i) => ({
+          id: o.id,
+          target: o.target,
+          number: i + 1,
+        })),
+      },
+      origin,
+    );
   }
   useEffect(() => {
     const receive = (e: MessageEvent) => {
@@ -49,15 +62,28 @@ export default function ReviewCanvas({
         return;
       const m = e.data;
       if (m?.type === "ff-state") setReady(true);
-      if (m?.type === "ff-pin" && typeof m.id === "string" && directions.some((o) => o.id === m.id)) onSelect?.(m.id);
+      if (
+        m?.type === "ff-pin" &&
+        typeof m.id === "string" &&
+        directions.some((o) => o.id === m.id)
+      )
+        onSelect?.(m.id);
       if (m?.type === "ff-unresolved" && Array.isArray(m.ids))
-        setUnresolved(m.ids.slice(0, 500).filter((id: unknown) => typeof id === "string" && directions.some((o) => o.id === id)));
+        setUnresolved(
+          m.ids
+            .slice(0, 500)
+            .filter(
+              (id: unknown) =>
+                typeof id === "string" && directions.some((o) => o.id === id),
+            ),
+        );
       if (m?.type === "ff-ready") {
         setReady(true);
         syncBridge();
       }
       if (
-        readOnly || !enabled ||
+        readOnly ||
+        !enabled ||
         !m?.context ||
         typeof m.context.page !== "string" ||
         typeof m.context.width !== "number"
@@ -67,9 +93,18 @@ export default function ReviewCanvas({
         !Number.isFinite(m.context.width) ||
         m.context.width < 1 ||
         m.context.page.length > 2000 ||
-        !Number.isFinite(m.context.scroll) || m.context.scroll < 0 ||
-        (m.context.selector !== undefined && (typeof m.context.selector !== "string" || m.context.selector.length > 2000)) ||
-        (m.context.rect !== undefined && (!m.context.rect || !["x", "y", "width", "height"].every((k) => Number.isFinite(m.context.rect[k])) || m.context.rect.width < 0 || m.context.rect.height < 0))
+        !Number.isFinite(m.context.scroll) ||
+        m.context.scroll < 0 ||
+        (m.context.selector !== undefined &&
+          (typeof m.context.selector !== "string" ||
+            m.context.selector.length > 2000)) ||
+        (m.context.rect !== undefined &&
+          (!m.context.rect ||
+            !["x", "y", "width", "height"].every((k) =>
+              Number.isFinite(m.context.rect[k]),
+            ) ||
+            m.context.rect.width < 0 ||
+            m.context.rect.height < 0))
       )
         return;
       if (m.type === "ff-target")
@@ -87,7 +122,11 @@ export default function ReviewCanvas({
   }, [origin, enabled, readOnly, onDirection, onReplace, directions, onSelect]);
   useEffect(() => {
     const target = directions.find((o) => o.id === selectedId)?.target;
-    if (ready && target?.selector) frame.current?.contentWindow?.postMessage({ type: "ff-focus", selector: target.selector, page: target.page }, origin);
+    if (ready && target?.selector)
+      frame.current?.contentWindow?.postMessage(
+        { type: "ff-focus", selector: target.selector, page: target.page },
+        origin,
+      );
   }, [selectedId, ready, directions, origin]);
   const scale = Math.min(1, Math.max(0.1, available / width));
   return (
@@ -105,7 +144,11 @@ export default function ReviewCanvas({
             </button>
           ))}
         </div>
-        <button disabled={readOnly} aria-pressed={enabled && !readOnly} onClick={() => setEnabled((v) => !v)}>
+        <button
+          disabled={readOnly}
+          aria-pressed={enabled && !readOnly}
+          onClick={() => setEnabled((v) => !v)}
+        >
           {enabled && !readOnly ? "Review mode" : "Browse mode"}
         </button>
       </div>

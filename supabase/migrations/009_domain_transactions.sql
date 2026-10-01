@@ -7,7 +7,7 @@ begin
  if host<>lower(host) or length(host)>253 or host !~ '^([a-z0-9][a-z0-9-]*\.)+[a-z][a-z0-9-]+$' then raise exception 'Invalid domain name'; end if;
  select * into d from site_domains where hostname=host;
  if d.hostname is not null then if d.project_id<>pid then raise exception 'Domain is unavailable'; end if;return to_jsonb(d); end if;
- if (select count(*) from site_domains where project_id=pid)>=5 then raise exception 'Remove an unused domain request before adding another'; end if;
+ if (select count(*) from site_domains where project_id=pid)>=5 then raise exception 'Choose one of your saved domains. Contact Fourthform to change existing requests'; end if;
  insert into site_domains(hostname,project_id) values(host,pid) returning * into d;
  return to_jsonb(d);
 end $$;

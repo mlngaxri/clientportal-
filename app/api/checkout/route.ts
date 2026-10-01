@@ -6,7 +6,12 @@ import { prices } from "../../../lib/model";
 export async function POST(req: Request) {
   try {
     checkOrigin(req);
-    const { projectId, kind } = z.object({ projectId: z.uuid(), kind: z.enum(["initial", "final", "revision", "pro"]) }).parse(await req.json());
+    const { projectId, kind } = z
+      .object({
+        projectId: z.uuid(),
+        kind: z.enum(["initial", "final", "revision", "pro"]),
+      })
+      .parse(await req.json());
     const { project, client } = await ownedProject(projectId);
     assertCheckoutEnabled({ package: project.package, kind }, process.env);
     const s = stripe();
@@ -28,14 +33,50 @@ export async function POST(req: Request) {
     });
     if (reservation.error) throw new Error(reservation.error.message);
     let intent = reservation.data;
+    let rotate =
+      !intent.session_id &&
+      Date.parse(intent.expires_at) - Date.now() < 31 * 60000;
     if (intent.session_id) {
       const existing = await s.checkout.sessions.retrieve(intent.session_id);
-      if (existing.status === "open")
+      if (existing.status === "open" && existing.url)
         return Response.json({ url: existing.url });
-      if (existing.status === "complete")
-        throw new Error(
-          "Payment is being confirmed. Refresh your project shortly.",
-        );
+      if (existing.status === "complete") {
+        if (kind === "revision") {
+          const receipt = await admin()
+            .from("payments")
+            .select("id")
+            .eq("id", existing.id)
+            .eq("project_id", projectId)
+            .eq("kind", "revision")
+            .maybeSingle();
+          if (receipt.error) throw receipt.error;
+          rotate = !!receipt.data;
+        } else if (kind === "pro" && existing.subscription) {
+          const subscription = await s.subscriptions.retrieve(
+            typeof existing.subscription === "string"
+              ? existing.subscription
+              : existing.subscription.id,
+          );
+          rotate = ["canceled", "incomplete_expired"].includes(
+            subscription.status,
+          );
+          if (
+            !rotate &&
+            ["past_due", "unpaid", "incomplete", "paused"].includes(
+              subscription.status,
+            )
+          )
+            throw new Error(
+              "Pro billing needs attention. Open Billing and manage your existing subscription.",
+            );
+        }
+        if (!rotate)
+          throw new Error(
+            "Payment is being confirmed. Refresh your project shortly.",
+          );
+      } else rotate = true;
+    }
+    if (rotate) {
       const rotation = await admin().rpc("rotate_checkout", {
         pid: projectId,
         payment_kind: kind,
@@ -48,6 +89,14 @@ export async function POST(req: Request) {
       });
       if (reservation.error) throw reservation.error;
       intent = reservation.data;
+      if (intent.session_id) {
+        const existing = await s.checkout.sessions.retrieve(intent.session_id);
+        if (existing.status === "open" && existing.url)
+          return Response.json({ url: existing.url });
+        throw new Error(
+          "Payment is being confirmed. Refresh your project shortly.",
+        );
+      }
     }
     const amount =
       kind === "initial"
@@ -56,7 +105,8 @@ export async function POST(req: Request) {
           : prices.initial
         : prices[kind as keyof typeof prices];
     const base = process.env.APP_URL;
-    if (!base || !["https:", "http:"].includes(new URL(base).protocol)) throw new Error("Payment return address is not configured.");
+    if (!base || !["https:", "http:"].includes(new URL(base).protocol))
+      throw new Error("Payment return address is not configured.");
     // A locked database reservation keeps simultaneous checkout requests on one Stripe session.
     const session = await s.checkout.sessions.create(
       {
@@ -89,7 +139,12 @@ export async function POST(req: Request) {
         idempotencyKey: intent.key,
       },
     );
-    const stored = await admin().rpc("bind_checkout", { pid: projectId, payment_kind: kind, reservation_key: intent.key, session_id: session.id });
+    const stored = await admin().rpc("bind_checkout", {
+      pid: projectId,
+      payment_kind: kind,
+      reservation_key: intent.key,
+      session_id: session.id,
+    });
     if (stored.error) throw stored.error;
     return Response.json({ url: session.url });
   } catch (e) {

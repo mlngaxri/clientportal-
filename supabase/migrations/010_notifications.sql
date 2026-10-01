@@ -24,6 +24,7 @@ create function public.record_email_event(event_id text,email_id text,new_status
 language plpgsql security definer set search_path=public as $$
 begin
  if new_status not in ('delivered','bounced','complained','suppressed','failed') then return; end if;
+ if not exists(select 1 from notification_outbox where provider_id=email_id) then raise exception 'Email acknowledgement is still pending'; end if;
  insert into email_events values(event_id,now()) on conflict do nothing;
  if not found then return; end if;
  update notification_outbox set delivery_status=new_status,delivery_updated_at=event_time where provider_id=email_id and (delivery_updated_at is null or delivery_updated_at<=event_time);

@@ -7,7 +7,8 @@ import { createClient } from "@supabase/supabase-js";
 export function configured() {
   return !!(
     process.env.NEXT_PUBLIC_SUPABASE_URL &&
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY && process.env.SUPABASE_SERVICE_ROLE_KEY
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY &&
+    process.env.SUPABASE_SERVICE_ROLE_KEY
   );
 }
 export async function db() {
@@ -22,13 +23,19 @@ export async function db() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        getAll: () => sessionExpired(jar.get("ff-session-until")?.value) ? jar.getAll().filter(c => !c.name.startsWith("sb-")) : jar.getAll(),
+        getAll: () =>
+          sessionExpired(jar.get("ff-session-until")?.value)
+            ? jar.getAll().filter((c) => !c.name.startsWith("sb-"))
+            : jar.getAll(),
         setAll: (items) => {
           try {
             items.forEach(({ name, value, options }) =>
               jar.set(name, value, {
                 ...options,
-                ...sessionCookieOptions(remember, jar.get("ff-session-until")?.value),
+                ...sessionCookieOptions(
+                  remember,
+                  jar.get("ff-session-until")?.value,
+                ),
                 ...(value ? {} : { maxAge: 0 }),
               }),
             );
@@ -79,11 +86,49 @@ export function failure(error: unknown) {
   const limited = error instanceof RequestLimitError;
   const validation = error instanceof Error && error.name === "ZodError";
   // Log categories only: provider text may contain SQL, email addresses or secrets.
-  console.error(JSON.stringify({ event: "request_failed", requestId, category: validation ? "validation" : error instanceof Error ? error.name : "unknown" }));
-  const known = /^(Please sign in|Project not found|Invalid request origin|Save conflict|This Direction is locked|Invalid Direction|Direction |Invalid project asset|Business |Initial Direction|Additional notes|Revisions |Revision |Work has begun|Pro is required|Live management|An additional revision|Add |Resolve or remove|Approval and payment|Launch |The current domain|Only Fourthform|Unknown action|Idempotency key|Enter |Use a password|Recovery is|Sign-in failed|Sign out could|Account creation|Google sign-in|Check your email|Account services|Server integration|Website |Your website|The website|This website|Domain |The domain|Hosting |Choose your|Invalid website|Invalid connection|Invalid State|Search inspection|Unknown website|Uploaded |Choose a document|Document uploads|Document scanning|Live payments|First applications|Pro billing)/.test(raw);
-  const message = limited ? raw : validation ? "Check the information you entered and try again." : known ? raw : "The request could not complete. Your work has not been confirmed saved. Try again.";
-  return Response.json({ error: message, requestId }, {
-    status: limited ? 429 : /temporarily unavailable|not configured/.test(raw) ? 503 : /sign in to continue/i.test(raw) ? 401 : /not found or access denied/i.test(raw) ? 404 : /conflict|locked|not editable|not available|cannot be|Work has begun|onboarding is complete/i.test(raw) ? 409 : 400,
-    headers: { "Cache-Control": "private, no-store", "X-Request-ID": requestId, ...(limited ? { "Retry-After": String(error.retryAfter) } : {}) },
-  });
+  console.error(
+    JSON.stringify({
+      event: "request_failed",
+      requestId,
+      category: validation
+        ? "validation"
+        : error instanceof Error
+          ? error.name
+          : "unknown",
+    }),
+  );
+  const known =
+    /^(Please sign in|Project not found|Invalid request origin|Save conflict|This Direction is locked|Invalid Direction|Direction |Invalid project asset|Business |Initial Direction|Additional notes|Revisions |Revision |Work has begun|Pro is required|Live management|An additional revision|Add |Resolve or remove|Approval and payment|Launch |The current domain|Only Fourthform|Unknown action|Idempotency key|Enter |Use a password|Recovery is|Sign-in failed|Sign out could|Account creation|Google sign-in|Check your email|Account services|Server integration|Website |Your website|The website|This website|Domain |The domain|Hosting |Choose your|Invalid website|Invalid connection|Invalid State|Search inspection|Unknown website|Uploaded |Choose a document|Document uploads|Document scanning|Payment is being|This payment|Live payments|First applications|Pro billing)/.test(
+      raw,
+    );
+  const message = limited
+    ? raw
+    : validation
+      ? "Check the information you entered and try again."
+      : known
+        ? raw
+        : "The request could not complete. Your work has not been confirmed saved. Try again.";
+  return Response.json(
+    { error: message, requestId },
+    {
+      status: limited
+        ? 429
+        : /temporarily unavailable|not configured/.test(raw)
+          ? 503
+          : /sign in to continue/i.test(raw)
+            ? 401
+            : /not found or access denied/i.test(raw)
+              ? 404
+              : /conflict|locked|not editable|not available|cannot be|Work has begun|onboarding is complete/i.test(
+                    raw,
+                  )
+                ? 409
+                : 400,
+      headers: {
+        "Cache-Control": "private, no-store",
+        "X-Request-ID": requestId,
+        ...(limited ? { "Retry-After": String(error.retryAfter) } : {}),
+      },
+    },
+  );
 }

@@ -1127,14 +1127,81 @@ select:focus-visible {
   }
 }
 
-.ff-dialog{max-height:calc(100dvh - 40px);overflow-y:auto;overscroll-behavior:contain}
-.dialog-close{min-width:44px;min-height:44px}
-.route-state{min-height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:32px;gap:12px;background:var(--canvas);font-family:var(--font-sans)}
-.route-state h1{font-family:var(--font-display);font-size:clamp(40px,6vw,64px);font-weight:400;line-height:1.05;margin:20px 0 0}
-.route-state p{max-width:440px;color:var(--text-secondary);line-height:1.6}
-.route-state>div{display:flex;gap:22px;align-items:center;flex-wrap:wrap;justify-content:center}
-.route-state .primary{padding:13px 20px;border-radius:10px;min-height:44px;display:inline-flex;align-items:center}
-.route-loader{height:1px!important;width:100px;background:var(--line);overflow:hidden;position:relative;margin-top:28px}
-.route-loader:after{content:"";position:absolute;inset:0;background:var(--ink);animation:route-load 1.6s ease-in-out infinite;transform-origin:left}
-@keyframes route-load{0%,100%{transform:scaleX(.15)}50%{transform:scaleX(1)}}
-@media(prefers-reduced-motion:reduce){.route-loader:after{animation:none;transform:scaleX(.5)}}
+.ff-dialog {
+  max-height: calc(100dvh - 40px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.dialog-close {
+  min-width: 44px;
+  min-height: 44px;
+}
+.route-state {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 32px;
+  gap: 12px;
+  background: var(--canvas);
+  font-family: var(--font-sans);
+}
+.route-state h1 {
+  font-family: var(--font-display);
+  font-size: clamp(40px, 6vw, 64px);
+  font-weight: 400;
+  line-height: 1.05;
+  margin: 20px 0 0;
+}
+.route-state p {
+  max-width: 440px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+.route-state > div {
+  display: flex;
+  gap: 22px;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.route-state .primary {
+  padding: 13px 20px;
+  border-radius: 10px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+}
+.route-loader {
+  height: 1px !important;
+  width: 100px;
+  background: var(--line);
+  overflow: hidden;
+  position: relative;
+  margin-top: 28px;
+}
+.route-loader:after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--ink);
+  animation: route-load 1.6s ease-in-out infinite;
+  transform-origin: left;
+}
+@keyframes route-load {
+  0%,
+  100% {
+    transform: scaleX(0.15);
+  }
+  50% {
+    transform: scaleX(1);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .route-loader:after {
+    animation: none;
+    transform: scaleX(0.5);
+  }
+}

@@ -33,7 +33,10 @@ export async function POST(req: Request) {
       throw new Error("Use a password between 8 and 128 characters.");
     const { client } = await userDb();
     const { error } = await client.auth.updateUser({ password });
-    if (error) throw new Error("Use a password that meets the account requirements, then try again.");
+    if (error)
+      throw new Error(
+        "Use a password that meets the account requirements, then try again.",
+      );
     return Response.json({ ok: true });
   } catch (e) {
     return failure(e);

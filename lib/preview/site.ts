@@ -2,8 +2,8 @@
 const interior = (warm: boolean) => `
 <svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1040" viewBox="0 0 1600 1040">
   <defs>
-    <linearGradient id="wall" x1="0" y1="0" x2="1" y2="1"><stop stop-color="${warm ? '#d8c2a7' : '#d8d7cc'}"/><stop offset="1" stop-color="${warm ? '#a77e5e' : '#aeb0a0'}"/></linearGradient>
-    <linearGradient id="floor" x1="0" y1="0" x2="0" y2="1"><stop stop-color="${warm ? '#987252' : '#85877a'}"/><stop offset="1" stop-color="${warm ? '#4b382d' : '#4c5048'}"/></linearGradient>
+    <linearGradient id="wall" x1="0" y1="0" x2="1" y2="1"><stop stop-color="${warm ? "#d8c2a7" : "#d8d7cc"}"/><stop offset="1" stop-color="${warm ? "#a77e5e" : "#aeb0a0"}"/></linearGradient>
+    <linearGradient id="floor" x1="0" y1="0" x2="0" y2="1"><stop stop-color="${warm ? "#987252" : "#85877a"}"/><stop offset="1" stop-color="${warm ? "#4b382d" : "#4c5048"}"/></linearGradient>
     <linearGradient id="glass" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#e9eee0" stop-opacity=".96"/><stop offset=".56" stop-color="#a8b59d" stop-opacity=".92"/><stop offset="1" stop-color="#697766" stop-opacity=".96"/></linearGradient>
     <radialGradient id="light"><stop stop-color="#fff7df" stop-opacity=".96"/><stop offset=".42" stop-color="#f5ddac" stop-opacity=".38"/><stop offset="1" stop-color="#f5ddac" stop-opacity="0"/></radialGradient>
     <filter id="blur"><feGaussianBlur stdDeviation="16"/></filter>
@@ -38,7 +38,7 @@ const interior = (warm: boolean) => `
   <path d="M109 782h118l-16 160h-82z" fill="#9c694e"/>
   <g stroke="#443d32" stroke-width="17" fill="none"><path d="M702 888V775q53-52 106 0v113M691 880h128M708 886v154M802 886v154M1234 894V792q50-49 100 0v102M1224 886h121M1240 892v148M1328 892v148"/></g>
   <rect width="1600" height="1040" filter="url(#grain)" opacity=".34" style="mix-blend-mode:soft-light"/>
-  <rect width="1600" height="1040" fill="${warm ? '#6f3d21' : '#6b705f'}" opacity="${warm ? '.055' : '.035'}"/>
+  <rect width="1600" height="1040" fill="${warm ? "#6f3d21" : "#6b705f"}" opacity="${warm ? ".055" : ".035"}"/>
 </svg>`;
 const data = (s: string) => `data:image/svg+xml,${encodeURIComponent(s)}`;
 export const originalImage = "/marketing/mori-interior.webp";
@@ -48,12 +48,37 @@ export const demoPages = [
   { path: "/menu", label: "Menu" },
   { path: "/visit", label: "Visit" },
 ];
-export function demoSite(page: string, replaced = false, heading = "A table worth\nstaying for.") {
+export function demoSite(
+  page: string,
+  replaced = false,
+  heading = "A table worth\nstaying for.",
+) {
   const image = replaced ? replacementImage : originalImage;
-  const safeHeading = heading.replace(/[<>&"']/g,(c)=>({"<":"&lt;",">":"&gt;","&":"&amp;",'"':"&quot;","'":"&#39;"})[c]!);
-  const title = page === "/menu" ? "Made for the\nway the day feels." : page === "/visit" ? "Come by.\nStay a while." : safeHeading;
-  const sub = page === "/menu" ? "A short menu that follows the market, not the calendar." : page === "/visit" ? "Morning coffee, long lunch, something small on the way home." : "Quiet ingredients, considered technique and an intimate room designed around the evening.";
-  const pageBlock = page === "/menu" ? `<section class="menu-list"><div><span>Morning</span><b>Sourdough, cultured butter</b><i>9</i></div><div><span>Garden</span><b>Leaves, tahini, preserved lemon</b><i>19</i></div><div><span>Lunch</span><b>Roast pumpkin, lentils, herbs</b><i>24</i></div><div><span>Market</span><b>Fish, brown butter, lemon</b><i>32</i></div></section>` : page === "/visit" ? `<section class="visit"><div><small>Hours</small><p data-fourthform-id="hours">Mon–Fri&nbsp;&nbsp;7:00–15:00<br>Sat–Sun&nbsp;&nbsp;8:00–16:00</p></div><div><small>Find us</small><p>18 Morrow Lane<br>Brisbane, QLD</p></div></section>` : "";
+  const safeHeading = heading.replace(
+    /[<>&"']/g,
+    (c) =>
+      ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;", "'": "&#39;" })[
+        c
+      ]!,
+  );
+  const title =
+    page === "/menu"
+      ? "Made for the\nway the day feels."
+      : page === "/visit"
+        ? "Come by.\nStay a while."
+        : safeHeading;
+  const sub =
+    page === "/menu"
+      ? "A short menu that follows the market, not the calendar."
+      : page === "/visit"
+        ? "Morning coffee, long lunch, something small on the way home."
+        : "Quiet ingredients, considered technique and an intimate room designed around the evening.";
+  const pageBlock =
+    page === "/menu"
+      ? `<section class="menu-list"><div><span>Morning</span><b>Sourdough, cultured butter</b><i>9</i></div><div><span>Garden</span><b>Leaves, tahini, preserved lemon</b><i>19</i></div><div><span>Lunch</span><b>Roast pumpkin, lentils, herbs</b><i>24</i></div><div><span>Market</span><b>Fish, brown butter, lemon</b><i>32</i></div></section>`
+      : page === "/visit"
+        ? `<section class="visit"><div><small>Hours</small><p data-fourthform-id="hours">Mon–Fri&nbsp;&nbsp;7:00–15:00<br>Sat–Sun&nbsp;&nbsp;8:00–16:00</p></div><div><small>Find us</small><p>18 Morrow Lane<br>Brisbane, QLD</p></div></section>`
+        : "";
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; script-src 'unsafe-inline'; connect-src 'none'; form-action 'none'; base-uri 'none'"><style>
 *{box-sizing:border-box}html{background:#eeeae0}body{margin:0;background:#eeeae0;color:#233128;font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}nav{height:76px;display:flex;align-items:center;justify-content:space-between;padding:0 5.5%;border-bottom:1px solid #c9c7bd}nav strong{font-size:25px;font-weight:500;letter-spacing:-1.1px}nav div{display:flex;gap:28px}a{color:inherit;text-decoration:none;font-size:12px}main{padding:52px 5.5% 44px}header{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:56px;align-items:end;margin-bottom:38px}small{font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:#6f746d}h1{font-family:"Iowan Old Style","Baskerville",Georgia,serif;font-weight:400;white-space:pre-line;font-size:clamp(58px,7.2vw,104px);line-height:.89;letter-spacing:-.055em;margin:21px 0 0;max-width:880px}header p{font-size:13px;line-height:1.7;color:#60665f;margin:0 0 16px}.line-link{display:inline-block;border-bottom:1px solid #788076;padding-bottom:4px}.hero-wrap{position:relative}.hero-wrap:after{content:"Mori House / Brisbane";position:absolute;right:13px;bottom:12px;color:white;font-size:9px;letter-spacing:.11em;text-transform:uppercase;text-shadow:0 1px 12px #0008}.hero{display:block;width:100%;height:440px;object-fit:cover;object-position:center 56%;filter:saturate(.88) contrast(.98)}footer{height:64px;padding:0 5.5%;display:flex;align-items:center;justify-content:space-between;font-size:10px;color:#75766f;border-top:1px solid #c9c7bd}.menu-list{display:grid;grid-template-columns:1fr 1fr;column-gap:70px;margin:6px 0 46px;border-top:1px solid #c9c7bd}.menu-list div{display:grid;grid-template-columns:72px 1fr auto;gap:14px;padding:18px 0;border-bottom:1px solid #c9c7bd;align-items:baseline}.menu-list span{font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:#7d7f77}.menu-list b{font-size:13px;font-weight:400}.menu-list i{font-size:11px;font-style:normal;color:#696d67}.visit{display:grid;grid-template-columns:1fr 1fr;gap:60px;margin:8px 0 54px;border-top:1px solid #c9c7bd;padding-top:24px}.visit p{font-family:"Iowan Old Style","Baskerville",Georgia,serif;font-size:28px;line-height:1.25;letter-spacing:-.03em;margin:10px 0}a:focus-visible,button:focus-visible{outline:2px solid #665cf6;outline-offset:4px}#hint{position:fixed;display:none;pointer-events:none;background:#20201d;color:#faf9f5;font:11px "Helvetica Neue",Arial,sans-serif;padding:6px 9px;border-radius:6px;z-index:100;box-shadow:0 8px 20px #0002}@media(max-width:700px){nav{height:64px;padding:0 20px}nav strong{font-size:22px}nav div{gap:15px}main{padding:36px 20px}header{grid-template-columns:1fr;gap:18px}h1{font-size:58px}header p{max-width:430px}.hero{height:370px}.menu-list{grid-template-columns:1fr}.visit{grid-template-columns:1fr;gap:22px}footer{padding:0 20px}.hero-wrap:after{display:none}}@media(max-width:700px){nav{height:42px;padding:0 16px}nav strong{font-size:16px;letter-spacing:-.04em}nav div{gap:12px}nav a{font-size:9px}main{padding:18px 16px 24px}header{gap:9px;margin-bottom:18px}h1{font-size:42px;margin:12px 0 0;line-height:.96}small{font-size:7px;letter-spacing:.1em}header>div:last-child{display:none}.hero{height:240px;object-position:center 56%}}@media(max-width:430px){h1{font-size:37px}.hero{height:210px}}</style></head><body>
 <nav><strong data-fourthform-id="wordmark">Mori House</strong><div><a href="/" data-page="/">Home</a><a href="/menu" data-page="/menu">Menu</a><a href="/visit" data-page="/visit">Visit</a></div></nav>

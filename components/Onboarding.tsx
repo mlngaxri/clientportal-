@@ -10,12 +10,23 @@ export default function Onboarding({
   returnTo = "/start",
   project: initial,
   configurationReady,
+  reference,
+  requestedPackage = "SITE",
 }: {
   signedIn: boolean;
   returnTo?: string;
   project: Project | null;
   configurationReady: boolean;
+  reference?: { id: string; title: string; url: string };
+  requestedPackage?: "SITE" | "FIRST";
 }) {
+  const [packageName, setPackageName] = useState(
+    initial?.package || requestedPackage,
+  );
+  const [openedOn, setOpenedOn] = useState(
+    String(initial?.brief.openedOn || ""),
+  );
+  const [includeReference, setIncludeReference] = useState(!!reference);
   const [project, setProject] = useState(initial),
     [step, setStep] = useState(
       !signedIn ? 1 : initial?.phase === "AWAITING_INITIAL_PAYMENT" ? 3 : 2,
@@ -48,14 +59,51 @@ export default function Onboarding({
     if (!signedIn) return;
     try {
       const cached = JSON.parse(localStorage.getItem(recoveryKey) || "null");
-      if (cached && typeof cached.name === "string" && typeof cached.description === "string" && Array.isArray(cached.goals) && typeof cached.links === "string" && typeof cached.feel === "string") setRecovery(cached);
-    } catch { /* Saving remains available when device storage is disabled. */ }
+      if (
+        cached &&
+        typeof cached.name === "string" &&
+        typeof cached.description === "string" &&
+        Array.isArray(cached.goals) &&
+        typeof cached.links === "string" &&
+        typeof cached.feel === "string"
+      )
+        setRecovery(cached);
+    } catch {
+      /* Saving remains available when device storage is disabled. */
+    }
     setRecoveryLoaded(true);
   }, [recoveryKey, signedIn]);
   useEffect(() => {
     if (!recoveryLoaded || recovery || state === "saved") return;
-    try { localStorage.setItem(recoveryKey, JSON.stringify({ name, description, links, goals, feel })); } catch {}
-  }, [name, description, links, goals, feel, state, recoveryKey, recoveryLoaded, recovery]);
+    try {
+      localStorage.setItem(
+        recoveryKey,
+        JSON.stringify({
+          name,
+          description,
+          links,
+          goals,
+          feel,
+          packageName,
+          openedOn,
+          includeReference,
+        }),
+      );
+    } catch {}
+  }, [
+    name,
+    description,
+    links,
+    goals,
+    feel,
+    state,
+    recoveryKey,
+    recoveryLoaded,
+    recovery,
+    packageName,
+    openedOn,
+    includeReference,
+  ]);
   async function auth(google = false) {
     setBusy(true);
     setError("");
@@ -67,7 +115,7 @@ export default function Onboarding({
         remember,
         next: returnTo,
       });
-      window.location.assign(r.url || "/start");
+      window.location.assign(r.url || returnTo);
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -82,18 +130,46 @@ export default function Onboarding({
     try {
       const p = project || (await api<Project>("/api/projects", {}));
       setProject(p);
-      const brief = { description, goals, links, feel };
+      const brief = {
+        description,
+        goals,
+        links,
+        feel,
+        openedOn,
+        ...(reference
+          ? includeReference
+            ? { reference }
+            : {}
+          : project?.brief.reference
+            ? { reference: project.brief.reference }
+            : {}),
+      };
       const serial = JSON.stringify({ name, brief, version: p.version });
-      if (pending.current?.serial !== serial) pending.current = { serial, key: crypto.randomUUID() };
+      if (pending.current?.serial !== serial)
+        pending.current = { serial, key: crypto.randomUUID() };
       const r = await api(`/api/projects/${p.id}/command`, {
         action: "save_business",
-        payload: { name, brief, objects: initialObjects(brief) },
+        payload: {
+          name,
+          brief,
+          package: packageName,
+          objects: initialObjects(brief),
+        },
         expected: p.version,
         key: pending.current.key,
       });
-      if (!r.project || r.project.id !== p.id || r.project.version !== p.version + 1) throw new Error("Your business information has not been confirmed saved. Try again.");
+      if (
+        !r.project ||
+        r.project.id !== p.id ||
+        r.project.version !== p.version + 1
+      )
+        throw new Error(
+          "Your business information has not been confirmed saved. Try again.",
+        );
       pending.current = null;
-      try { localStorage.removeItem(recoveryKey); } catch {}
+      try {
+        localStorage.removeItem(recoveryKey);
+      } catch {}
       setProject(r.project);
       setState("saved");
       if (next) setStep(3);
@@ -123,8 +199,15 @@ export default function Onboarding({
   return (
     <main className="start-page">
       <header className="start-topbar">
-        <Link className="wordmark" href={process.env.NEXT_PUBLIC_MARKETING_URL || "https://fourthform-marketing.vercel.app/"}>
-          <span className="ff-mark" aria-hidden="true"/>fourthform
+        <Link
+          className="wordmark"
+          href={
+            process.env.NEXT_PUBLIC_MARKETING_URL ||
+            "https://fourthform-marketing.vercel.app/"
+          }
+        >
+          <span className="ff-mark" aria-hidden="true" />
+          fourthform
         </Link>
         <span>From brief to live, in one place.</span>
         <Link href="/app">Your projects</Link>
@@ -136,24 +219,70 @@ export default function Onboarding({
           <p>A little context. A clear beginning.</p>
           <ol className="onboarding-steps">
             {["Account", "Business information", "Payment"].map((x, i) => (
-              <li aria-current={step === i + 1 ? "step" : undefined} className={step === i + 1 ? "active" : ""} key={x}>
+              <li
+                aria-current={step === i + 1 ? "step" : undefined}
+                className={step === i + 1 ? "active" : ""}
+                key={x}
+              >
                 <span>{String(i + 1).padStart(2, "0")}</span>
                 {x}
               </li>
             ))}
           </ol>
           <div className="start-rule">
-            <strong>A website costs A$1,500.</strong>
-            <p>A$200 to start. A$1,300 when approved.</p>
+            <strong>
+              {packageName === "FIRST"
+                ? "Fourthform First costs A$199."
+                : "A website costs A$1,500."}
+            </strong>
             <p>
-              Three revision rounds included. Each round is a batch of
-              Directions.
+              {packageName === "FIRST"
+                ? "One page. One revision round. Core included."
+                : "A$200 to start. A$1,300 when approved."}
+            </p>
+            <p>
+              {packageName === "FIRST"
+                ? "For businesses opened within the last six months."
+                : "Three revision rounds included. Each round is a batch of Directions."}
             </p>
           </div>
         </aside>
         <section className="start-card">
           <div className="start-panel">
-            {recovery && <section className="recovery-notice" role="status"><p>We found unfinished business information on this device.</p><button onClick={() => { setName(recovery.name); setDescription(recovery.description); setLinks(recovery.links); setGoals(recovery.goals); setFeel(recovery.feel); setRecovery(null); setState("dirty"); }}>Restore draft</button><button onClick={() => { try { localStorage.removeItem(recoveryKey); } catch {} setRecovery(null); }}>Keep saved version</button></section>}
+            {recovery && (
+              <section className="recovery-notice" role="status">
+                <p>We found unfinished business information on this device.</p>
+                <button
+                  onClick={() => {
+                    setName(recovery.name);
+                    setDescription(recovery.description);
+                    setLinks(recovery.links);
+                    setGoals(recovery.goals);
+                    setFeel(recovery.feel);
+                    if (["SITE", "FIRST"].includes(recovery.packageName))
+                      setPackageName(recovery.packageName);
+                    if (typeof recovery.openedOn === "string")
+                      setOpenedOn(recovery.openedOn);
+                    if (typeof recovery.includeReference === "boolean")
+                      setIncludeReference(recovery.includeReference);
+                    setRecovery(null);
+                    setState("dirty");
+                  }}
+                >
+                  Restore draft
+                </button>
+                <button
+                  onClick={() => {
+                    try {
+                      localStorage.removeItem(recoveryKey);
+                    } catch {}
+                    setRecovery(null);
+                  }}
+                >
+                  Keep saved version
+                </button>
+              </section>
+            )}
             {!configurationReady && (
               <p className="notice" role="status">
                 Account access is temporarily paused. Please try again later.
@@ -248,6 +377,62 @@ export default function Onboarding({
                   <h2>Tell us the useful parts.</h2>
                   <p>This becomes the beginning of your Initial Direction.</p>
                 </div>
+                <label>
+                  Website package
+                  <select
+                    value={packageName}
+                    onChange={(e) => {
+                      setPackageName(e.target.value as "SITE" | "FIRST");
+                      dirty();
+                    }}
+                  >
+                    <option value="SITE">Site · A$1,500 · Up to 5 pages</option>
+                    <option value="FIRST">First · A$199 · One page</option>
+                  </select>
+                </label>
+                {packageName === "FIRST" && (
+                  <label>
+                    When did your business open?
+                    <input
+                      type="date"
+                      required
+                      max={new Date().toISOString().slice(0, 10)}
+                      value={openedOn}
+                      onChange={(e) => {
+                        setOpenedOn(e.target.value);
+                        dirty();
+                      }}
+                    />
+                    <small>
+                      First is available within six months of opening. The date
+                      is checked before your brief is saved.
+                    </small>
+                  </label>
+                )}
+                {reference && (
+                  <div className="connected-card">
+                    <span className="overline">Selected design reference</span>
+                    <h3>{reference.title}</h3>
+                    <p>
+                      This studio concept helps explain the direction you like.
+                      We build your website around your business.
+                    </p>
+                    <a href={reference.url} target="_blank" rel="noreferrer">
+                      View reference ↗
+                    </a>
+                    <label className="check-label">
+                      <input
+                        type="checkbox"
+                        checked={includeReference}
+                        onChange={(e) => {
+                          setIncludeReference(e.target.checked);
+                          dirty();
+                        }}
+                      />
+                      Include this reference in my Initial Direction
+                    </label>
+                  </div>
+                )}
                 <label>
                   Business name
                   <input
@@ -354,20 +539,28 @@ export default function Onboarding({
                 <div className="commit-card">
                   <div>
                     <span>Site · up to 5 custom pages</span>
-                    <strong>A$1,500</strong>
+                    <strong>
+                      {packageName === "FIRST" ? "A$199" : "A$1,500"}
+                    </strong>
                   </div>
                   <div>
                     <span>Today</span>
-                    <strong>A$200</strong>
+                    <strong>
+                      {packageName === "FIRST" ? "A$199" : "A$200"}
+                    </strong>
                   </div>
                   <div>
                     <span>When you approve</span>
-                    <strong>A$1,300</strong>
+                    <strong>
+                      {packageName === "FIRST" ? "A$0" : "A$1,300"}
+                    </strong>
                   </div>
                 </div>
                 <p>
-                  Three revision rounds included. Your Initial Direction does
-                  not use a revision.
+                  {packageName === "FIRST"
+                    ? "One revision round included."
+                    : "Three revision rounds included."}{" "}
+                  Your Initial Direction does not use a revision.
                 </p>
                 <p className="muted">
                   Core is included after launch. Domain registration and
@@ -378,7 +571,11 @@ export default function Onboarding({
                   disabled={busy}
                   onClick={() => void checkout()}
                 >
-                  {busy ? "Opening secure checkout…" : "Pay A$200 and start"}
+                  {busy
+                    ? "Opening secure checkout…"
+                    : packageName === "FIRST"
+                      ? "Pay A$199 and start"
+                      : "Pay A$200 and start"}
                 </button>
                 <button className="text-button" onClick={() => setStep(2)}>
                   Edit business information

@@ -1,23 +1,17 @@
 # Fourthform client portal
 
-A complete interactive product preview, using the Mori House example project. Includes Initial Direction, media/drawing references, Review, revision submission and withdrawal, page content editing, search appearance, sample analytics, domains, connections, scheduled States, Core/Pro billing and launch checks.
+The connected customer application for Fourthform. Next.js handles verified accounts, a persistent website CMS, private project media, contextual review, revisions, enquiries, analytics, search inspection, billing reconciliation and launch checks. Supabase provides Auth, Postgres and private Storage. Stripe, Resend and Vercel integrations activate when their accounts are configured.
 
-## Local development
+The independent example portal remains at `/preview` and `/index.html`. Its data stays in the browser. The marketing site embeds that example, while actual customer work runs in `/app`, `/projects` and `/start`.
 
-Requires Node.js 22+. Run `npm run dev` and open http://localhost:4173. No runtime dependencies or environment variables are needed. Run `npm test` for static build integrity and `npm run build` to produce `dist`.
+## Run locally
 
-## Deployment
+Use Node.js 22+, `npm ci`, Supabase CLI and Docker. Run `supabase start`, copy `.env.example` into `.env.local`, and enter the local credentials from `supabase status`. Use `APP_URL=http://localhost:4173` and `APP_ENV=development`. `npm run dev` starts the application at port 4173. Never commit environment files.
 
-Import this repository into the Vercel project serving https://fourthform-client-portal.vercel.app/. `vercel.json` supplies the build command and output directory. This commit does not itself link or deploy the Vercel project.
+`npm run typecheck` checks TypeScript. `npm test` checks preview integrity, authentication rules, lifecycle transitions, database permissions, persistent CMS, upload validation and service security. The GitHub workflow builds the production application and exercises a full browser journey against isolated real Supabase services. Payment lifecycle tests use explicit administrator fixtures; they do not claim a Stripe payment.
 
-The marketing repository includes the same portal under `public/portal-preview` so onboarding and embedded preview share browser storage. Update that copy when changing the standalone portal.
+## Deploy and activate
 
-## Preview boundary
+Use the existing Next.js Vercel project for this repository. Apply all migrations to a separate staging database first. Configure server secrets and exact authentication callbacks, then complete the provider acceptance steps in [ACTIVATION.md](docs/ACTIVATION.md). Turn on billing and the marketing customer funnel only after acceptance. A GitHub push by itself does not prove the existing Vercel projects are linked or deployed.
 
-All data stays in this browser. The UI does not create accounts, charge cards, crawl live SEO, collect real analytics, verify DNS or publish customer sites. Media capture uses the browser permission flow where supported. Do not enter sensitive customer information. Save confirms a device copy; Export saves a JSON draft; Reset restores the sample. Product and keyboard/mobile checks are documented in `docs/LOCAL_ACCEPTANCE.md`.
-
-Source is separated into `public/portal-operations.js`, `portal-communication.js`, `portal-reliability.js`, and visual integration files. `public/index.html` contains the original shell and sample website. Fonts and photography are hosted locally.
-
-## Continuous validation
-
-GitHub Actions runs the portal data-rule tests and standalone build integrity checks on pushes and pull requests. The marketing workflow verifies the matching embedded portal in Chromium.
+[ARCHITECTURE.md](docs/ARCHITECTURE.md) describes the data model and invariants. [ACTIVATION.md](docs/ACTIVATION.md) gives deployment, service configuration, recovery and remaining production acceptance work.

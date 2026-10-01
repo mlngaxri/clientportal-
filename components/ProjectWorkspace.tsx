@@ -3,7 +3,12 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { api } from "../lib/client";
-import { projectSections, phaseLabels, type Project, type Board } from "../lib/model";
+import {
+  projectSections,
+  phaseLabels,
+  type Project,
+  type Board,
+} from "../lib/model";
 import DirectionBoard from "./DirectionBoard";
 import Review from "./Review";
 import LaunchWorkspace from "./LaunchWorkspace";
@@ -80,8 +85,15 @@ export default function ProjectWorkspace({
     <main className="portal-v2 production-portal">
       <header className="portal-v2-topbar">
         <div className="portal-v2-project">
-          <Link href={process.env.NEXT_PUBLIC_MARKETING_URL || "https://fourthform-marketing.vercel.app/"} className="portal-v2-logo">
-            <span className="ff-mark" aria-hidden="true"/>fourthform
+          <Link
+            href={
+              process.env.NEXT_PUBLIC_MARKETING_URL ||
+              "https://fourthform-marketing.vercel.app/"
+            }
+            className="portal-v2-logo"
+          >
+            <span className="ff-mark" aria-hidden="true" />
+            fourthform
           </Link>
           <span className="portal-v2-slash">/</span>
           <Link href="/app">{project.name}</Link>
@@ -104,7 +116,7 @@ export default function ProjectWorkspace({
         <aside className="portal-v2-sidebar">
           <nav className="portal-v2-nav">
             <span className="overline">Form</span>
-            {projectSections(project.phase,operator).map((s) => (
+            {projectSections(project.phase, operator).map((s) => (
               <Link
                 key={s}
                 className={s === section ? "active" : ""}
@@ -127,7 +139,13 @@ export default function ProjectWorkspace({
               </div>
             ))}
           </div>
-          <Link className="portal-back-link" href={process.env.NEXT_PUBLIC_MARKETING_URL || "https://fourthform-marketing.vercel.app/"}>
+          <Link
+            className="portal-back-link"
+            href={
+              process.env.NEXT_PUBLIC_MARKETING_URL ||
+              "https://fourthform-marketing.vercel.app/"
+            }
+          >
             Marketing site
           </Link>
         </aside>
@@ -166,14 +184,30 @@ export default function ProjectWorkspace({
             onUpgrade={() => void pay("pro")}
           />
         )}
-        {(section==="pages"||section==="seo")&&<SiteContentEditor key={section} projectId={project.id} section={section} live={project.phase==="LIVE"}/>}
-        {section==="connections"&&<SettingsWorkspace projectId={project.id} connections/>}
-        {section==="settings"&&<SettingsWorkspace projectId={project.id}/>}
-        {section==="build"&&<BuildHistory projectId={project.id}/>}
-        {section==="billing"&&<BillingWorkspace project={project} onPay={kind=>void pay(kind)}/>}
-        {section==="domains"&&<DomainsWorkspace projectId={project.id}/>}
-        {section==="analytics"&&<AnalyticsWorkspace projectId={project.id}/>}
-        {section==="inbox"&&<InboxWorkspace projectId={project.id}/>}
+        {(section === "pages" || section === "seo") && (
+          <SiteContentEditor
+            key={section}
+            projectId={project.id}
+            section={section}
+            live={project.phase === "LIVE"}
+          />
+        )}
+        {section === "connections" && (
+          <SettingsWorkspace projectId={project.id} connections />
+        )}
+        {section === "settings" && <SettingsWorkspace projectId={project.id} />}
+        {section === "build" && <BuildHistory projectId={project.id} />}
+        {section === "billing" && (
+          <BillingWorkspace
+            project={project}
+            onPay={(kind) => void pay(kind)}
+          />
+        )}
+        {section === "domains" && <DomainsWorkspace projectId={project.id} />}
+        {section === "analytics" && (
+          <AnalyticsWorkspace projectId={project.id} />
+        )}
+        {section === "inbox" && <InboxWorkspace projectId={project.id} />}
         {section === "overview" && (
           <section className="direction-workspace overview">
             <span className="overline">Form / Overview</span>
@@ -251,17 +285,9 @@ export default function ProjectWorkspace({
             {project.phase === "LIVE" && (
               <>
                 <p>Core is included with your Fourthform website.</p>
-                <button
-                  onClick={() =>
-                    api<{ url: string }>("/api/billing", {
-                      projectId: project.id,
-                    })
-                      .then((r) => window.location.assign(r.url))
-                      .catch((e) => setError(e.message))
-                  }
-                >
-                  Manage Pro billing
-                </button>
+                <Link href={`/projects/${project.id}/billing`}>
+                  View billing and subscriptions
+                </Link>
                 {project.live_url && (
                   <a
                     className="primary"
@@ -295,7 +321,7 @@ export default function ProjectWorkspace({
             {operator && (
               <details className="operator-tools">
                 <summary>Fourthform team actions</summary>
-                <SiteSetup project={project}/>
+                <SiteSetup project={project} />
                 {project.phase === "DIRECTION" && (
                   <button onClick={() => void action("begin_build")}>
                     Begin building
@@ -310,7 +336,10 @@ export default function ProjectWorkspace({
                       onClick={() => {
                         const url = prompt(
                           "HTTPS review URL. The managed review site is included below.",
-                          new URL(`/review/${project.id}`,window.location.origin).toString()
+                          new URL(
+                            `/review/${project.id}`,
+                            window.location.origin,
+                          ).toString(),
                         );
                         if (url) void action("deliver", { url });
                       }}

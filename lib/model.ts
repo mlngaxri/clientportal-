@@ -104,17 +104,43 @@ export const sections: Record<Phase, string[]> = {
     "inbox",
   ],
 };
-export function projectSections(phase:Phase,operator=false){return [...sections[phase],...(!sections[phase].includes("pages")&&operator?["pages"]:[]),"build","billing","settings"];}
+export function projectSections(phase: Phase, operator = false) {
+  return [
+    ...sections[phase],
+    ...(!sections[phase].includes("pages") && operator ? ["pages"] : []),
+    "build",
+    "billing",
+    "settings",
+  ];
+}
 export function initialObjects(brief: Record<string, unknown>): BoardObject[] {
-  return ["description", "goals", "links", "feel"].flatMap((key) =>
-    brief[key]
+  const reference = brief.reference as
+    { id?: string; title?: string; url?: string } | undefined;
+  const references: BoardObject[] =
+    reference &&
+    typeof reference.url === "string" &&
+    reference.url.startsWith("https://fourthform-marketing.vercel.app/work/")
       ? [
           {
-            id: `brief-${key}`,
-            type: "text" as const,
-            text: `${({ description: "What we do", goals: "The website should help people", links: "Existing online presence", feel: "Visual direction" } as Record<string, string>)[key]}\n${Array.isArray(brief[key]) ? (brief[key] as string[]).join(" · ") : brief[key]}`,
+            id: "brief-reference",
+            type: "link",
+            text: `Studio reference: ${reference.title || "Selected design"}`,
+            url: reference.url,
           },
         ]
-      : [],
-  );
+      : [];
+  return [
+    ...references,
+    ...["description", "goals", "links", "feel"].flatMap((key) =>
+      brief[key]
+        ? [
+            {
+              id: `brief-${key}`,
+              type: "text" as const,
+              text: `${({ description: "What we do", goals: "The website should help people", links: "Existing online presence", feel: "Visual direction" } as Record<string, string>)[key]}\n${Array.isArray(brief[key]) ? (brief[key] as string[]).join(" · ") : brief[key]}`,
+            },
+          ]
+        : [],
+    ),
+  ];
 }

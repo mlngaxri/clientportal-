@@ -44,7 +44,7 @@ alter function public.project_command(uuid,text,jsonb,integer,uuid) rename to pr
 revoke all on function public.project_command_validated(uuid,text,jsonb,integer,uuid) from public,anon,authenticated;
 create function public.project_command(pid uuid,action text,payload jsonb,expected integer,command_key uuid) returns jsonb
 language plpgsql security definer set search_path=public as $$
-declare d site_documents; b boards; state jsonb; field record; result jsonb;
+declare d site_documents; b boards; state jsonb; field record; result jsonb; package_value text; opened date; current_package text;
 begin
  if auth.uid() is null or not public.can_access(pid) then raise exception 'Project not found or access denied'; end if;
  perform 1 from projects where id=pid for update;
@@ -53,20 +53,31 @@ begin
   select * into d from site_documents where project_id=pid;
   if d.project_id is null or d.published_id is null or (select count(*) from integration_receipts where project_id=pid and kind in ('domain','analytics','forms','seo','deployment') and evidence->>'revision'=d.revision::text and verified_at>now()-interval '24 hours')<>5 then raise exception 'Launch checks must be repeated for this website version'; end if;
  end if;
+ if action='save_business' and payload ? 'package' then
+  package_value=payload->>'package';select package into current_package from projects where id=pid;
+  if package_value not in ('SITE','FIRST') then raise exception 'Business package is invalid'; end if;
+  if package_value<>current_package and exists(select 1 from checkout_intents where project_id=pid and session_id is not null and expires_at>now()) then raise exception 'Business package cannot change while checkout is open. Return when that checkout expires'; end if;
+  if package_value='FIRST' then
+   begin opened=(payload->'brief'->>'openedOn')::date;exception when others then raise exception 'Business opening date is required for First';end;
+   if opened is null or opened>current_date or opened<(current_date-interval '6 months')::date then raise exception 'Business opening date must be within the last six months for First'; end if;
+  end if;
+ end if;
  if action='save_board' then
   select * into b from boards where id=(payload->>'boardId')::uuid and project_id=pid;
   if b.kind='states' then
    if jsonb_typeof(payload->'data'->'states') is distinct from 'array' or jsonb_array_length(payload->'data'->'states')>100 then raise exception 'Invalid State schedules'; end if;
    select * into d from site_documents where project_id=pid;
+   if (select count(distinct x->>'id') from jsonb_array_elements(payload->'data'->'states') x)<>jsonb_array_length(payload->'data'->'states') then raise exception 'State IDs must be unique'; end if;
    for state in select * from jsonb_array_elements(payload->'data'->'states') loop
-    if jsonb_typeof(state->'title') is distinct from 'string' or length(trim(state->>'title'))=0 or jsonb_typeof(state->'enabled') is distinct from 'boolean' or not exists(select 1 from pg_timezone_names where name=state->>'timezone') or state->>'start' !~ '^([01][0-9]|2[0-3]):[0-5][0-9]$' or state->>'end' !~ '^([01][0-9]|2[0-3]):[0-5][0-9]$' or state->>'start'=state->>'end' or jsonb_typeof(state->'days') is distinct from 'array' or jsonb_array_length(state->'days')=0 or jsonb_typeof(state->'overrides') is distinct from 'object' then raise exception 'Invalid State schedule'; end if;
-    if exists(select 1 from jsonb_array_elements(state->'days') day where day::text !~ '^[0-6]$') then raise exception 'Invalid State days'; end if;
+    if jsonb_typeof(state->'id') is distinct from 'string' or length(state->>'id') not between 1 and 100 or length(state->>'title')>160 or jsonb_typeof(state->'priority') is distinct from 'number' or coalesce(state->>'priority','') !~ '^(100|[0-9]{1,2})$' or jsonb_typeof(state->'start') is distinct from 'string' or jsonb_typeof(state->'end') is distinct from 'string' or jsonb_typeof(state->'title') is distinct from 'string' or length(trim(state->>'title'))=0 or jsonb_typeof(state->'enabled') is distinct from 'boolean' or not exists(select 1 from pg_timezone_names where name=state->>'timezone') or state->>'start' !~ '^([01][0-9]|2[0-3]):[0-5][0-9]$' or state->>'end' !~ '^([01][0-9]|2[0-3]):[0-5][0-9]$' or state->>'start'=state->>'end' or jsonb_typeof(state->'days') is distinct from 'array' or jsonb_array_length(state->'days')=0 or jsonb_typeof(state->'overrides') is distinct from 'object' then raise exception 'Invalid State schedule'; end if;
+    if (select count(distinct day) from jsonb_array_elements(state->'days') day)<>jsonb_array_length(state->'days') or exists(select 1 from jsonb_array_elements(state->'days') day where day::text !~ '^[0-6]$') then raise exception 'Invalid State days'; end if;
     for field in select * from jsonb_each(state->'overrides') loop
-     if not exists(select 1 from jsonb_array_elements(d.manifest->'pages') p cross join lateral jsonb_array_elements(p->'fields') f where f->>'id'=field.key and f->>'kind'='text') or jsonb_typeof(field.value)<>'string' or length(field.value#>>'{}')>10000 then raise exception 'Invalid State content field'; end if;
+     if not exists(select 1 from jsonb_array_elements(d.manifest->'pages') p cross join lateral jsonb_array_elements(p->'fields') f where f->>'id'=field.key and f->>'kind'='text' and length(field.value#>>'{}')<=coalesce((f->>'maxLength')::integer,10000)) or jsonb_typeof(field.value)<>'string' or length(field.value#>>'{}')>10000 then raise exception 'Invalid State content field'; end if;
     end loop;
    end loop;
   end if;
  end if;
+ if action='save_business' and package_value is not null then update projects set package=package_value,revision_limit=case when package_value='FIRST' then 1 else 3 end where id=pid; end if;
  result=public.project_command_validated(pid,action,payload,expected,command_key);
  return result;
 end $$;

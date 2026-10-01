@@ -24,10 +24,18 @@ export default function Dialog({
     <dialog
       ref={ref}
       className="ff-dialog"
-      onCancel={(event) => { event.preventDefault(); onClose(); }}
+      onCancel={(event) => {
+        event.preventDefault();
+        onClose();
+      }}
       aria-labelledby={titleId}
     >
-      <button type="button" className="dialog-close" onClick={onClose} aria-label={`Close ${title}`}>
+      <button
+        type="button"
+        className="dialog-close"
+        onClick={onClose}
+        aria-label={`Close ${title}`}
+      >
         ×
       </button>
       <h2 id={titleId}>{title}</h2>

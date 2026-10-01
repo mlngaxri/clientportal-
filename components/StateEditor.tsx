@@ -1,5 +1,7 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { api } from "../lib/client";
+import type { SiteManifest, SiteContent } from "../lib/site/service";
 import type { Board } from "../lib/model";
 import {
   evaluateStates,
@@ -19,12 +21,42 @@ export default function StateEditor({
   onUpgrade: () => void;
 }) {
   const editor = useSave(board, !pro);
+  const [site, setSite] = useState<{
+    manifest: SiteManifest;
+    content: SiteContent;
+  } | null>(null);
+  const [loadError, setLoadError] = useState("");
+  useEffect(() => {
+    let active = true;
+    void api<{ manifest: SiteManifest; content: SiteContent }>(
+      `/api/projects/${board.project_id}/site`,
+    )
+      .then((r) => {
+        if (active) setSite(r);
+      })
+      .catch((e) => {
+        if (active) setLoadError(e.message);
+      });
+    return () => {
+      active = false;
+    };
+  }, [board.project_id]);
+  const fields =
+    site?.manifest.pages.flatMap((p) =>
+      p.fields
+        .filter((f) => f.kind === "text")
+        .map((f) => ({ ...f, label: `${p.title}: ${f.label}` })),
+    ) || [];
+  const defaultField =
+    fields.find((f) => f.role === "heading")?.id || fields[0]?.id;
   const [selected, setSelected] = useState<string | null>(null);
   const [at, setAt] = useState(() => new Date().toISOString().slice(0, 16));
-  const states = (Array.isArray(editor.data.states) ? editor.data.states : []) as ScheduledState[];
+  const states = (
+    Array.isArray(editor.data.states) ? editor.data.states : []
+  ) as ScheduledState[];
   const state = states.find((s) => s.id === selected);
   const preview = evaluateStates(states, new Date(`${at}:00Z`), {
-    heading: "Your usual website heading",
+    ...(site?.content.fields || {}),
   });
   function change(patch: Partial<ScheduledState>) {
     editor.update((d) => ({
@@ -47,7 +79,9 @@ export default function StateEditor({
           start: "11:00",
           end: "15:00",
           priority: 0,
-          overrides: { heading: "" },
+          overrides: defaultField
+            ? { [defaultField]: site?.content.fields[defaultField] || "" }
+            : {},
         } satisfies ScheduledState,
       ],
     }));
@@ -60,8 +94,8 @@ export default function StateEditor({
           <span className="overline">Form / States · Pro</span>
           <h1>Content for the right moment.</h1>
           <p>
-            Draft and preview scheduled variations. Live scheduling is not
-            connected.
+            Save variations that appear during selected hours in each schedule’s
+            timezone. Your usual content returns outside those hours.
           </p>
         </div>
         {pro && (
@@ -74,6 +108,7 @@ export default function StateEditor({
         )}
       </header>
       <RecoveryNotice editor={editor} />
+      {loadError && <p role="alert">{loadError}</p>}
       {pro ? (
         <>
           <div className="chips">
@@ -86,7 +121,9 @@ export default function StateEditor({
                 {s.title}
               </button>
             ))}
-            <button onClick={add}>Add State</button>
+            <button onClick={add} disabled={!defaultField}>
+              Add State
+            </button>
           </div>
           {state && (
             <fieldset className="state-fields">
@@ -144,20 +181,80 @@ export default function StateEditor({
                 starting day. Schedules follow local clock time, including
                 daylight saving changes.
               </p>
-              <label>
-                Heading
-                <input
-                  value={state.overrides.heading || ""}
-                  onChange={(e) =>
+              <h3>Scheduled content</h3>
+              {Object.keys(state.overrides).map((id) => (
+                <div key={id} className="connected-card">
+                  <label>
+                    Content field
+                    <select
+                      value={id}
+                      onChange={(e) => {
+                        const overrides = { ...state.overrides };
+                        delete overrides[id];
+                        overrides[e.target.value] = state.overrides[id];
+                        change({ overrides });
+                      }}
+                    >
+                      {fields
+                        .filter(
+                          (f) =>
+                            f.id === id ||
+                            !Object.hasOwn(state.overrides, f.id),
+                        )
+                        .map((f) => (
+                          <option key={f.id} value={f.id}>
+                            {f.label}
+                          </option>
+                        ))}
+                    </select>
+                  </label>
+                  <label>
+                    Content during this schedule
+                    <textarea
+                      value={state.overrides[id]}
+                      maxLength={
+                        fields.find((f) => f.id === id)?.maxLength || 10000
+                      }
+                      onChange={(e) =>
+                        change({
+                          overrides: {
+                            ...state.overrides,
+                            [id]: e.target.value,
+                          },
+                        })
+                      }
+                    />
+                  </label>
+                  <button
+                    onClick={() => {
+                      const overrides = { ...state.overrides };
+                      delete overrides[id];
+                      change({ overrides });
+                    }}
+                  >
+                    Remove content field
+                  </button>
+                </div>
+              ))}
+              <button
+                disabled={
+                  !fields.some((f) => !Object.hasOwn(state.overrides, f.id))
+                }
+                onClick={() => {
+                  const f = fields.find(
+                    (f) => !Object.hasOwn(state.overrides, f.id),
+                  );
+                  if (f)
                     change({
                       overrides: {
                         ...state.overrides,
-                        heading: e.target.value,
+                        [f.id]: site?.content.fields[f.id] || "",
                       },
-                    })
-                  }
-                />
-              </label>
+                    });
+                }}
+              >
+                Add content field
+              </button>
               <details>
                 <summary>When schedules overlap</summary>
                 <label>
@@ -183,7 +280,7 @@ export default function StateEditor({
                   checked={state.enabled}
                   onChange={(e) => change({ enabled: e.target.checked })}
                 />
-                Enabled in preview
+                Enable this schedule
               </label>
               {validateState(state).map((issue) => (
                 <p role="alert" key={issue}>
@@ -213,7 +310,14 @@ export default function StateEditor({
           </label>
           <div className="state-live-demo">
             <span>State preview</span>
-            <h2>{preview.content.heading}</h2>
+            {fields
+              .filter((f) => f.role !== "image-alt")
+              .map((f) => (
+                <div key={f.id}>
+                  <span>{f.label}</span>
+                  <p>{preview.content[f.id] || "No content"}</p>
+                </div>
+              ))}
             <p>
               {preview.activeIds.length} active schedule
               {preview.activeIds.length === 1 ? "" : "s"}
@@ -229,7 +333,7 @@ export default function StateEditor({
         <>
           <p>
             Core includes your complete website. Pro adds scheduled States and
-            deeper intelligence.
+            automatic content changes.
           </p>
           <button onClick={onUpgrade}>Pro · A$39/month</button>
         </>
