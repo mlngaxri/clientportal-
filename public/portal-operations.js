@@ -244,7 +244,7 @@
   const button = (text, action, primary = false) =>
     `<button class="top-button ${primary ? "primary" : ""}" data-ops="${action}" type="button">${text}</button>`;
   function intro(title, lead, name) {
-    return `<div class="ops-wrap"><div class="ops-eyebrow">Form / ${names[name]}</div><h1 class="ops-title">${title}</h1><p class="ops-lead">${lead}</p><select class="ops-mobile-select" aria-label="Workspace">${views.map((v) => `<option value="${v}" ${v === name ? "selected" : ""}>${names[v]}</option>`).join("")}</select>`;
+    return `<div class="ops-wrap"><div class="ops-eyebrow">Form / ${names[name]}</div><h1 class="ops-title">${title}</h1><p class="ops-lead">${lead}</p><select class="ops-mobile-select" aria-label="Workspace">${(window.ffPreviewSpace?.views||views).filter(v=>views.includes(v)).map((v) => `<option value="${v}" ${v === name ? "selected" : ""}>${names[v]}</option>`).join("")}</select>`;
   }
   const input = (label, field, type = "text", extra = "") =>
     `<label class="ops-label">${label}<input type="${type}" data-field="${field}" value="${esc(state[field])}" ${extra}></label>`;

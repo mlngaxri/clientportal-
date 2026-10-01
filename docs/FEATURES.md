@@ -5,22 +5,22 @@ Fourthform combines a marketing website, a guided brief and an interactive clien
 ## Marketing and portfolio
 
 - An editorial homepage explaining the audience, custom website service, visitor goals and next action.
-- A three-design hero selector using Monolith Hero, OYLA and Keel from the Fourthform studio collection.
+- A three-design hero selector using Stratum, OYLA and Keel from the Fourthform studio collection.
 - Four featured designs in a staggered image grid, linked to the complete `/work` collection.
 - Twenty selected designs, curated after visually reviewing 49 public previews. All 20 designs now have live concept pages with refined business copy and Fourthform reference links.
 - Immersive, Editorial, Product and Expressive filters with result counts and selected states.
-- Large native dialog previews with project descriptions, three design techniques per project, source links, previous/next controls, arrow-key browsing, Escape dismissal and restored keyboard focus.
+- Large native dialog previews with interactive live websites, project descriptions, three design techniques per project, same-origin concept links, previous/next controls, arrow-key browsing, Escape dismissal and restored keyboard focus.
 - Direct project links such as `/work?project=oyla`.
-- Four local, silent motion clips, requested explicitly rather than downloaded automatically: Monolith Hero, Keel, Nature Ritual and Playful Idea.
+- All 20 concepts include responsive layouts, purposeful copy, browsable sections, local enquiry validation and motion that respects reduced-motion preferences.
 - Optimized local WebP images and smaller responsive variants.
 - A chosen design becomes a brief reference without replacing existing business details or links.
 - A four-stage process explanation: Direction, Build, Review and Launch.
 - A working embedded portal preview with four unguided spaces covering design, content, insights and launch. Switching spaces preserves independent local drafts.
-- A full-screen preview route preserving the selected task.
+- A full-screen preview route preserving the selected view and optional focused space.
 - A scheduled States story using the same Mori House headline and Evening service alternate as the portal.
 - Site, First, Core and Pro pricing; direct package actions; scope, deposit, balance and revision terms.
 - Native FAQ disclosures, desktop/mobile navigation, skip links and visible keyboard focus.
-- Local fonts, large mixed typography, cinematic imagery, contrasting sections, subtle image perspective, GSAP transitions and reduced-motion layouts.
+- A consistent four-corner frame motif, local fonts, large mixed typography, cinematic imagery, contrasting sections, subtle image perspective, GSAP transitions and reduced-motion layouts.
 - Search metadata, canonical links, social preview images, robots and a sitemap including the portfolio.
 - No em dashes, fabricated customer results, invented testimonials or award claims.
 
