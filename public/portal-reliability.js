@@ -111,7 +111,13 @@
     note?.remove();
     note = document.createElement("section");
     note.className = "preview-recovery";
-    note.setAttribute("aria-label", "Review local changes");
+    note.setAttribute("role", "region");
+    const heading = document.createElement("h2");
+    heading.id = "preview-recovery-heading";
+    heading.className = "sr-only";
+    heading.textContent = "Review local changes";
+    note.setAttribute("aria-labelledby", heading.id);
+    note.append(heading);
     const text = document.createElement("p");
     text.textContent = remote
       ? "This preview was saved in another tab. Keep your current draft or load that saved version."
@@ -124,8 +130,9 @@
       b.textContent = label;
       b.onclick = fn;
       note.append(b);
+      return b;
     };
-    button(remote ? "Keep this tab’s draft" : "Restore draft", () => {
+    const primary = button(remote ? "Keep this tab’s draft" : "Restore draft", () => {
       if (!remote) apply(record);
       localDirty = true;
       dismiss();
@@ -144,6 +151,9 @@
     });
     button("Export current draft", exportDraft);
     document.body.append(note);
+    // Startup recovery is part of the current task, so put keyboard users on
+    // its primary action. Cross-tab notices remain non-disruptive.
+    if (!remote) primary.focus();
   }
   markDirty = function () {
     originalMarkDirty();

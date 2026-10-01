@@ -22,6 +22,11 @@ test("standalone build retains ordered scripts and all local assets", async () =
   const styles=[...html.matchAll(/<link[^>]*rel="stylesheet"[^>]*href="([^"]+)"/g)].map(x=>x[1]);
   assert.equal(styles.length,new Set(styles).size,"stylesheets load only once");
   assert.ok(!html.includes("fonts.googleapis.com"), "fonts remain local");
+  const recovery = await readFile("dist/portal-reliability.js", "utf8");
+  assert.ok(recovery.includes('note.setAttribute("role", "region")'));
+  assert.ok(recovery.includes('note.setAttribute("aria-labelledby", heading.id)'));
+  assert.ok(recovery.includes("if (!remote) primary.focus()"));
+
   const operations = await readFile("dist/portal-operations.js", "utf8");
   assert.ok(operations.includes("fourthform:reset"));
 });
