@@ -22,3 +22,11 @@ Latest known portal work includes complete interactive preview flows plus subseq
 - Evidence: **S0 pending CI**. No workflow run existed for the exact commit when checked, so S1 is not claimed.
 - Blocker: the repository already had a separate TypeScript failure in the persisted-State database regression before this UX-only change; Builder 4/5 owns that operational/release blocker.
 - Next: use the new UX audit as the prioritized backlog and take the highest-value connected-app UX item that remains after red build issues are cleared; do not spend a UX run on deployment plumbing.
+
+### 2026-10-02 — Repair route-error accessibility regression test
+- Current `main` validation reached `npm test` after typecheck passed, then failed only the route-error accessibility regression because its retry-button regex assumed `Try again` immediately followed the opening tag; the component intentionally formats the label on its own line.
+- Updated the assertion to tolerate JSX whitespace while still requiring `Try again` to be the button label. No production UX behavior changed.
+- Source/test commit: `5cfd967d4f09a78ca66f48f6788e469fd5425c85`.
+- Evidence: **S0 pending fresh CI**. The preceding `b1f379876302b31a4875d73779e110cc11bcdaab` workflow proved typecheck passes and isolated this test as the `npm test` blocker, but S1 is not claimed until validation runs against the repair commit.
+- Blockers: none for this source repair. Build, connected browser, deployment and live evidence remain downstream of CI and Builder 5.
+- Next: after CI clears, return to the highest-value connected-app accessibility/responsive defect from the UX audit rather than changing the already-correct route-error component.
