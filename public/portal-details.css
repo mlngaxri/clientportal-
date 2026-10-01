@@ -34,3 +34,16 @@ input,textarea,select{accent-color:var(--detail-focus)}
 /* Dialog actions stay reachable on short desktop and landscape screens. */
 .modal{max-height:calc(100dvh - 40px);overflow-y:auto;overscroll-behavior:contain}
 @media(max-width:640px){.modal{max-height:calc(100dvh - 24px)}}
+
+/* Content can wrap within narrow cards without clipping controls. */
+.ops-grid>*,.ops-label,.ops-line>div,.ops-inline>div{min-width:0}
+.ops-label input,.ops-label textarea,.ops-label select{min-width:0}
+.ops-connection-mark{flex-shrink:0}
+@media(max-width:480px){
+ .ops-line{flex-wrap:wrap;align-items:flex-start}
+ .ops-line>:first-child{flex:1 1 140px;min-width:0}
+ .ops-line>.top-button{flex:0 0 auto}
+ .ops-table{table-layout:fixed}
+ .ops-table td,.ops-table th{overflow-wrap:anywhere}
+ .ops-table td:last-child{white-space:normal}
+}
