@@ -757,6 +757,32 @@ try {
     },
   );
   await check(
+    "protected health and maintenance retain published media and remove expired uploads",
+    async () => {
+      assert.equal((await fetch(`${base}/api/health`)).status, 401);
+      assert.equal((await fetch(`${base}/api/jobs/maintenance`, { headers: { Authorization: "Bearer invalid" } })).status, 401);
+      const health = await fetch(`${base}/api/health`, { headers: { Authorization: `Bearer ${env.HEALTHCHECK_TOKEN}` } });
+      assert.equal(health.status, 200);
+      assert.equal((await health.json()).database, "reachable");
+      const bytes = await readFile("public/mori/interior.webp");
+      const abandoned = await ok(ownerPage, `/api/projects/${id}/upload`, { name: "expired.webp", size: bytes.length, mime: "image/webp" });
+      assert.ok((await fetch(abandoned.signedUrl, { method: "PUT", headers: { "Content-Type": "image/webp", "x-upsert": "false" }, body: bytes })).ok);
+      assert.equal((await service.from("asset_uploads").update({ created_at: new Date(Date.now() - 4 * 3600000).toISOString() }).eq("id", abandoned.id)).error, null);
+      const expiredEvent = randomUUID();
+      assert.equal((await service.from("analytics_events").insert({ id: expiredEvent, project_id: id, page_id: "home", kind: "pageview", visitor: "retention-fixture", source: "direct", device: "desktop", created_at: new Date(Date.now() - 91 * 86400000).toISOString() })).error, null);
+      const maintained = await fetch(`${base}/api/jobs/maintenance`, { headers: { Authorization: `Bearer ${env.CRON_SECRET}` } });
+      assert.equal(maintained.status, 200);
+      const result = await maintained.json();
+      assert.equal(result.cleanedUploads, 1);
+      assert.equal(result.deferredUploads, 0);
+      assert.equal((await service.from("asset_uploads").select("id").eq("id", abandoned.id)).data.length, 0);
+      assert.ok((await service.storage.from("project-assets").download(`${id}/${abandoned.id}.webp`)).error);
+      assert.equal((await service.from("analytics_events").select("id").eq("id", expiredEvent)).data.length, 0);
+      assert.equal((await service.from("assets").select("id").eq("id", asset)).data.length, 1);
+      assert.ok((await fetch(`${base}/api/public-assets/${asset}?project=${id}`)).ok);
+    },
+  );
+  await check(
     "logout revokes the local session and protected reads require authentication",
     async () => {
       await ok(secondPage, "/api/auth", { mode: "logout" });

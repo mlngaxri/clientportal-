@@ -20,37 +20,53 @@ export async function GET(req: Request) {
       .delete()
       .lt("created_at", cutoff);
     if (error) throw error;
-    const { data: uploads } = await service
+    const { data: uploads, error: uploadsError } = await service
       .from("asset_uploads")
       .select("id,storage_key")
       .lt("created_at", new Date(Date.now() - 3 * 3600000).toISOString())
+      .order("created_at")
       .limit(50);
+    if (uploadsError) throw uploadsError;
+    let cleanedUploads = 0;
+    let deferredUploads = 0;
     for (const u of uploads || []) {
-      const { data: asset } = await service
+      const { data: asset, error: assetError } = await service
         .from("assets")
         .select("id")
         .eq("id", u.id)
         .maybeSingle();
+      if (assetError) throw assetError;
       if (!asset) {
         const { error: removal } = await service.storage
           .from("project-assets")
           .remove([u.storage_key]);
-        if (removal) continue;
+        if (removal) {
+          deferredUploads++;
+          continue;
+        }
       }
-      await service.from("asset_uploads").delete().eq("id", u.id);
+      const { error: deletion } = await service
+        .from("asset_uploads")
+        .delete()
+        .eq("id", u.id);
+      if (deletion) throw deletion;
+      cleanedUploads++;
     }
-    await service
+    const { error: limitsError } = await service
       .from("request_limits")
       .delete()
       .lt("resets_at", new Date(Date.now() - 86400000).toISOString());
-    await service
+    if (limitsError) throw limitsError;
+    const { error: probesError } = await service
       .from("service_probes")
       .delete()
       .lt("created_at", new Date(Date.now() - 86400000).toISOString());
+    if (probesError) throw probesError;
     return Response.json({
       ok: true,
       notifications,
-      cleanedUploads: uploads?.length || 0,
+      cleanedUploads,
+      deferredUploads,
     });
   } catch {
     console.error(
