@@ -19,6 +19,15 @@ a {
   color: inherit;
   text-decoration: none;
 }
+
+/* Keep keyboard location visible across marketing and connected product surfaces. */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--accent, #665cf6);
+  outline-offset: 3px;
+}
+:where(input, select, textarea):focus-visible {
+  outline-offset: 1px;
+}
 .shell {
   width: min(1440px, calc(100% - 64px));
   margin: 0 auto;
