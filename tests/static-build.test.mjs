@@ -30,3 +30,11 @@ test("standalone build retains ordered scripts and all local assets", async () =
   const operations = await readFile("dist/portal-operations.js", "utf8");
   assert.ok(operations.includes("fourthform:reset"));
 });
+
+test("connected route errors announce context before recovery actions", async () => {
+  const source = await readFile("app/error.tsx", "utf8");
+  assert.match(source, /const heading = useRef<HTMLHeadingElement>\(null\)/);
+  assert.match(source, /heading\.current\?\.focus\(\)/);
+  assert.match(source, /<h1 ref=\{heading\} tabIndex=\{-1\}>/);
+  assert.match(source, />Try again</);
+});
