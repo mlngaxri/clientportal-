@@ -16,3 +16,12 @@ No autonomous run recorded under the refined protocol yet.
 - Evidence: **S0 pending CI**. No combined status had been reported for the commit when checked, so S1 is not claimed.
 - Boundary: these tests exercise the deterministic State evaluator only; they do not claim a production scheduler, live deployment or external provider acceptance.
 - Next: after CI validates this test set, harden the persisted State schedule contract at the database boundary so malformed or duplicate schedules cannot bypass the API validator, then test request-time State rendering against that authoritative contract.
+
+### 2026-10-02 — State API collection validation
+- Replaced the `save_board` route's ad-hoc State array checks with shared `validateStates()` collection validation, so malformed entries such as `null` fail closed instead of throwing while duplicate IDs and the 100-State limit remain explicit invariants.
+- Added focused regression coverage for valid collections, non-array input, malformed entries, duplicate IDs and oversized collections.
+- Source commit: `6f1dd571aef98d77aafe30446f200f8e2929bc11`.
+- Evidence: **S0 pending CI**. No combined status existed for the source commit when checked, so S1 is not claimed.
+- Boundary: this hardens request validation and its contract with the persisted State trigger; it does not claim a live scheduler, publishing operation or external provider acceptance.
+- Blockers: none for this source task; automated workflow evidence is pending.
+- Next: add authenticated `save_board` route/integration coverage proving friendly API rejection and database-trigger rejection agree on malformed State payloads without mutating the board.
