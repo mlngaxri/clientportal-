@@ -744,6 +744,8 @@ try {
         if (section === "billing") await ownerPage.getByRole("cell", { name: "initial", exact: true }).waitFor();
         if (section === "settings") {
           await ownerPage.getByLabel("Business timezone", { exact: true }).waitFor();
+          const buttonColors = await ownerPage.getByRole("button", { name: "Save settings", exact: true }).evaluate((el) => ({ ink: getComputedStyle(el).color, background: getComputedStyle(el).backgroundColor }));
+          assert.notEqual(buttonColors.ink, buttonColors.background, "Primary action text must remain visible.");
           await visual(ownerPage, "real-phone-settings");
         }
         if (section === "build") await ownerPage.getByText("Website launched", { exact: true }).waitFor();
