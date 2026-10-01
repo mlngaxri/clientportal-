@@ -36,5 +36,5 @@ test("connected route errors announce context before recovery actions", async ()
   assert.match(source, /const heading = useRef<HTMLHeadingElement>\(null\)/);
   assert.match(source, /heading\.current\?\.focus\(\)/);
   assert.match(source, /<h1 ref=\{heading\} tabIndex=\{-1\}>/);
-  assert.match(source, />Try again</);
+  assert.match(source, /Try again\s*<\/button>/);
 });
