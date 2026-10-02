@@ -63,3 +63,11 @@ No autonomous run recorded under the refined protocol yet.
 - Evidence: **S0 pending fresh CI**. No exact-SHA validation result existed when checked.
 - No external Supabase/Auth acceptance is claimed.
 - Next: after CI, inspect password-update completion/recovery-session privilege behavior or another concrete auth integrity boundary.
+
+### 2026-10-03 — Keep recovery callback URL valid without APP_URL
+- Current `main` validation run 170 was green before this change.
+- Found the recovery route interpolated `process.env.APP_URL` directly, unlike other auth entry paths; an absent APP_URL therefore produced an invalid `undefined/auth/callback...` provider redirect instead of using the request origin.
+- Recovery now builds the callback with `new URL()` using APP_URL when configured and the request origin otherwise, while preserving the password-reset return path.
+- Added auth-policy regression coverage for the absolute callback construction and removal of direct APP_URL interpolation.
+- Evidence: **S0 pending fresh CI**. No external Supabase/Auth acceptance is claimed.
+- Next: inspect recovery-session privilege scoping before password-update completion, or another concrete auth integrity boundary.

@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
 const authRoute = new URL("../../app/api/auth/route.ts", import.meta.url);
+const accountRoute = new URL("../../app/api/account/route.ts", import.meta.url);
 const callbackRoute = new URL("../../app/auth/callback/route.ts", import.meta.url);
 const middleware = new URL("../../middleware.ts", import.meta.url);
 const server = new URL("../../lib/server.ts", import.meta.url);
@@ -29,6 +30,14 @@ test("password recovery callbacks cannot inherit a stale remembered-session poli
   assert.match(text, /const remember = !recovery && jar\.get\("ff-remember"\)\?\.value === "yes";/);
   assert.match(text, /if \(recovery\) jar\.delete\("ff-remember"\);/);
   assert.match(text, /new URL\(returnPath, process\.env\.APP_URL \|\| url\.origin\)/);
+});
+
+test("password recovery redirect remains an absolute callback without APP_URL", async () => {
+  const text = await source(accountRoute);
+  assert.match(text, /const callback = new URL\([\s\S]*?"\/auth\/callback",[\s\S]*?process\.env\.APP_URL \|\| new URL\(req\.url\)\.origin,[\s\S]*?\);/);
+  assert.match(text, /callback\.searchParams\.set\("next", "\/account\/password"\);/);
+  assert.match(text, /redirectTo: callback\.toString\(\)/);
+  assert.doesNotMatch(text, /redirectTo:\s*`\$\{process\.env\.APP_URL\}/);
 });
 
 test("middleware verifies and refreshes a session from one stable clock", async () => {

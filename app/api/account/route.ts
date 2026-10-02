@@ -14,8 +14,13 @@ export async function POST(req: Request) {
       )
         throw new Error("Enter a valid email address.");
       const client = await db();
+      const callback = new URL(
+        "/auth/callback",
+        process.env.APP_URL || new URL(req.url).origin,
+      );
+      callback.searchParams.set("next", "/account/password");
       const { error } = await client.auth.resetPasswordForEmail(email, {
-        redirectTo: `${process.env.APP_URL}/auth/callback?next=/account/password`,
+        redirectTo: callback.toString(),
       });
       // Never expose account existence. Provider capacity failures still communicate retry.
       if (error)
