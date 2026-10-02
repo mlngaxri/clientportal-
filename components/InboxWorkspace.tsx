@@ -86,7 +86,7 @@ export default function InboxWorkspace({ projectId }: { projectId: string }) {
           <span className="overline">
             {m.status} · {new Date(m.created_at).toLocaleString()}
           </span>
-          <button className="inbox-item-title" aria-expanded={selected === m.id} onClick={() => setSelected(selected === m.id ? null : m.id)}><strong>{m.name}</strong><span>{m.message.slice(0, 90)}{m.message.length > 90 ? "…" : ""}</span></button>
+          <button className="inbox-item-title" aria-expanded={selected === m.id} onClick={() => setSelected(selected === m.id ? null : m.id)}><strong role="heading" aria-level={2}>{m.name}</strong><span>{m.message.slice(0, 90)}{m.message.length > 90 ? "…" : ""}</span></button>
           {selected === m.id && <>
           <a href={`mailto:${m.email}`}>{m.email}</a>
           <p>{m.message}</p>
