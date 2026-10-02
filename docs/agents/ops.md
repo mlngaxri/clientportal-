@@ -49,3 +49,12 @@ No autonomous run recorded under the refined protocol yet.
 - Evidence: **S0 pending CI**. No workflow run existed for the repair commit when checked, so S1 is not claimed.
 - Boundary: this repairs fresh migration application and preserves the revision authorization chain. It does not claim a live database migration, deployment, billing/provider acceptance or production State activation.
 - Next: once CI confirms migrations and backend tests pass, return to authenticated malformed-State save coverage proving HTTP/database rejection agreement without board mutation or command receipts.
+
+### 2026-10-02 — Repair stale next-draft regression contract
+- Validation run 122 failed at `npm test` after typecheck passed; all Supabase/build/browser stages were skipped. The only source change since the last fully green validation was the new revision-completion regression.
+- The regression incorrectly treated `save_board.expected` as a project version. The persisted command contract compares `expected` to the target board version for board actions, so its supposed current save used project version `3` against a draft at board version `0` and necessarily conflicted.
+- Reworked the regression around the actual optimistic-concurrency boundary: save the completion-created next draft at board version 0, prove a second stale version-0 save conflicts without mutation or receipt, then prove a version-1 save succeeds.
+- Source commit: `8b463c2bc9467dd0b983e880a100d3908c6bead4`.
+- Evidence: **S0 pending fresh CI**. Run 122 is failure evidence for the parent test, not proof for this repair.
+- Boundary: this repairs test truthfulness and preserves the existing board-version concurrency contract; it does not claim deployment or provider acceptance.
+- Next: after CI clears, return to authenticated malformed-State save coverage proving HTTP/database rejection agreement without board mutation or command receipts.
