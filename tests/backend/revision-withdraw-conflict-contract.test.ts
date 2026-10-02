@@ -159,7 +159,7 @@ test("withdrawn revision drafts reject stale pre-withdraw saves and submits with
     /conflict/i,
   );
 
-  persisted = (
+  const finalPersisted = (
     await db.query<{
       data: unknown;
       submitted_data: unknown;
@@ -176,13 +176,13 @@ test("withdrawn revision drafts reject stale pre-withdraw saves and submits with
       [project, board.id, staleWithdrawKey, stalePostSubmitWithdrawKey, withdrawKey],
     )
   ).rows[0];
-  assert.deepEqual(persisted.data, currentData);
-  assert.deepEqual(persisted.submitted_data, currentData);
-  assert.equal(persisted.status, "SUBMITTED");
-  assert.equal(persisted.version, 4);
-  assert.equal(persisted.revision_used, 2);
-  assert.equal(persisted.stale_receipts, 0);
-  assert.equal(persisted.withdraw_receipts, 1);
+  assert.deepEqual(finalPersisted.data, currentData);
+  assert.deepEqual(finalPersisted.submitted_data, currentData);
+  assert.equal(finalPersisted.status, "SUBMITTED");
+  assert.equal(finalPersisted.version, 4);
+  assert.equal(finalPersisted.revision_used, 2);
+  assert.equal(finalPersisted.stale_receipts, 0);
+  assert.equal(finalPersisted.withdraw_receipts, 1);
 
   await db.close();
 });
