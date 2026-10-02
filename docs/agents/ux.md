@@ -64,3 +64,12 @@ Latest known portal work includes complete interactive preview flows plus subseq
 - Evidence: **S0 pending fresh CI**. No check result existed for the exact source/test SHA when checked, so S1 is not claimed.
 - Blockers: none in source. Builder 5 owns deployment provenance; the release workflow is separately failing closed while Vercel credentials are absent.
 - Next: inspect another connected status/recovery action for form-safety, focus, announcement or narrow-layout defects after CI clears.
+
+### 2026-10-02 — Recovery action form safety
+- Validation run 140 was green for the preceding `main` SHA `c6837992c1379b0dec989d9c623aea48430c02c9`, so this run continued the connected recovery/action reliability audit rather than deployment work.
+- `RecoveryNotice` had eight action buttons without explicit button types. Because HTML buttons default to submit, embedding this reusable recovery/conflict surface in an editor form could submit unrelated draft data when the customer only intended to undo, restore, export, discard, or resolve a conflict.
+- Added `type="button"` to every recovery/conflict action and a static regression requiring every button in `RecoveryNotice` to remain non-submit. The existing primary-focus regression was updated to match the safe button contract.
+- Source/test commit: `c12533b2fe6db8e8825de77ea1380b95754b0eb4`.
+- Evidence: **S0 pending fresh CI**. Run 140 proves the parent line was green, not this exact source SHA; S1 is not inferred.
+- Blocker: none in this UX source change. Builder 5 owns the separate fail-closed Vercel credential/deployment gate.
+- Next: after CI, inspect another connected editor/status action surface for form-safety, status-announcement or narrow-layout defects.
