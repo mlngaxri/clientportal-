@@ -167,11 +167,13 @@ test("withdrawn revision drafts reject stale pre-withdraw saves and submits with
       version: number;
       revision_used: number;
       stale_receipts: number;
+      withdraw_receipts: number;
     }>(
       `select b.data,b.submitted_data,b.status,b.version,p.revision_used,
-        (select count(*)::int from commands c where c.project_id=$1 and c.key in ($3,$4)) as stale_receipts
+        (select count(*)::int from commands c where c.project_id=$1 and c.key in ($3,$4)) as stale_receipts,
+        (select count(*)::int from commands c where c.project_id=$1 and c.key=$5) as withdraw_receipts
        from boards b join projects p on p.id=b.project_id where b.id=$2`,
-      [project, board.id, staleWithdrawKey, stalePostSubmitWithdrawKey],
+      [project, board.id, staleWithdrawKey, stalePostSubmitWithdrawKey, withdrawKey],
     )
   ).rows[0];
   assert.deepEqual(persisted.data, currentData);
@@ -180,6 +182,7 @@ test("withdrawn revision drafts reject stale pre-withdraw saves and submits with
   assert.equal(persisted.version, 4);
   assert.equal(persisted.revision_used, 2);
   assert.equal(persisted.stale_receipts, 0);
+  assert.equal(persisted.withdraw_receipts, 1);
 
   await db.close();
 });
