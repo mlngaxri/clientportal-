@@ -26,6 +26,10 @@ export default function BillingWorkspace({
     let active = true;
     setLoading(true);
     setError("");
+    setReceipts([]);
+    setSubscriptions([]);
+    setReceipt(null);
+    setManaging(false);
     void api(`/api/projects/${project.id}/billing`)
       .then((r) => {
         if (!active) return;

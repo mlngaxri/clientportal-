@@ -9,3 +9,15 @@ test("billing actions cannot submit an enclosing form", async () => {
   assert.ok(buttons.length > 0);
   assert.equal(safeButtons.length, buttons.length);
 });
+
+test("billing clears project-specific records before a refresh", async () => {
+  const source = await readFile("components/BillingWorkspace.tsx", "utf8");
+  const effectStart = source.indexOf("useEffect(() => {");
+  const requestStart = source.indexOf("void api(`/api/projects/${project.id}/billing`)", effectStart);
+  assert.ok(effectStart >= 0 && requestStart > effectStart);
+  const setup = source.slice(effectStart, requestStart);
+  assert.match(setup, /setReceipts\(\[\]\)/);
+  assert.match(setup, /setSubscriptions\(\[\]\)/);
+  assert.match(setup, /setReceipt\(null\)/);
+  assert.match(setup, /setManaging\(false\)/);
+});
