@@ -20,7 +20,7 @@ export default function AnalyticsWorkspace({ projectId }: { projectId: string })
   const [days, setDays] = useState(30), [data, setData] = useState<Stats | null>(null), [error, setError] = useState(""), [attempt, setAttempt] = useState(0), [loading, setLoading] = useState(true), [pro, setPro] = useState(false);
   useEffect(() => {
     let active = true;
-    setError(""); setLoading(true);
+    setError(""); setLoading(true); setData(null);
     void api<Stats>(`/api/projects/${projectId}/analytics?days=${days}`)
       .then((d) => { if (active) { setData(d); setPro(d.pro); } })
       .catch((e) => { if (active) setError(e.message); })
