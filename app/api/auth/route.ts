@@ -5,9 +5,8 @@ import { z } from "zod";
 import { db, checkOrigin, failure } from "../../../lib/server";
 import { safeReturnPath } from "../../../lib/navigation";
 import {
-  REMEMBER_SECONDS,
-  SESSION_SECONDS,
   sessionCookieOptions,
+  sessionExpiry,
   signSessionExpiry,
 } from "../../../lib/auth-session";
 const input = z.object({
@@ -24,9 +23,7 @@ export async function POST(req: Request) {
     if (body.mode !== "logout")
       await rateLimit("auth", requestSubject(req), 12, 60);
     const jar = await cookies();
-    const expiry = String(
-      Date.now() + (body.remember ? REMEMBER_SECONDS : SESSION_SECONDS) * 1000,
-    );
+    const expiry = sessionExpiry(body.remember);
     const options = sessionCookieOptions(body.remember, expiry);
     const client = await db(
       body.mode === "logout" ? undefined : { remember: body.remember, expiry },
