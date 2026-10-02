@@ -22,3 +22,10 @@ Latest known portal work includes complete interactive preview flows plus subseq
 - Added `type="button"` to every Launch workspace action and a static invariant in `tests/static-build.test.mjs` requiring every button in the component to remain non-submitting.
 - Evidence: **S0 pending fresh CI**. The current parent validation failure is at isolated Supabase startup after typecheck/tests, and does not provide exact-SHA evidence for this change.
 - Next: inspect fresh validation for this commit, then continue the connected action audit for form safety, announcements, focus and narrow-layout behavior. Builder 5 owns release provenance.
+
+### 2026-10-03 — Domain action submit intent
+- Continued the explicit connected-action audit after exact-main validation returned green.
+- `DomainsWorkspace` mixed one intentional form submit (`Add domain`) with retry, clipboard and connection actions whose button type was implicit. Made the form submit explicitly `type="submit"` and every non-submit domain action explicitly `type="button"`, so future form composition cannot silently change action semantics.
+- Added a static regression requiring every domain button to declare its type and exactly one domain control to be a submit button.
+- Evidence: **S0 pending fresh CI**. Parent `ad1c68184a5acf77232b3aac90540983e2e254aa` validation run 169 is green, but exact-SHA validation for this change is still required before S1.
+- Next: continue the connected action audit for status announcements, keyboard focus and narrow-layout behavior. Builder 5 owns deployment provenance.

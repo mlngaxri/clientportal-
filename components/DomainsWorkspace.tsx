@@ -59,7 +59,7 @@ export default function DomainsWorkspace({ projectId }: { projectId: string }) {
         </div>
       </header>
       {loading && <p role="status">Loading domain connections…</p>}
-      {error && !platform && <button onClick={() => void load().catch(e => setError(e.message))}>Retry loading domains</button>}
+      {error && !platform && <button type="button" onClick={() => void load().catch(e => setError(e.message))}>Retry loading domains</button>}
       <div className="connected-card">
         <h2>Included address</h2>
         <p className="connected-code">{platform}</p>
@@ -83,7 +83,7 @@ export default function DomainsWorkspace({ projectId }: { projectId: string }) {
             onChange={(e) => setHostname(e.target.value)}
           />
         </label>
-        <button disabled={busy}>Add domain</button>
+        <button type="submit" disabled={busy}>Add domain</button>
       </form>
       {domains.map((d) => (
         <article className="connected-card" key={d.hostname}>
@@ -103,17 +103,19 @@ export default function DomainsWorkspace({ projectId }: { projectId: string }) {
                 <br />
                 Value: fourthform={d.token}
               </div>
-              <button onClick={() => { void navigator.clipboard.writeText(`fourthform=${d.token}`).then(() => setNotice(`Ownership value copied for ${d.hostname}.`)).catch(() => setNotice("Select and copy the ownership value.")); }}>Copy ownership value</button>
+              <button type="button" onClick={() => { void navigator.clipboard.writeText(`fourthform=${d.token}`).then(() => setNotice(`Ownership value copied for ${d.hostname}.`)).catch(() => setNotice("Select and copy the ownership value.")); }}>Copy ownership value</button>
             </>
           )}
           <div className="connected-actions">
             <button
+              type="button"
               disabled={busy}
               onClick={() => void action("connect", d.hostname)}
             >
               Check and connect
             </button>
             <button
+              type="button"
               disabled={busy}
               onClick={() => void action("reserve", d.hostname)}
             >
@@ -144,8 +146,8 @@ export default function DomainsWorkspace({ projectId }: { projectId: string }) {
               {instructions.rows.map((r) => (
                 <tr key={`${r.type}:${r.name}:${r.value}`}>
                   <td>{r.type}</td>
-                  <td>{r.name}<button onClick={() => { void navigator.clipboard.writeText(r.name).then(() => setNotice("Record name copied.")).catch(() => setNotice("Select and copy the record name.")); }}>Copy name</button></td>
-                  <td className="dns-value">{r.value}<button onClick={() => { void navigator.clipboard.writeText(r.value).then(() => setNotice(`Copied ${r.type} value for ${instructions.host}.`)).catch(() => setNotice("Clipboard unavailable. Select and copy the value shown here.")); }}>Copy value</button></td>
+                  <td>{r.name}<button type="button" onClick={() => { void navigator.clipboard.writeText(r.name).then(() => setNotice("Record name copied.")).catch(() => setNotice("Select and copy the record name.")); }}>Copy name</button></td>
+                  <td className="dns-value">{r.value}<button type="button" onClick={() => { void navigator.clipboard.writeText(r.value).then(() => setNotice(`Copied ${r.type} value for ${instructions.host}.`)).catch(() => setNotice("Clipboard unavailable. Select and copy the value shown here.")); }}>Copy value</button></td>
                   <td>{r.purpose}</td>
                 </tr>
               ))}

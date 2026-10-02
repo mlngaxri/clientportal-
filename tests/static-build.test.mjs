@@ -96,3 +96,13 @@ test("annotation tools cannot submit an enclosing review form", async () => {
   assert.ok(buttons.length > 0);
   assert.equal(safeButtons.length, buttons.length);
 });
+
+test("domain controls declare submit intent explicitly", async () => {
+  const source = await readFile("components/DomainsWorkspace.tsx", "utf8");
+  const buttons = source.match(/<button\b/g) ?? [];
+  const typedButtons = source.match(/<button(?:\s|\n)+type="(?:button|submit)"/g) ?? [];
+  assert.ok(buttons.length > 0);
+  assert.equal(typedButtons.length, buttons.length);
+  assert.equal((source.match(/<button(?:\s|\n)+type="submit"/g) ?? []).length, 1);
+  assert.match(source, /<button type="submit" disabled=\{busy\}>Add domain<\/button>/);
+});
