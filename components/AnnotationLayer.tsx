@@ -59,6 +59,22 @@ export default function AnnotationLayer({
     active.current = null;
     setDraft(null);
   }
+  function keyboardPlace(e: React.KeyboardEvent<SVGSVGElement>) {
+    if (readOnly || (e.key !== "Enter" && e.key !== " ")) return;
+    e.preventDefault();
+    const center = { x: 500, y: 300 };
+    if (tool === "text") {
+      setTextPoint({ id: crypto.randomUUID(), type: tool, points: [center, center] });
+      return;
+    }
+    const points: Point[] =
+      tool === "rect"
+        ? [{ x: 400, y: 250 }, { x: 600, y: 350 }]
+        : tool === "arrow"
+          ? [{ x: 400, y: 300 }, { x: 600, y: 300 }]
+          : [{ x: 480, y: 300 }, { x: 520, y: 300 }];
+    onChange([...strokes, { id: crypto.randomUUID(), type: tool, points }]);
+  }
   return (
     <div className="annotation-editor">
       {textPoint && <TextEntryDialog title="Add an annotation" label="Annotation text" onClose={() => setTextPoint(null)} onSubmit={text => { onChange([...strokes, { ...textPoint, text }]); setTextPoint(null); }} />}
@@ -85,9 +101,11 @@ export default function AnnotationLayer({
       )}
       <svg
         role="img"
-        aria-label="Drawing; use the accompanying text field for an accessible description"
+        aria-label={readOnly ? "Drawing" : "Annotation canvas. Choose a tool, then press Enter or Space to place an annotation in the center; pointer drawing is also available."}
+        tabIndex={readOnly ? undefined : 0}
         viewBox="0 0 1000 600"
         preserveAspectRatio="none"
+        onKeyDown={keyboardPlace}
         onPointerDown={down}
         onPointerMove={move}
         onPointerUp={up}
