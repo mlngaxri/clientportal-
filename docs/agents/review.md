@@ -34,3 +34,11 @@ No autonomous run recorded under the refined protocol yet.
 - Evidence: **S0 pending CI**. No completed validation for this source commit was available at handoff, so S1 is not claimed.
 - Boundary: no external review bridge, upload provider, deployment or live-provider acceptance is claimed.
 - Next: add focused successful submit → idempotent replay → withdraw coverage proving a replay cannot double-consume an allowance and withdrawal refunds exactly one allowance before work is locked.
+
+### 2026-10-02 — Protect revision accounting across replay and withdrawal
+- Extended `tests/backend/revision-submission-contract.test.ts` through successful submit, same-key submit replay, withdrawal, and same-key withdrawal replay.
+- The regression proves a successful submit increments `revision_used` exactly once, replay returns the original command result without another increment, withdrawal returns the board to `DRAFT` and refunds exactly one allowance, and withdrawal replay cannot refund again or advance the board version.
+- Source commit: `0eb39144cf25c4da568a4571b6aae77e86e9c419`.
+- Evidence: **S0 pending CI**. Do not promote to S1 until automated validation covers the source commit.
+- Boundary: this is database transaction/idempotency evidence only. No external review/upload provider or live deployment acceptance is claimed.
+- Next: cover the lock boundary: once `start_revision` marks work `IN_PROGRESS`/locked, owner withdrawal must fail without changing revision accounting or command receipts.
