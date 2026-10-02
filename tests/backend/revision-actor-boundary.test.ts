@@ -156,14 +156,30 @@ test("owners cannot rewrite revision work after it is submitted", async () => {
     /Only a draft revision can be edited/,
   );
 
-  const persisted = (await db.query<{ data: unknown; status: string; version: number; rejected: number }>(
-    `select b.data,b.status,b.version,(select count(*)::int from commands c where c.project_id=$1 and c.key=$3) as rejected from boards b where b.id=$2`,
-    [project, board.id, rejectedKey],
+  await db.query("select set_config('test.uid',$1,false)", [operator]);
+  await db.query("select set_config('test.role','operator',false)");
+  await db.query("select project_command($1,'complete_revision',$2::jsonb,2,$3)", [project, JSON.stringify({ boardId: board.id }), randomUUID()]);
+
+  const completedRejectedKey = randomUUID();
+  await db.query("select set_config('test.uid',$1,false)", [owner]);
+  await db.query("select set_config('test.role','',false)");
+  await assert.rejects(
+    () => db.query("select project_command($1,'save_board',$2::jsonb,3,$3)", [project, JSON.stringify({ boardId: board.id, data: replacement }), completedRejectedKey]),
+    /Only a draft revision can be edited/,
+  );
+
+  const persisted = (await db.query<{ data: unknown; status: string; version: number; rejected: number; completed_rejected: number }>(
+    `select b.data,b.status,b.version,
+      (select count(*)::int from commands c where c.project_id=$1 and c.key=$3) as rejected,
+      (select count(*)::int from commands c where c.project_id=$1 and c.key=$4) as completed_rejected
+     from boards b where b.id=$2`,
+    [project, board.id, rejectedKey, completedRejectedKey],
   )).rows[0];
   assert.deepEqual(persisted.data, original);
-  assert.equal(persisted.status, "IN_PROGRESS");
-  assert.equal(persisted.version, 2);
+  assert.equal(persisted.status, "DONE");
+  assert.equal(persisted.version, 3);
   assert.equal(persisted.rejected, 0);
+  assert.equal(persisted.completed_rejected, 0);
 
   await db.close();
 });
