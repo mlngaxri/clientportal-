@@ -131,8 +131,11 @@ export async function middleware(request: NextRequest) {
     !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
   )
     return response;
+  const sessionNow = Date.now();
   const expiry = await verifiedSessionExpiry(
     request.cookies.get("ff-session-until")?.value,
+    undefined,
+    sessionNow,
   );
   if (!expiry) {
     for (const c of request.cookies.getAll())
@@ -159,7 +162,7 @@ export async function middleware(request: NextRequest) {
           items.forEach(({ name, value, options }) =>
             response.cookies.set(name, value, {
               ...options,
-              ...sessionCookieOptions(remember, expiry),
+              ...sessionCookieOptions(remember, expiry, sessionNow),
               ...(value ? {} : { maxAge: 0 }),
             }),
           );
