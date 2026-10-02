@@ -13,6 +13,7 @@ export default function PasswordRecovery({
   const [busy, setBusy] = useState(false),
     [done, setDone] = useState(false),
     [error, setError] = useState("");
+  const passwordMismatch = error === "The passwords do not match.";
   async function submit() {
     if (update && password !== confirmation) {
       setError("The passwords do not match.");
@@ -68,6 +69,8 @@ export default function PasswordRecovery({
                     required
                     minLength={8}
                     maxLength={128}
+                    aria-invalid={passwordMismatch || undefined}
+                    aria-describedby={passwordMismatch ? "password-error" : undefined}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                   />
@@ -78,6 +81,8 @@ export default function PasswordRecovery({
                     type="password"
                     autoComplete="new-password"
                     required
+                    aria-invalid={passwordMismatch || undefined}
+                    aria-describedby={passwordMismatch ? "password-error" : undefined}
                     value={confirmation}
                     onChange={(e) => setConfirmation(e.target.value)}
                   />
@@ -104,7 +109,7 @@ export default function PasswordRecovery({
             </button>
           </form>
         )}
-        {error && <p role="alert">{error}</p>}
+        {error && <p id="password-error" role="alert">{error}</p>}
         {done && update && <Link href="/app">Return to projects</Link>}
       </section>
     </main>

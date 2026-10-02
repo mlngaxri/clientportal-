@@ -47,3 +47,11 @@ test("connected draft recovery moves keyboard focus to the primary choice", asyn
   assert.match(source, /<p id="recovery-heading">/);
   assert.match(source, /<button ref=\{recoveryAction\} onClick=\{recover\}>Restore draft<\/button>/);
 });
+
+test("password mismatch identifies the affected fields", async () => {
+  const source = await readFile("components/PasswordRecovery.tsx", "utf8");
+  assert.match(source, /const passwordMismatch = error === "The passwords do not match\."/);
+  assert.equal((source.match(/aria-invalid=\{passwordMismatch \|\| undefined\}/g) ?? []).length, 2);
+  assert.equal((source.match(/aria-describedby=\{passwordMismatch \? "password-error" : undefined\}/g) ?? []).length, 2);
+  assert.match(source, /<p id="password-error" role="alert">\{error\}<\/p>/);
+});
