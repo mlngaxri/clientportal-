@@ -18,7 +18,8 @@ export async function GET(req: Request) {
       const recovery = returnPath === "/account/password";
       const remember = !recovery && jar.get("ff-remember")?.value === "yes";
       const expiry = sessionExpiry(remember);
-      const client = await db({ remember, expiry });
+      // PKCE callbacks must read the transient verifier even before a Fourthform session proof exists.
+      const client = await db({ remember, expiry }, true);
       const { error } = await client.auth.exchangeCodeForSession(code);
       if (!error) {
         if (recovery) {

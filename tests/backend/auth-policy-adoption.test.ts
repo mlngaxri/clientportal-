@@ -34,6 +34,14 @@ test("auth callback preserves the request origin that owns its session cookies",
   assert.doesNotMatch(text, /new URL\(returnPath, process\.env\.APP_URL/);
 });
 
+test("auth callback can read only the transient PKCE verifier before session proof exists", async () => {
+  const callback = await source(callbackRoute);
+  const serverText = await source(server);
+  assert.match(callback, /db\(\{ remember, expiry \}, true\)/);
+  assert.match(serverText, /!expiry && !allowTransientAuthCookies/);
+  assert.match(serverText, /jar\.getAll\(\)\.filter\(\(c\) => !isAuthSessionCookie\(c\.name\)\)/);
+});
+
 test("password recovery callback returns to the request origin that owns its PKCE verifier", async () => {
   const text = await source(accountRoute);
   assert.match(text, /const callback = new URL\("\/auth\/callback", new URL\(req\.url\)\.origin\);/);
