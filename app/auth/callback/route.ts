@@ -20,6 +20,7 @@ export async function GET(req: Request) {
       const client = await db({ remember, expiry });
       const { error } = await client.auth.exchangeCodeForSession(code);
       if (!error) {
+        if (recovery) jar.delete("ff-remember");
         jar.set(
           "ff-session-until",
           await signSessionExpiry(expiry),

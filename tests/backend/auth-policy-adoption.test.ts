@@ -48,6 +48,11 @@ test("password recovery callbacks cannot inherit a stale remembered-session poli
   );
   assert.match(
     text,
+    /if \(recovery\) jar\.delete\("ff-remember"\);/,
+    "a successful recovery exchange must clear stale remembered-session intent",
+  );
+  assert.match(
+    text,
     /new URL\(returnPath, process\.env\.APP_URL \|\| url\.origin\)/,
     "the validated path used for policy selection must also drive the redirect",
   );
