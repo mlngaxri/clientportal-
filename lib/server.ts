@@ -92,7 +92,16 @@ export async function ownedProject(id: string) {
 }
 export function checkOrigin(req: Request) {
   const origin = req.headers.get("origin");
-  if (!origin || origin !== new URL(req.url).origin)
+  const requestOrigin = new URL(req.url).origin;
+  let configuredOrigin: string | undefined;
+  if (process.env.APP_URL) {
+    try {
+      configuredOrigin = new URL(process.env.APP_URL).origin;
+    } catch {
+      configuredOrigin = undefined;
+    }
+  }
+  if (!origin || (origin !== requestOrigin && origin !== configuredOrigin))
     throw new Error("Invalid request origin.");
 }
 export function failure(error: unknown) {
