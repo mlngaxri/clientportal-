@@ -10,6 +10,7 @@ export default function RevisionSubmitDialog({ objects, number, limit, onClose, 
     <p>You can withdraw this batch until Fourthform starts work. Saving drafts uses no round.</p>
     <label className="check-label"><input type="checkbox" checked={ack} onChange={e => setAck(e.target.checked)} disabled={busy} />I have included everything for this revision round.</label>
     <div className="connected-actions"><button type="button" disabled={busy} onClick={onClose}>Keep editing</button><button type="button" className="primary" disabled={!ack || busy} onClick={async () => { if (busy) return; setBusy(true); setError(""); try { await onSubmit(); onClose(); } catch (e) { setError((e as Error).message); } finally { setBusy(false); } }}>{busy ? "Submitting…" : "Submit revision"}</button></div>
+    {busy && <p role="status" aria-live="polite">Submitting revision…</p>}
     {error && <p role="alert">{error}</p>}
   </Dialog>;
 }
