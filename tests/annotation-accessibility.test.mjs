@@ -12,3 +12,9 @@ test("annotation canvas offers a keyboard creation path", async () => {
   assert.match(source, /setTextPoint\(\{ id: crypto\.randomUUID\(\), type: tool, points: \[center, center\] \}\)/);
   assert.match(source, /onChange\(\[\.\.\.strokes, \{ id: crypto\.randomUUID\(\), type: tool, points \}\]\)/);
 });
+
+test("editable annotation canvas exposes interactive region semantics", async () => {
+  const source = await readFile("components/AnnotationLayer.tsx", "utf8");
+  assert.match(source, /role=\{readOnly \? "img" : "region"\}/);
+  assert.doesNotMatch(source, /<svg[\s\S]*?role="img"[\s\S]*?onKeyDown=\{keyboardPlace\}/);
+});

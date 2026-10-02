@@ -100,7 +100,7 @@ export default function AnnotationLayer({
         </div>
       )}
       <svg
-        role="img"
+        role={readOnly ? "img" : "region"}
         aria-label={readOnly ? "Drawing" : "Annotation canvas. Choose a tool, then press Enter or Space to place an annotation in the center; pointer drawing is also available."}
         tabIndex={readOnly ? undefined : 0}
         viewBox="0 0 1000 600"
