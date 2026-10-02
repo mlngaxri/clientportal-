@@ -29,6 +29,30 @@ test("auth entry paths derive expiry from the shared session policy", async () =
   }
 });
 
+test("password recovery callbacks cannot inherit a stale remembered-session policy", async () => {
+  const text = await source(callbackRoute);
+  assert.match(
+    text,
+    /const returnPath = safeReturnPath\(url\.searchParams\.get\("next"\)\);/,
+    "the callback must validate the return path before choosing session policy",
+  );
+  assert.match(
+    text,
+    /const recovery = returnPath === "\/account\/password";/,
+    "the password recovery destination must be identified explicitly",
+  );
+  assert.match(
+    text,
+    /const remember = !recovery && jar\.get\("ff-remember"\)\?\.value === "yes";/,
+    "recovery must stay transient even when a stale remember cookie exists",
+  );
+  assert.match(
+    text,
+    /new URL\(returnPath, process\.env\.APP_URL \|\| url\.origin\)/,
+    "the validated path used for policy selection must also drive the redirect",
+  );
+});
+
 test("middleware verifies and refreshes a session from one stable clock", async () => {
   const text = await source(middleware);
   assert.match(text, /const sessionNow = Date\.now\(\);/);
