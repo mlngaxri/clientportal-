@@ -25,7 +25,7 @@ test("standalone build retains ordered scripts and all local assets", async () =
   const recovery = await readFile("dist/portal-reliability.js", "utf8");
   assert.ok(recovery.includes('note.setAttribute("role", "region")'));
   assert.ok(recovery.includes('note.setAttribute("aria-labelledby", heading.id)'));
-  assert.ok(recovery.includes("if (!remote) primary.focus()"));
+  assert.ok(recovery.includes("if (!remote) primary.focus()");
 
   const operations = await readFile("dist/portal-operations.js", "utf8");
   assert.ok(operations.includes("fourthform:reset"));
@@ -74,4 +74,9 @@ test("timezone field keeps an exact accessible name and separate guidance", asyn
 test("payment confirmation check cannot submit an enclosing form", async () => {
   const source = await readFile("components/PaymentReturn.tsx", "utf8");
   assert.match(source, /<button type="button" disabled=\{payment\.checking\} onClick=/);
+});
+
+test("build history retry cannot submit an enclosing form", async () => {
+  const source = await readFile("components/BuildHistory.tsx", "utf8");
+  assert.match(source, /<button type="button" onClick=\{\(\) => setAttempt\(\(n\) => n \+ 1\)\}>Try again<\/button>/);
 });
