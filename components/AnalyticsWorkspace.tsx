@@ -17,12 +17,13 @@ type Stats = {
   pageActions: { page: string; actions: number }[] | null;
 };
 export default function AnalyticsWorkspace({ projectId }: { projectId: string }) {
-  const [days, setDays] = useState(30), [data, setData] = useState<Stats | null>(null), [error, setError] = useState(""), [attempt, setAttempt] = useState(0), [loading, setLoading] = useState(true), [pro, setPro] = useState(false);
+  const [days, setDays] = useState(30), [data, setData] = useState<Stats | null>(null), [error, setError] = useState(""), [attempt, setAttempt] = useState(0), [loading, setLoading] = useState(true), [proProject, setProProject] = useState<string | null>(null);
+  const pro = proProject === projectId;
   useEffect(() => {
     let active = true;
     setError(""); setLoading(true); setData(null);
     void api<Stats>(`/api/projects/${projectId}/analytics?days=${days}`)
-      .then((d) => { if (active) { setData(d); setPro(d.pro); } })
+      .then((d) => { if (active) { setData(d); setProProject(d.pro ? projectId : null); } })
       .catch((e) => { if (active) setError(e.message); })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
