@@ -104,3 +104,14 @@ test("State publication is explicit, version-pinned and idempotent", async () =>
   assert.match(route, /activate_state_schedules/);
   assert.match(route, /key: z\.uuid\(\)/);
 });
+
+test("public State rendering gates release evaluation on current Pro entitlement", async () => {
+  const source = await readFile("lib/site/public.ts", "utf8");
+  const proGate = source.indexOf("if (project.pro) {");
+  const releaseRead = source.indexOf('.from("state_releases")');
+  const evaluation = source.indexOf("evaluateStates(states, new Date(), content.fields)");
+  assert.ok(proGate >= 0, "public rendering must gate State evaluation on current Pro entitlement");
+  assert.ok(releaseRead > proGate, "the pinned release must only be read inside the Pro gate");
+  assert.ok(evaluation > releaseRead, "State overrides must only be evaluated after the gated release read");
+  assert.doesNotMatch(source, /state_releases[\s\S]{0,200}\.delete\(/);
+});
