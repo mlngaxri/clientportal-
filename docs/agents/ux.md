@@ -47,3 +47,11 @@ Latest known portal work includes complete interactive preview flows plus subseq
 - Evidence: **S0 pending CI**. The source and regression are committed; fresh validation for this SHA was not complete at handoff.
 - Blocker: the pre-existing connected-browser billing locator remains the repository-wide red gate; this UX task does not weaken or bypass it.
 - Next: after CI, inspect another connected form/recovery surface for error association or status-announcement gaps; Builder 5 owns deployment provenance.
+
+### 2026-10-02 — Responsive billing acceptance contract
+- Inspected validation run 117's connected-system artifact and failure screenshot for exact `main` SHA `2c55467743a8c5cb272f15607c0a737628f3b0bd`. The phone billing UI intentionally renders payment information as responsive cards, where the visible state is `Initial payment confirmed`; the browser harness incorrectly required a table-cell role for `Website start`.
+- Updated only the billing assertion in `tests/browser/connected-system.mjs` to wait for the exact customer-facing `Initial payment confirmed` text, preserving the rest of the phone overflow, navigation, billing lifecycle and connected-system coverage.
+- Source/test commit: `7fb8dcbd16de05bb4695064a0b9023e2dd26d39b`.
+- Evidence: **S0 pending fresh CI**. The preceding run proves the old locator was the active browser blocker, but S1/S2 are not claimed until validation executes against the repair commit.
+- Blockers: none known in this bounded acceptance contract. Builder 5 owns release provenance and any downstream failure exposed after this locator clears.
+- Next: after CI, return to a connected-app accessibility/responsive defect rather than revisiting billing unless fresh evidence identifies a product issue.
