@@ -8,18 +8,22 @@ export default function DomainsWorkspace({ projectId }: { projectId: string }) {
     [hostname, setHostname] = useState(""),
     [platform, setPlatform] = useState(""),
     [busy, setBusy] = useState(false),
+    [loading, setLoading] = useState(true),
     [error, setError] = useState(""),
-    [instructions, setInstructions] = useState<RecordRow[] | null>(null),
+    [instructions, setInstructions] = useState<{ host: string; rows: RecordRow[] } | null>(null),
     [notice, setNotice] = useState("");
   async function load() {
     const r = await api(`/api/projects/${projectId}/domains`);
+    setError("");
+    setLoading(false);
     setDomains(r.domains);
     setPlatform(r.platformUrl);
   }
   useEffect(() => {
-    void load().catch((e) => setError(e.message));
+    void load().catch((e) => { setError(e.message); setLoading(false); });
   }, [projectId]);
   async function action(action: string, host = hostname) {
+    if (busy) return;
     setBusy(true);
     setError("");
     try {
@@ -27,7 +31,7 @@ export default function DomainsWorkspace({ projectId }: { projectId: string }) {
         action,
         hostname: host,
       });
-      setInstructions(r.hosting);
+      setInstructions({ host, rows: r.hosting || [] });
       setNotice(
         r.notice ||
           (action === "reserve"
@@ -54,6 +58,8 @@ export default function DomainsWorkspace({ projectId }: { projectId: string }) {
           </p>
         </div>
       </header>
+      {loading && <p role="status">Loading domain connections…</p>}
+      {error && !platform && <button onClick={() => void load().catch(e => setError(e.message))}>Retry loading domains</button>}
       <div className="connected-card">
         <h2>Included address</h2>
         <p className="connected-code">{platform}</p>
@@ -97,6 +103,7 @@ export default function DomainsWorkspace({ projectId }: { projectId: string }) {
                 <br />
                 Value: fourthform={d.token}
               </div>
+              <button onClick={() => { void navigator.clipboard.writeText(`fourthform=${d.token}`).then(() => setNotice(`Ownership value copied for ${d.hostname}.`)).catch(() => setNotice("Select and copy the ownership value.")); }}>Copy ownership value</button>
             </>
           )}
           <div className="connected-actions">
@@ -115,9 +122,9 @@ export default function DomainsWorkspace({ projectId }: { projectId: string }) {
           </div>
         </article>
       ))}
-      {instructions && instructions.length > 0 && (
+      {instructions && instructions.rows.length > 0 && (
         <details className="connected-card" open>
-          <summary>Hosting DNS records</summary>
+          <summary>Hosting DNS records for {instructions.host}</summary>
           <p>
             For a root domain, use the A records. For a subdomain, use the CNAME
             alternative. Do not set both A and CNAME for the same name. Add any
@@ -130,14 +137,16 @@ export default function DomainsWorkspace({ projectId }: { projectId: string }) {
                 <th>Type</th>
                 <th>Name</th>
                 <th>Value</th>
+                <th>Purpose</th>
               </tr>
             </thead>
             <tbody>
-              {instructions.map((r) => (
+              {instructions.rows.map((r) => (
                 <tr key={`${r.type}:${r.name}:${r.value}`}>
                   <td>{r.type}</td>
-                  <td>{r.name}</td>
-                  <td>{r.value}</td>
+                  <td>{r.name}<button onClick={() => { void navigator.clipboard.writeText(r.name).then(() => setNotice("Record name copied.")).catch(() => setNotice("Select and copy the record name.")); }}>Copy name</button></td>
+                  <td className="dns-value">{r.value}<button onClick={() => { void navigator.clipboard.writeText(r.value).then(() => setNotice(`Copied ${r.type} value for ${instructions.host}.`)).catch(() => setNotice("Clipboard unavailable. Select and copy the value shown here.")); }}>Copy value</button></td>
+                  <td>{r.purpose}</td>
                 </tr>
               ))}
             </tbody>

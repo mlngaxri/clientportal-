@@ -7,6 +7,7 @@ import "./globals.css";
 import "./product.css";
 import "./connected.css";
 import "./customer-site.css";
+import "./release.css";
 import "@fontsource/instrument-serif/400-italic.css";
 
 export const metadata: Metadata = {

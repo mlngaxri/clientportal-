@@ -1,7 +1,8 @@
 export const dynamic = "force-dynamic";
-import { configured, db } from "../../lib/server";
+import { configured, db, ownedProject } from "../../lib/server";
 import references from "../../lib/portfolio-references.json";
 import Onboarding from "../../components/Onboarding";
+import { capabilities } from "../../lib/capabilities";
 import { safeReturnPath } from "../../lib/navigation";
 import { redirect } from "next/navigation";
 export default async function Start({
@@ -12,6 +13,8 @@ export default async function Start({
     reference?: string;
     package?: string;
     new?: string;
+    mode?: string;
+    project?: string;
   }>;
 }) {
   const {
@@ -19,6 +22,8 @@ export default async function Start({
     reference: referenceId,
     package: packageName,
     new: newProject,
+    mode,
+    project: projectId,
   } = await searchParams;
   const reference = references.find((r) => r.id === referenceId);
   const requestedPackage = packageName === "first" ? "FIRST" : "SITE";
@@ -26,6 +31,7 @@ export default async function Start({
   if (reference) startQuery.set("reference", reference.id);
   if (requestedPackage === "FIRST") startQuery.set("package", "first");
   if (newProject === "1") startQuery.set("new", "1");
+  if (projectId) startQuery.set("project", projectId);
   const startPath = "/start" + (startQuery.size ? `?${startQuery}` : "");
   let project = null,
     signedIn = false;
@@ -36,18 +42,13 @@ export default async function Start({
     } = await client.auth.getUser();
     signedIn = !!user;
     if (user) {
-      let query = client
-        .from("projects")
-        .select("*")
-        .eq("owner_id", user.id)
-        .order("created_at", { ascending: false });
-      if (newProject === "1")
-        query = query.in("phase", [
-          "DRAFT_ONBOARDING",
-          "AWAITING_INITIAL_PAYMENT",
-        ]);
-      const { data } = await query.limit(1);
-      project = data?.[0] || null;
+      if (projectId) {
+        project = (await ownedProject(projectId)).project;
+      } else if (newProject !== "1") {
+        const { data, error } = await client.from("projects").select("*").eq("owner_id", user.id).order("created_at", { ascending: false }).limit(1);
+        if (error) throw new Error("Your saved brief could not be loaded. Try again.");
+        project = data?.[0] || null;
+      }
       if (
         project &&
         !["DRAFT_ONBOARDING", "AWAITING_INITIAL_PAYMENT"].includes(
@@ -70,6 +71,9 @@ export default async function Start({
       signedIn={signedIn}
       project={project}
       configurationReady={configured()}
+      googleReady={capabilities().google}
+      initialMode={mode === "signin" ? "signin" : "signup"}
+      createNew={newProject === "1"}
     />
   );
 }

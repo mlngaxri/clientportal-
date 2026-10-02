@@ -1,5 +1,5 @@
 "use client";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { uploadAsset, assetType } from "../lib/upload-client";
 import { api } from "../lib/client";
 import type { Board, BoardObject, Project } from "../lib/model";
@@ -29,6 +29,10 @@ export default function Review({
   const keys = useRef<Record<string, string>>({});
   const [uploading, setUploading] = useState(0);
   const [busy, setBusy] = useState(false);
+  const [context, setContext] = useState<BoardObject["target"]>();
+  const [reattach, setReattach] = useState<string | null>(null);
+  const textInput = useRef<HTMLTextAreaElement>(null);
+  useEffect(() => { textInput.current?.focus({ preventScroll: true }); textInput.current?.scrollIntoView({ block: "nearest" }); }, [selected]);
   const obj = data.objects.find((o) => o.id === selected);
   const incomplete = incompleteDirections(data.objects);
   function add(patch: Partial<BoardObject> = {}) {
@@ -90,7 +94,9 @@ export default function Review({
           selectedId={selected}
           directions={data.objects}
           onSelect={setSelected}
-          onDirection={add}
+          onContext={next => setContext(previous => previous?.page === next?.page && previous?.width === next?.width && previous?.scroll === next?.scroll ? previous : next)}
+          onAnnotate={strokes => { if (selected) update(d => ({ ...d, objects: d.objects.map(o => o.id === selected ? { ...o, strokes } : o) })); }}
+          onDirection={patch => { if (reattach && patch.target) { update(d => ({ ...d, objects: d.objects.map(o => o.id === reattach ? { ...o, target: patch.target } : o) })); setSelected(reattach); setReattach(null); setMessage(""); } else add(patch); }}
           onReplace={replacement}
         />
       ) : (
@@ -150,13 +156,8 @@ export default function Review({
               </button>
               <button
                 className="inspector-new-comment"
-                onClick={() =>
-                  add({
-                    type: "drawing",
-                    strokes: [],
-                    target: { page: "/", width: 1024, scroll: 0 },
-                  })
-                }
+                disabled={!context}
+                onClick={() => add({ type: "drawing", strokes: [], target: context })}
               >
                 Draw a Direction
               </button>
@@ -176,6 +177,8 @@ export default function Review({
         {obj && (
           <div className="selected-comment-editor">
             <span>{obj.name || obj.target?.selector || "Direction"}</span>
+            {obj.target && <p className="direction-location">Page {obj.target.page.replace(/^\/review\/[0-9a-f-]{36}/i, "") || "Home"} · {obj.target.width} px · {Math.round(obj.target.scroll)} px down the page</p>}
+            {!locked && obj.target && <button onClick={() => { setReattach(obj.id); setMessage("Click the new location on your website to reattach this Direction."); }}>Reattach to website</button>}
             {obj.type === "image" && (
               <img
                 className="replacement-preview"
@@ -184,7 +187,9 @@ export default function Review({
               />
             )}
             <textarea
+              ref={textInput}
               aria-label="Direction text"
+              maxLength={10000}
               value={obj.text}
               readOnly={locked}
               placeholder="What would you like to change?"
@@ -204,29 +209,13 @@ export default function Review({
                 Open {obj.name}
               </a>
             )}
-            {obj.type === "drawing" && (
-              <AnnotationLayer
-                readOnly={locked}
-                strokes={obj.strokes || []}
-                onChange={(strokes) =>
-                  update((d) => ({
-                    ...d,
-                    objects: d.objects.map((o) =>
-                      o.id === obj.id ? { ...o, strokes } : o,
-                    ),
-                  }))
-                }
-              />
-            )}{" "}
+            {obj.type === "drawing" && <p>Draw directly over the website preview. Add a written description so your feedback can be understood without the drawing.</p>}
             {!locked && (
               <div className="row">
                 <button onClick={() => void save()}>Save Direction</button>
                 <button
                   onClick={() => {
-                    update((d) => ({
-                      ...d,
-                      objects: d.objects.filter((o) => o.id !== obj.id),
-                    }));
+                    editor.removeObjects([obj.id]);
                     setSelected(null);
                   }}
                 >
@@ -289,7 +278,7 @@ export default function Review({
             </>
           ) : !locked ? (
             <>
-              <p>Saving preserves this batch. Only submitting uses a round.</p>
+              <p>{Math.max(0, project.revision_limit - project.revision_used)} rounds remaining. Saving preserves this batch. Only submitting uses a round.</p>
               <button
                 disabled={
                   busy ||

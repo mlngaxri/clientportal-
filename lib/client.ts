@@ -18,7 +18,7 @@ export async function api<T = any>(path: string, data?: unknown): Promise<T> {
     });
   } catch {
     throw new ApiError(
-      "Connection lost before the server confirmed this request. Your draft is retained. Try again.",
+      "Connection lost before the server confirmed this request. Check the result before trying again.",
       0,
     );
   }

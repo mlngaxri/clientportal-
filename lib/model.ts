@@ -107,6 +107,7 @@ export const sections: Record<Phase, string[]> = {
 export function projectSections(phase: Phase, operator = false) {
   return [
     ...sections[phase],
+    ...(phase === "LIVE" ? ["direction", "review"] : []),
     ...(!sections[phase].includes("pages") && operator ? ["pages"] : []),
     "build",
     "billing",

@@ -1,5 +1,5 @@
 import { notFound, redirect } from "next/navigation";
-import { ownedProject } from "../../../../lib/server";
+import { ownedProject, AccessError } from "../../../../lib/server";
 import { projectSections, type Phase } from "../../../../lib/model";
 import ProjectWorkspace from "../../../../components/ProjectWorkspace";
 export default async function ProjectPage({
@@ -11,12 +11,14 @@ export default async function ProjectPage({
   let result;
   try {
     result = await ownedProject(id);
-  } catch {
-    redirect(`/start?next=${encodeURIComponent(`/projects/${id}/${section}`)}`);
+  } catch (error) {
+    if (error instanceof AccessError && error.status === 404) notFound();
+    if (error instanceof AccessError && error.status === 401) redirect(`/start?mode=signin&next=${encodeURIComponent(`/projects/${id}/${section}`)}`);
+    throw error;
   }
   const { client, project, user } = result;
   if (["DRAFT_ONBOARDING", "AWAITING_INITIAL_PAYMENT"].includes(project.phase))
-    redirect(`/start?next=${encodeURIComponent(`/projects/${id}/${section}`)}`);
+    redirect(`/start?project=${id}`);
   if (
     !projectSections(
       project.phase as Phase,

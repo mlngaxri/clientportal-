@@ -1,6 +1,6 @@
 export const dynamic = "force-dynamic";
 import Link from "next/link";
-import { configured, userDb } from "../../lib/server";
+import { configured, userDb, AccessError } from "../../lib/server";
 import { phaseLabels, type Phase } from "../../lib/model";
 import { redirect } from "next/navigation";
 export default async function Projects() {
@@ -8,13 +8,15 @@ export default async function Projects() {
   let session;
   try {
     session = await userDb();
-  } catch {
-    redirect("/start");
+  } catch (error) {
+    if (error instanceof AccessError && error.status === 401) redirect("/start?mode=signin&next=/app");
+    throw error;
   }
-  const { data } = await session.client
+  const { data, error } = await session.client
     .from("projects")
     .select("*")
     .order("created_at", { ascending: false });
+  if (error) throw new Error("Your websites could not be loaded. Try again.");
   if (!data?.length) redirect("/start");
   return (
     <main className="projects-index">
@@ -39,7 +41,7 @@ export default async function Projects() {
         <Link className="primary" href="/start?new=1">
           Start another website
         </Link>
-        <Link href="/account/password">Account settings</Link>
+        <Link href="/account/password">Change password</Link>
         <Link href="/preview">Explore the example portal</Link>
       </div>
       {data.map((p) => (
@@ -48,7 +50,7 @@ export default async function Projects() {
           key={p.id}
           href={
             ["DRAFT_ONBOARDING", "AWAITING_INITIAL_PAYMENT"].includes(p.phase)
-              ? "/start"
+              ? `/start?project=${p.id}`
               : `/projects/${p.id}/${p.phase === "DIRECTION" ? "direction" : p.phase === "REVIEW" ? "review" : "overview"}`
           }
         >

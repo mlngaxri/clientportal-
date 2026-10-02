@@ -20,10 +20,11 @@ export default function ContactForm({
         e.preventDefault();
         if (review) {
           setStatus(
-            "The contact form becomes available when this website launches.",
+            "Example complete. No message was sent. The form will deliver enquiries to your Inbox after launch.",
           );
           return;
         }
+        if (busy) return;
         const form = e.currentTarget,
           values = new FormData(form);
         const payload = {
@@ -68,6 +69,7 @@ export default function ContactForm({
     >
       <span className="customer-eyebrow">Get in touch</span>
       <h2>Start a conversation.</h2>
+      {review && <p role="status">Private review: try this form with sample details. Messages are not sent until the website launches.</p>}
       <fieldset disabled={busy}>
         <label>
           Your name
@@ -97,7 +99,7 @@ export default function ContactForm({
           Website
           <input name="website" tabIndex={-1} autoComplete="off" />
         </label>
-        <button type="submit">{busy ? "Sending…" : "Send message ↗"}</button>
+        <button type="submit">{busy ? "Sending…" : review ? "Try the form ↗" : "Send message ↗"}</button>
       </fieldset>
       {status && <p role="status">{status}</p>}
     </form>

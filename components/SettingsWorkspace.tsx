@@ -1,6 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
 import { api } from "../lib/client";
+import TimezonePicker from "./TimezonePicker";
+import { useLocalDraft, DraftRecovery } from "./useLocalDraft";
 import { useUnsavedGuard } from "./useUnsavedGuard";
 type Settings = {
   revision: number;
@@ -21,10 +23,14 @@ export default function SettingsWorkspace({
     [dirty, setDirty] = useState(false),
     [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
-    [notice, setNotice] = useState("");
+    [notice, setNotice] = useState(""),
+    [emailReady, setEmailReady] = useState(false);
+  const draft = useLocalDraft(`fourthform:settings:${projectId}:${connections ? "connections" : "preferences"}`, settings, dirty, String(settings?.revision || 0));
   useUnsavedGuard(dirty);
   async function load() {
     const r = await api(`/api/projects/${projectId}/settings`);
+    setError("");
+    setEmailReady(r.emailAvailable === true);
     setSettings(r.settings);
     setEmail(r.email);
     setDirty(false);
@@ -51,6 +57,7 @@ export default function SettingsWorkspace({
           });
       setSettings(r.settings);
       setDirty(false);
+      draft.clear();
       setNotice("Saved to your account.");
     } catch (e) {
       setError((e as Error).message);
@@ -63,7 +70,7 @@ export default function SettingsWorkspace({
       <header className="workspace-heading">
         <div>
           <span className="overline">
-            {connections ? "Website / Connections" : "Account / Settings"}
+            {connections ? "Website / Connections" : "Project / Settings"}
           </span>
           <h1>
             {connections
@@ -75,6 +82,8 @@ export default function SettingsWorkspace({
       {error && <p role="alert">{error}</p>}
       {notice && <p role="status">{notice}</p>}
       {!settings && !error && <p role="status">Loading your saved {connections ? "connections" : "settings"}…</p>}
+      {settings && <DraftRecovery draft={draft} revision={String(settings.revision)} onRestore={data => { setSettings({ ...data, revision: settings.revision }); setDirty(true); setNotice(""); }} />}
+      {!settings && error && <button disabled={busy} onClick={() => void load().catch(e => setError(e.message))}>Retry loading settings</button>}
       {settings && (
         <fieldset className="connected-card" disabled={busy}>
           {connections ? (
@@ -119,17 +128,7 @@ export default function SettingsWorkspace({
             </>
           ) : (
             <>
-              <label>
-                Business timezone
-                <input
-                  value={settings.timezone}
-                  placeholder="Australia/Brisbane"
-                  onChange={(e) => {
-                    setSettings({ ...settings, timezone: e.target.value });
-                    setDirty(true);
-                  }}
-                />
-              </label>
+              <TimezonePicker value={settings.timezone} onChange={timezone => { setSettings({ ...settings, timezone }); setDirty(true); setNotice(""); }} />
               <label className="check-label">
                 <input
                   type="checkbox"
@@ -140,6 +139,7 @@ export default function SettingsWorkspace({
                       notify_forms: e.target.checked,
                     });
                     setDirty(true);
+                    setNotice("");
                   }}
                 />
                 Email me about website enquiries
@@ -154,10 +154,12 @@ export default function SettingsWorkspace({
                       notify_project: e.target.checked,
                     });
                     setDirty(true);
+                    setNotice("");
                   }}
                 />
                 Email me about project updates
               </label>
+              <p role="status">{emailReady ? "Email notifications are available." : "Email delivery is awaiting setup. Your preferences are saved and enquiries remain in the Inbox."}</p>
               <p>
                 Notifications go to your account address: {email}. Email
                 delivery depends on the agency’s configured sending service.

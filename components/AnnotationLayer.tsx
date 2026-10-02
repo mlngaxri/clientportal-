@@ -1,5 +1,6 @@
 "use client";
 import { useId, useRef, useState } from "react";
+import TextEntryDialog from "./TextEntryDialog";
 import type { Stroke, Point } from "../lib/model";
 export default function AnnotationLayer({
   strokes,
@@ -14,6 +15,7 @@ export default function AnnotationLayer({
   const [tool, setTool] = useState<Stroke["type"]>("pen");
   const active = useRef<Stroke | null>(null);
   const [draft, setDraft] = useState<Stroke | null>(null);
+  const [textPoint, setTextPoint] = useState<Stroke | null>(null);
   function point(e: React.PointerEvent<SVGSVGElement>): Point {
     const r = e.currentTarget.getBoundingClientRect();
     return {
@@ -33,8 +35,8 @@ export default function AnnotationLayer({
     const p = point(e);
     active.current = { id: crypto.randomUUID(), type: tool, points: [p, p] };
     if (tool === "text") {
-      const text = prompt("Annotation text");
-      if (text) onChange([...strokes, { ...active.current, text }]);
+      setTextPoint(active.current);
+      e.currentTarget.releasePointerCapture(e.pointerId);
       active.current = null;
       return;
     }
@@ -59,6 +61,7 @@ export default function AnnotationLayer({
   }
   return (
     <div className="annotation-editor">
+      {textPoint && <TextEntryDialog title="Add an annotation" label="Annotation text" onClose={() => setTextPoint(null)} onSubmit={text => { onChange([...strokes, { ...textPoint, text }]); setTextPoint(null); }} />}
       {!readOnly && (
         <div className="annotation-tools">
           {(["pen", "arrow", "rect", "text"] as const).map((t) => (

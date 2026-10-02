@@ -41,7 +41,7 @@ export default function PasswordRecovery({
         <Link className="wordmark" href="/">
           fourthform
         </Link>
-        <Link href="/start">Sign in</Link>
+        <Link href="/start?mode=signin">Sign in</Link>
       </header>
       <section className="account-panel">
         <h1>{update ? "Choose a new password." : "Reset your password."}</h1>

@@ -27,7 +27,7 @@
     overlay.replaceChildren();
     const missing = [];
     for (const pin of pins) {
-      if (pin.target?.page !== location.pathname + location.search) continue;
+      if (pin.target?.page !== location.pathname + location.search || !pin.target?.selector) continue;
       let el;
       try { el = pin.target.selector && document.querySelector(pin.target.selector); } catch {}
       if (!el) { missing.push(pin.id); continue; }
@@ -39,12 +39,14 @@
       overlay.appendChild(button);
     }
     parent.postMessage({ type: 'ff-unresolved', ids: missing }, origin);
+    parent.postMessage({ type: 'ff-context', context: { page: location.pathname + location.search, width: innerWidth, scroll: scrollY } }, origin);
   }
   addEventListener('message', e => {
     if (e.origin !== origin || e.source !== parent) return;
     if (e.data?.type === 'ff-mode') { enabled = e.data.enabled === true; clearTarget(); renderPins(); parent.postMessage({ type: 'ff-state', enabled }, origin); }
     if (e.data?.type === 'ff-pins' && Array.isArray(e.data.pins)) { pins = e.data.pins.slice(0, 500).filter(p => p && typeof p.id === 'string' && Number.isInteger(p.number)); renderPins(); }
-    if (e.data?.type === 'ff-focus' && typeof e.data.selector === 'string' && e.data.selector.length < 2001 && e.data.page === location.pathname + location.search) {
+    if (e.data?.type === 'ff-focus' && e.data.page === location.pathname + location.search) {
+      if (!e.data.selector && Number.isFinite(e.data.scroll)) scrollTo({ top: Math.max(0, e.data.scroll), behavior: 'instant' });
       try { document.querySelector(e.data.selector)?.scrollIntoView({ block: 'nearest', behavior: 'auto' }); } catch {}
     }
   });

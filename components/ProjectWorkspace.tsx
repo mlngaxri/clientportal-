@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { api } from "../lib/client";
@@ -13,6 +13,7 @@ import DirectionBoard from "./DirectionBoard";
 import Review from "./Review";
 import LaunchWorkspace from "./LaunchWorkspace";
 import Dialog from "./Dialog";
+import PaymentReturn, { usePaymentReturn } from "./PaymentReturn";
 import StateEditor from "./StateEditor";
 import SiteContentEditor from "./SiteContentEditor";
 import SiteSetup from "./SiteSetup";
@@ -34,11 +35,15 @@ export default function ProjectWorkspace({
   operator: boolean;
 }) {
   const router = useRouter();
+  const [mobile, setMobile] = useState(false);
+  useEffect(() => { const media = matchMedia("(max-width: 760px)"); const sync = () => setMobile(media.matches); sync(); media.addEventListener("change", sync); return () => media.removeEventListener("change", sync); }, []);
   const [project, setProject] = useState(initialProject),
     [boards, setBoards] = useState(initialBoards),
     [error, setError] = useState(""),
     [approve, setApprove] = useState(false),
-    [busy, setBusy] = useState(false);
+    [busy, setBusy] = useState(false),
+    [paying, setPaying] = useState("");
+  const payment = usePaymentReturn(project.id, () => void refresh());
   async function refresh() {
     const r = await api(`/api/projects/${project.id}`);
     setProject(r.project);
@@ -50,7 +55,9 @@ export default function ProjectWorkspace({
     payload: Record<string, unknown> = {},
     board?: Board,
   ) {
+    if (busy) return;
     setBusy(true);
+    setError("");
     try {
       await api(`/api/projects/${project.id}/command`, {
         action,
@@ -67,20 +74,29 @@ export default function ProjectWorkspace({
     }
   }
   async function pay(kind: string) {
+    if (paying || payment.blocked) return;
+    setPaying(kind);
+    setError("");
     try {
       const r = await api("/api/checkout", { projectId: project.id, kind });
       window.location.assign(r.url);
     } catch (e) {
       setError((e as Error).message);
+      setPaying("");
     }
   }
   const initial = boards.find((b) => b.kind === "initial");
   const revision =
     boards.find((b) => b.kind === "revision" && b.status === "DRAFT") ||
-    boards.find((b) => b.kind === "revision" && b.status === "SUBMITTED");
+    boards.find((b) => b.kind === "revision" && b.status === "SUBMITTED") ||
+    boards.filter((b) => b.kind === "revision").at(-1);
   const board = boards.find((b) => b.kind === section);
   const review = section === "review" && revision;
   const build = project.phase === "BUILDING";
+  const allSections = projectSections(project.phase, operator);
+  const primary = project.phase === "LIVE" ? ["overview", "pages", "analytics", "inbox"] : ["overview", "direction", "review"];
+  const sectionLabel = (s: string) => s === "states" ? "States · Pro" : s === "seo" ? "Search" : s === "build" ? "Project history" : s[0].toUpperCase() + s.slice(1);
+  const navigationLink = (s: string) => <Link key={s} aria-current={s === section ? "page" : undefined} className={s === section ? "active" : ""} href={`/projects/${project.id}/${s}`}>{sectionLabel(s)}</Link>;
   return (
     <main className="portal-v2 production-portal">
       <header className="portal-v2-topbar">
@@ -114,26 +130,15 @@ export default function ProjectWorkspace({
       </header>
       <div className={`portal-v2-grid ${review ? "" : "without-inspector"}`}>
         <aside className="portal-v2-sidebar">
-          <nav className="portal-v2-nav">
+          <nav className="portal-v2-nav" aria-label="Project navigation">
             <span className="overline">Form</span>
-            {projectSections(project.phase, operator).map((s) => (
-              <Link
-                key={s}
-                className={s === section ? "active" : ""}
-                href={`/projects/${project.id}/${s}`}
-              >
-                {s === "states"
-                  ? "States · Pro"
-                  : s === "seo"
-                    ? "SEO"
-                    : s[0].toUpperCase() + s.slice(1)}
-              </Link>
-            ))}
+            {allSections.filter(s => primary.includes(s)).map(navigationLink)}
+            <details className="portal-more-nav" open={!mobile || undefined} onClick={event => { if (mobile && (event.target as Element).closest("a")) event.currentTarget.removeAttribute("open"); }}><summary>More{!primary.includes(section) ? ` · ${sectionLabel(section)}` : ""}</summary><div>{allSections.filter(s => !primary.includes(s)).map(navigationLink)}</div></details>
           </nav>
           <div className="portal-project-progress">
             <span className="overline">Project</span>
             {["Direction", "Build", "Review", "Launch"].map((s, i) => (
-              <div className="progress-row" key={s}>
+              <div className={`progress-row ${["DIRECTION", "BUILDING", "REVIEW", "LAUNCH"].indexOf(project.phase) === i ? "current" : ""}`} key={s}>
                 <span className="mono">0{i + 1}</span>
                 <strong>{s}</strong>
               </div>
@@ -199,6 +204,7 @@ export default function ProjectWorkspace({
         {section === "build" && <BuildHistory projectId={project.id} />}
         {section === "billing" && (
           <BillingWorkspace
+            busy={!!paying || payment.blocked}
             project={project}
             onPay={(kind) => void pay(kind)}
           />
@@ -212,6 +218,9 @@ export default function ProjectWorkspace({
           <section className="direction-workspace overview">
             <span className="overline">Form / Overview</span>
             <h1>{phaseLabels[project.phase]}</h1>
+            <PaymentReturn payment={payment} />
+            <p className="overline">{project.phase === "BUILDING" || project.phase === "REVISION_IN_PROGRESS" ? "Next step: Fourthform is preparing your website" : project.phase === "LIVE" ? "Next step: keep your content current" : "Next step: your action"}</p>
+            <div className="connected-metrics"><div><span>Saved Directions</span><strong>{boards.reduce((n, b) => n + (b.data.objects?.length || 0), 0)}</strong></div><div><span>Rounds remaining</span><strong>{Math.max(0, project.revision_limit - project.revision_used)}</strong></div></div>
             {project.phase === "DIRECTION" && (
               <>
                 <p>
@@ -260,7 +269,7 @@ export default function ProjectWorkspace({
                   <button onClick={() => setApprove(true)}>Approve site</button>
                 )}
                 {project.revision_used >= project.revision_limit && (
-                  <button onClick={() => void pay("revision")}>
+                  <button disabled={!!paying || payment.blocked} onClick={() => void pay("revision")}>
                     Additional revision · A$150
                   </button>
                 )}
@@ -269,7 +278,7 @@ export default function ProjectWorkspace({
             {project.phase === "APPROVED_AWAITING_FINAL_PAYMENT" && (
               <>
                 <p>Your site is approved. The remaining balance is A$1,300.</p>
-                <button className="primary" onClick={() => void pay("final")}>
+                <button className="primary" disabled={!!paying || payment.blocked} onClick={() => void pay("final")}>
                   Pay A$1,300
                 </button>
                 <button onClick={() => void refresh()}>
@@ -323,16 +332,17 @@ export default function ProjectWorkspace({
                 <summary>Fourthform team actions</summary>
                 <SiteSetup project={project} />
                 {project.phase === "DIRECTION" && (
-                  <button onClick={() => void action("begin_build")}>
+                  <button disabled={busy} onClick={() => void action("begin_build")}>
                     Begin building
                   </button>
                 )}
                 {build && (
                   <>
-                    <button onClick={() => void action("internal_check")}>
+                    <button disabled={busy} onClick={() => void action("internal_check")}>
                       Internal check
                     </button>
                     <button
+                      disabled={busy}
                       onClick={() => {
                         const url = prompt(
                           "HTTPS review URL. The managed review site is included below.",
@@ -357,6 +367,7 @@ export default function ProjectWorkspace({
                   .map((b) => (
                     <button
                       key={b.id}
+                      disabled={busy}
                       onClick={() =>
                         void action(
                           b.status === "SUBMITTED"
@@ -386,8 +397,9 @@ export default function ProjectWorkspace({
         </div>
       )}
       {approve && (
-        <Dialog title="Ready to launch?" onClose={() => setApprove(false)}>
-          <p>Approving ends the website build phase.</p>
+        <Dialog title="Approve this website?" onClose={() => setApprove(false)}>
+          <p>Approve the website you have just reviewed. This ends the build and revision stage. Your website becomes public after the balance and final launch checks are complete.</p>
+          {project.preview_url && <a href={project.preview_url} target="_blank" rel="noreferrer">Review the current website ↗</a>}
           <p>
             Remaining balance: {project.package === "FIRST" ? "A$0" : "A$1,300"}
           </p>
@@ -397,7 +409,7 @@ export default function ProjectWorkspace({
             disabled={busy}
             onClick={() => void action("approve")}
           >
-            Approve & continue
+            Approve website
           </button>
           {error && <p role="alert">{error}</p>}
         </Dialog>

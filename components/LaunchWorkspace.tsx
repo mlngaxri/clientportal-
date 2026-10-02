@@ -22,7 +22,10 @@ export default function LaunchWorkspace({
   onRefresh: () => void;
 }) {
   const [domain, setDomain] = useState(String(project.launch.domain || "")),
-    [options, setOptions] = useState<string[]>([]),
+    [options, setOptions] = useState<{ host: string; url: string }[]>([]),
+    [siteRevision, setSiteRevision] = useState(""),
+    [clock, setClock] = useState(Date.now()),
+    [operation, setOperation] = useState(""),
     [checks, setChecks] = useState<Check[]>([]),
     [dirty, setDirty] = useState(false),
     [busy, setBusy] = useState(false),
@@ -37,11 +40,12 @@ export default function LaunchWorkspace({
       api(`/api/projects/${project.id}/checks`),
     ]);
     const platform = new URL(domains.platformUrl).hostname;
+    setSiteRevision(result.revision || "");
     setOptions([
-      platform,
+      { host: platform, url: domains.platformUrl },
       ...domains.domains
         .filter((d: { status: string }) => d.status === "connected")
-        .map((d: { hostname: string }) => d.hostname),
+        .map((d: { hostname: string }) => ({ host: d.hostname, url: `https://${d.hostname}/` })),
     ]);
     setChecks(result.checks);
     if (!domain) {
@@ -52,11 +56,17 @@ export default function LaunchWorkspace({
   useEffect(() => {
     void load().catch((e) => setError(e.message));
   }, [project.id]);
+  useEffect(() => { const timer = setInterval(() => setClock(Date.now()), 60000); return () => clearInterval(timer); }, []);
+  const destination = options.find(o => o.host === domain)?.url || checks.find(c => c.evidence.domain === domain)?.evidence.url;
+  const fresh = (check?: Check) => !!check && String(check.evidence.revision) === siteRevision && check.evidence.domain === domain && check.evidence.url === destination && clock - Date.parse(check.verified_at) < 24 * 3600000;
+  const ready = ["domain", "deployment", "forms", "analytics", "seo"].every(kind => fresh(checks.find(c => c.kind === kind)));
   async function command(
     action: string,
     payload: Record<string, unknown> = {},
   ) {
+    if (busy) return;
     setBusy(true);
+    setOperation(action);
     setError("");
     const serial = JSON.stringify({
       action,
@@ -113,8 +123,8 @@ export default function LaunchWorkspace({
               setChecks([]);
             }}
           >
-            {options.map((host) => (
-              <option key={host}>{host}</option>
+            {options.map(option => (
+              <option key={option.host} value={option.host}>{option.url}</option>
             ))}
           </select>
         </label>
@@ -129,7 +139,7 @@ export default function LaunchWorkspace({
             void command("save_launch", { data: { ...project.launch, domain } })
           }
         >
-          Save launch settings
+          {busy && operation === "save_launch" ? "Saving launch settings…" : "Save launch settings"}
         </button>
       </fieldset>
       <div className="connected-card">
@@ -152,7 +162,7 @@ export default function LaunchWorkspace({
                 <strong>{label}</strong>
                 <span>
                   {check
-                    ? `Checked ${new Date(check.verified_at).toLocaleString()}`
+                    ? `${fresh(check) ? "Verified" : "Expired or changed. Check again"} · ${new Date(check.verified_at).toLocaleString()}`
                     : "Waiting for verification"}
                 </span>
               </li>
@@ -163,6 +173,7 @@ export default function LaunchWorkspace({
           disabled={busy || dirty || !domain}
           onClick={async () => {
             setBusy(true);
+            setOperation("checks");
             setError("");
             try {
               const r = await api(`/api/projects/${project.id}/checks`, {});
@@ -175,12 +186,12 @@ export default function LaunchWorkspace({
             }
           }}
         >
-          {busy ? "Checking…" : "Run launch checks"}
+          {busy && operation === "checks" ? "Checking website…" : "Run launch checks"}
         </button>
       </div>
       <button
         className="primary"
-        disabled={busy || dirty || checks.length !== 5}
+        disabled={busy || dirty || !ready}
         onClick={() => setConfirm(true)}
       >
         Review launch
@@ -194,13 +205,14 @@ export default function LaunchWorkspace({
             The website will be available to visitors at the verified address.
             Later content changes can be published from Pages.
           </p>
+          <dl><dt>Public address</dt><dd className="connected-code">{destination}</dd><dt>Saved website revision</dt><dd>{siteRevision}</dd><dt>Verification</dt><dd>All five checks must match this version and address, and be less than 24 hours old.</dd></dl>
           <div className="connected-actions">
             <button onClick={() => setConfirm(false)} disabled={busy}>
               Back
             </button>
             <button
               className="primary"
-              disabled={busy}
+              disabled={busy || !ready}
               onClick={() => void command("launch")}
             >
               {busy ? "Publishing…" : "Launch website"}

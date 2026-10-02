@@ -20,7 +20,9 @@ export async function GET(
       .select("kind,evidence,verified_at")
       .eq("project_id", id);
     if (error) throw error;
-    return Response.json({ checks: data || [] });
+    const { data: document, error: documentError } = await client.from("site_documents").select("revision").eq("project_id", id).maybeSingle();
+    if (documentError) throw documentError;
+    return Response.json({ checks: data || [], revision: String(document?.revision || "") });
   } catch (e) {
     return failure(e);
   }

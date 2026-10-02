@@ -36,13 +36,9 @@ export const loadSite = cache(async function loadSite(
   const manifest = (version?.manifest || doc.manifest) as SiteManifest;
   let content = (version?.content || doc.content) as SiteContent;
   if (project.pro) {
-    const { data: board } = await client
-      .from("boards")
-      .select("data")
-      .eq("project_id", id)
-      .eq("kind", "states")
-      .maybeSingle();
-    const states = (board?.data?.states || []) as ScheduledState[];
+    const { data: release, error: releaseError } = await client.from("state_releases").select("states").eq("project_id", id).maybeSingle();
+    if (releaseError) throw releaseError;
+    const states = (review ? [] : release?.states || []) as ScheduledState[];
     content = {
       ...content,
       fields: evaluateStates(states, new Date(), content.fields).content,

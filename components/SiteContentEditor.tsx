@@ -5,7 +5,12 @@ import type {
   SiteContent,
   PublishedVersion,
 } from "../lib/site/service";
-import { api } from "../lib/client";
+import { contentChanges } from "../lib/content-diff";
+import { contentSchema } from "../lib/site/schema";
+import Dialog from "./Dialog";
+import CustomerSite from "./site/CustomerSite";
+import { useLocalDraft, DraftRecovery } from "./useLocalDraft";
+import { api, ApiError } from "../lib/client";
 import { uploadAsset } from "../lib/upload-client";
 import { useUnsavedGuard } from "./useUnsavedGuard";
 type Data = {
@@ -32,6 +37,12 @@ export default function SiteContentEditor({
     [inspection, setInspection] = useState<
       { label: string; status: string; detail: string }[] | null
     >(null);
+  const [confirm, setConfirm] = useState<{ action: "publish" | "rollback"; version?: PublishedVersion } | null>(null);
+  const [localPreview, setLocalPreview] = useState(false);
+  const [conflict, setConflict] = useState<Data | null>(null);
+  const [needsReload, setNeedsReload] = useState(false);
+  const [checked, setChecked] = useState<{ url: string; at: string } | null>(null);
+  const draft = useLocalDraft(`fourthform:content:${projectId}`, data?.content || null, dirty, data?.manifest.revision || "");
   const [insights, setInsights] = useState<string[] | null>(null);
   const pending = useRef<{ body: string; key: string } | null>(null);
   useUnsavedGuard(dirty);
@@ -42,6 +53,8 @@ export default function SiteContentEditor({
     if (!r.ok)
       throw new Error(value.error || "Your website could not be loaded.");
     setData(value);
+    setError("");
+    setNeedsReload(false);
     setSaved(value.content);
     setSelected((p) => p || value.manifest.pages[0].id);
   }
@@ -80,10 +93,19 @@ export default function SiteContentEditor({
     setBusy(true);
     setError("");
     try {
-      await api(url, { ...body, key: pending.current.key });
+      const receipt = await api(url, { ...body, key: pending.current.key });
       pending.current = null;
-      await load();
-      setDirty(false);
+      if (receipt.manifest && receipt.content && receipt.revision) {
+        setData({ ...data, manifest: receipt.manifest, content: receipt.content, history: receipt.version ? [receipt.version, ...data.history] : data.history });
+        setSaved(receipt.content);
+        setDirty(false);
+        draft.clear();
+      } else {
+        setNeedsReload(true);
+        setNotice("The change was accepted. Reload the website before making another change.");
+        await load(); setDirty(false); draft.clear();
+      }
+      setConfirm(null);
       setNotice(
         action === "save"
           ? "Draft saved to your account."
@@ -91,6 +113,7 @@ export default function SiteContentEditor({
       );
     } catch (e) {
       setError((e as Error).message);
+      if (e instanceof ApiError && e.status === 409) setNeedsReload(true);
     } finally {
       setBusy(false);
     }
@@ -115,6 +138,9 @@ export default function SiteContentEditor({
       </header>
       {error && <p role="alert">{error}</p>}
       {notice && <p role="status">{notice}</p>}
+      {data && <DraftRecovery draft={draft} revision={data.manifest.revision} onRestore={content => { const parsed = contentSchema.safeParse(content); if (!parsed.success) { setError("This recovery copy is invalid. Keep the saved version or restore an exported draft."); return; } update(parsed.data); }} />}
+      {needsReload && <div className="recovery-notice"><p>Reload the latest saved content to compare it with your edits. Your draft remains on this device.</p><button disabled={busy} onClick={async () => { try { setConflict(await api<Data>(url)); setError(""); } catch (e) { setError((e as Error).message); } }}>Compare latest saved version</button></div>}
+      {conflict && data && <section className="recovery-notice"><h2>The saved version changed.</h2><ul>{contentChanges(conflict.manifest, conflict.content, data.content).map(c => <li key={c.label}><strong>{c.label}</strong><p>Saved: {c.before || "Empty"}</p><p>Your edit: {c.after || "Empty"}</p></li>)}</ul><div className="connected-actions"><button onClick={() => { setData(conflict); setSaved(conflict.content); setDirty(false); setConflict(null); setNeedsReload(false); draft.clear(); }}>Use saved version</button><button onClick={() => { setSaved(conflict.content); setData({ ...conflict, content: data.content }); setConflict(null); setNeedsReload(false); pending.current = null; setDirty(true); }}>Keep my edits against this version</button></div></section>}
       {!data && (
         <button onClick={() => void load().catch((e) => setError(e.message))}>
           Load website
@@ -136,7 +162,8 @@ export default function SiteContentEditor({
               </button>
             ))}
           </div>
-          <fieldset className="connected-card" disabled={busy}>
+          <p role="status">{dirty ? "Unsaved edits on this device" : "Draft saved to your account"} · {data.history[0] ? `Published ${new Date(data.history[0].deployedAt).toLocaleString()}` : "Not published yet"}</p>
+          <fieldset className="connected-card" disabled={busy || !!draft.recovery || !!conflict}>
             <legend>{page.title}</legend>
             {section === "pages" ? (
               page.fields.map((f) => (
@@ -220,6 +247,10 @@ export default function SiteContentEditor({
                       }
                     />
                   )}
+                  {f.kind !== "image" && <small>{(data.content.fields[f.id] || "").length} / {f.maxLength || 10000} characters</small>}
+                  {f.kind === "link" && <small>Use https://, mailto:you@example.com, tel:+61…, /a-page or #a-section.</small>}
+                  {f.role === "image-alt" && <small>Describe what the image communicates. Leave empty only for a decorative image.</small>}
+                  {f.kind === "image" && <small>The image follows the approved layout crop. Check its focus in the preview and describe its content in the image description field.</small>}
                 </label>
               ))
             ) : (
@@ -283,13 +314,15 @@ export default function SiteContentEditor({
                   />
                   Keep this page out of search results
                 </label>
+                <p className="notice">This asks search engines to exclude the page after publication. It does not make the page private, and existing search results can take time to update.</p>
+                <div className="search-snippet" aria-label="Example search result"><span>{page.path === "/" ? "yourwebsite.com" : `yourwebsite.com${page.path}`}</span><h3>{data.content.seo[page.id]?.title || page.title}</h3><p>{data.content.seo[page.id]?.description || "Add a useful description of this page."}</p><small>Appearance can vary in real search results.</small></div>
               </>
             )}
           </fieldset>
           <div className="connected-actions">
             <button
               className="primary"
-              disabled={!dirty || busy}
+              disabled={!dirty || busy || needsReload || !!draft.recovery}
               onClick={() => void command("save")}
             >
               {busy ? "Saving…" : "Save draft"}
@@ -297,24 +330,18 @@ export default function SiteContentEditor({
             {live && (
               <button
                 disabled={
-                  busy ||
+                  busy || needsReload || !!draft.recovery ||
                   (!dirty &&
                     data.history[0] &&
                     JSON.stringify(data.history[0].content) ===
                       JSON.stringify(data.content))
                 }
-                onClick={() => {
-                  if (
-                    window.confirm(
-                      "Publish these changes to your live website?",
-                    )
-                  )
-                    void command("publish");
-                }}
+                onClick={() => setConfirm({ action: "publish" })}
               >
                 Publish changes
               </button>
             )}
+            <button disabled={busy} onClick={() => setLocalPreview(true)}>Preview current edits</button>
             <a
               href={`/review/${projectId}${page.path}`}
               target="_blank"
@@ -329,6 +356,7 @@ export default function SiteContentEditor({
                   if (saved && window.confirm("Discard your unsaved edits?")) {
                     setData({ ...data, content: saved });
                     setDirty(false);
+                    draft.clear();
                   }
                 }}
               >
@@ -348,6 +376,7 @@ export default function SiteContentEditor({
                       `/api/projects/${projectId}/inspect?page=${page.id}`,
                     );
                     setInspection(r.checks);
+                    setChecked({ url: r.url, at: r.checkedAt });
                     setInsights(r.insights);
                   } catch (e) {
                     setError((e as Error).message);
@@ -373,6 +402,7 @@ export default function SiteContentEditor({
                   </p>
                 </div>
               )}
+              {checked && <p>Inspected <a href={checked.url} target="_blank" rel="noreferrer">{checked.url}</a> at {new Date(checked.at).toLocaleString()}.</p>}
               {inspection && (
                 <ul className="connected-checks">
                   {inspection.map((c) => (
@@ -391,19 +421,12 @@ export default function SiteContentEditor({
             <details className="connected-card">
               <summary>Published history</summary>
               {data.history.length ? (
-                data.history.map((v) => (
+                data.history.map((v, index) => (
                   <div className="connected-actions" key={v.id}>
-                    <span>{new Date(v.deployedAt).toLocaleString()}</span>
+                    <span>Version {data.history.length - index} · {index === 0 ? "Current publication · " : ""}{new Date(v.deployedAt).toLocaleString()}<small>{Object.values(v.content.seo).map(s => s.title).join(" · ")}</small></span>
                     <button
                       disabled={dirty || busy}
-                      onClick={() => {
-                        if (
-                          window.confirm(
-                            "Restore this content as a new published version?",
-                          )
-                        )
-                          void command("rollback", v.id);
-                      }}
+                      onClick={() => setConfirm({ action: "rollback", version: v })}
                     >
                       Restore version
                     </button>
@@ -414,7 +437,9 @@ export default function SiteContentEditor({
               )}
             </details>
           )}
-          {dirty && <p role="status">Unsaved edits on this page</p>}
+          {dirty && <p role="status">Edits are kept on this device for recovery until a save is confirmed.</p>}
+          {localPreview && <Dialog title="Preview your current edits" onClose={() => setLocalPreview(false)}><p>{dirty ? "This preview includes unsaved edits. Save the draft before sharing its review link." : "Your saved draft in the approved layout."} It has not changed the public website.</p><div className="content-preview"><CustomerSite inline site={{ project: { id: projectId, name: data.manifest.theme?.name || "Your website", phase: "REVIEW", pro: false }, manifest: data.manifest, content: data.content, revision: data.manifest.revision, base: `/review/${projectId}`, connections: {} }} pageId={page.id} review /></div></Dialog>}
+          {confirm && <Dialog title={confirm.action === "publish" ? "Publish these changes?" : "Restore this published version?"} onClose={() => { if (!busy) setConfirm(null); }}><p>{confirm.action === "rollback" ? "This creates a new publication using the selected version. Your history is preserved." : "These changes will replace content on your public website."}</p><ul className="publication-diff">{contentChanges(data.manifest, data.history[0]?.content || null, confirm.version?.content || data.content).map(c => <li key={c.label}><strong>{c.label}</strong><del>{c.before || "Empty"}</del><span>{c.after || "Empty"}</span></li>)}</ul><div className="connected-actions"><button disabled={busy} onClick={() => setConfirm(null)}>Keep editing</button><button className="primary" disabled={busy || needsReload} onClick={() => void command(confirm.action, confirm.version?.id)}>{busy ? "Publishing…" : confirm.action === "publish" ? "Publish changes" : "Restore as new version"}</button></div>{error && <p role="alert">{error}</p>}</Dialog>}
         </>
       )}
     </section>

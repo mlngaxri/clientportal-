@@ -62,7 +62,7 @@ export async function POST(
         },
         "save",
       );
-      return Response.json({ revision: String(result.document.revision) });
+      return Response.json({ revision: String(result.document.revision), manifest: { ...result.document.manifest, revision: String(result.document.revision) }, content: result.document.content });
     }
     if (project.phase !== "LIVE")
       throw new Error("Website publishing begins after launch.");
@@ -80,7 +80,7 @@ export async function POST(
         },
         body.action,
       );
-      return Response.json({ version: await adapter.convert(result.version) });
+      return Response.json({ revision: String(result.document.revision), manifest: { ...result.document.manifest, revision: String(result.document.revision) }, content: result.document.content, version: await adapter.convert(result.version) });
     }
     if (body.content) {
       const manifest = await adapter.manifest(id);

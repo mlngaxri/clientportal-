@@ -1,6 +1,7 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
+import PaymentReturn, { usePaymentReturn } from "./PaymentReturn";
 import { useUnsavedGuard } from "./useUnsavedGuard";
 import { api } from "../lib/client";
 import { initialObjects, type Project } from "../lib/model";
@@ -10,6 +11,9 @@ export default function Onboarding({
   returnTo = "/start",
   project: initial,
   configurationReady,
+  googleReady = false,
+  initialMode = "signup",
+  createNew = false,
   reference,
   requestedPackage = "SITE",
 }: {
@@ -17,6 +21,9 @@ export default function Onboarding({
   returnTo?: string;
   project: Project | null;
   configurationReady: boolean;
+  googleReady?: boolean;
+  initialMode?: "signin" | "signup";
+  createNew?: boolean;
   reference?: { id: string; title: string; url: string };
   requestedPackage?: "SITE" | "FIRST";
 }) {
@@ -31,7 +38,7 @@ export default function Onboarding({
     [step, setStep] = useState(
       !signedIn ? 1 : initial?.phase === "AWAITING_INITIAL_PAYMENT" ? 3 : 2,
     ),
-    [mode, setMode] = useState("signup"),
+    [mode, setMode] = useState(initialMode),
     [remember, setRemember] = useState(true),
     [email, setEmail] = useState(""),
     [password, setPassword] = useState(""),
@@ -51,6 +58,7 @@ export default function Onboarding({
     [authNotice, setAuthNotice] = useState(""),
     [busy, setBusy] = useState(false);
   useUnsavedGuard(state !== "saved");
+  const payment = usePaymentReturn(project?.id, () => window.location.assign(`/projects/${project?.id}/overview`));
   const saving = useRef(false);
   const pending = useRef<{ serial: string; key: string } | null>(null);
   const recoveryKey = `fourthform:onboarding:${initial?.id || "new"}`;
@@ -105,22 +113,24 @@ export default function Onboarding({
     openedOn,
     includeReference,
   ]);
-  async function auth(google = false) {
+  const creationKey = useRef<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [confirmationSent, setConfirmationSent] = useState(false);
+  async function auth(google = false, resend = false) {
+    if (busy) return;
     setBusy(true);
     setError("");
     setAuthNotice("");
     try {
       const r = await api("/api/auth", {
-        mode: google ? "google" : mode,
-        email,
-        password,
+        mode: resend ? "confirmation" : google ? "google" : mode,
+        ...(!google ? { email, ...(!resend ? { password } : {}) } : {}),
         remember,
         next: returnTo,
       });
       if (r.confirmationRequired) {
-        setAuthNotice(
-          "Check your email to finish creating your account. Open the link in this browser.",
-        );
+        setConfirmationSent(true);
+        setAuthNotice(`Confirmation sent to ${email}. Open the link in this browser to return to your selected package and reference. Check spam if it does not arrive.`);
       } else {
         window.location.assign(r.url || returnTo);
       }
@@ -132,11 +142,21 @@ export default function Onboarding({
   }
   async function save(next = false, exit = false) {
     if (saving.current || recovery) return;
+    const issues: Record<string, string> = {};
+    if (!name.trim()) issues.name = "Enter your business name.";
+    if (!description.trim()) issues.description = "Describe what your business offers.";
+    if (packageName === "FIRST") {
+      const date = new Date(openedOn + "T12:00:00");
+      const oldest = new Date(); oldest.setMonth(oldest.getMonth() - 6);
+      if (!openedOn || !Number.isFinite(date.getTime()) || date > new Date() || date < oldest) issues.openedOn = "First is for businesses opened in the last six months. Choose an eligible opening date or select Site.";
+    }
+    setFieldErrors(issues);
+    if (Object.keys(issues).length) { setError("Check the highlighted business information."); document.getElementById(`brief-${Object.keys(issues)[0]}`)?.focus(); return; }
     saving.current = true;
     setState("saving");
     setError("");
     try {
-      const p = project || (await api<Project>("/api/projects", {}));
+      const p = project || (await api<Project>("/api/projects", createNew ? { createNew: true, key: (creationKey.current ||= crypto.randomUUID()) } : {}));
       setProject(p);
       const brief = {
         description,
@@ -190,7 +210,8 @@ export default function Onboarding({
     }
   }
   async function checkout() {
-    if (!project) return;
+    if (!project || busy) return;
+    setError("");
     setBusy(true);
     try {
       const r = await api("/api/checkout", {
@@ -223,7 +244,7 @@ export default function Onboarding({
       <div className="start-shell">
         <aside className="start-progress">
           <span className="overline">Your website</span>
-          <h1>Start your site.</h1>
+          <h1>{!signedIn && mode === "signin" ? "Your workspace." : "Start your site."}</h1>
           <p>A little context. A clear beginning.</p>
           <ol className="onboarding-steps">
             {["Account", "Business information", "Payment"].map((x, i) => (
@@ -291,6 +312,7 @@ export default function Onboarding({
                 </button>
               </section>
             )}
+            <PaymentReturn payment={payment} />
             {!configurationReady && (
               <p className="notice" role="status">
                 Account access is temporarily paused. Please try again later.
@@ -309,14 +331,15 @@ export default function Onboarding({
                 {authNotice && (
                   <p className="notice" role="status">{authNotice}</p>
                 )}
-                <button
+                {googleReady && <button
                   className="google-button"
                   disabled={busy || !configurationReady}
                   onClick={() => void auth(true)}
                 >
                   Continue with Google
-                </button>
+                </button>}
                 <Link href="/account/recover">Forgot password?</Link>
+                {confirmationSent && <div className="connected-actions"><button disabled={busy} onClick={() => void auth(false, true)}>Resend confirmation</button><button disabled={busy} onClick={() => { setConfirmationSent(false); setAuthNotice(""); }}>Use another email</button></div>}
                 <div className="split-label">
                   <i />
                   <span>or</span>
@@ -405,6 +428,9 @@ export default function Onboarding({
                   <label>
                     When did your business open?
                     <input
+                      id="brief-openedOn"
+                      aria-invalid={!!fieldErrors.openedOn}
+                      aria-describedby="brief-openedOn-help"
                       type="date"
                       required
                       max={new Date().toISOString().slice(0, 10)}
@@ -414,6 +440,7 @@ export default function Onboarding({
                         dirty();
                       }}
                     />
+                    <small id="brief-openedOn-help">{fieldErrors.openedOn || "First is available within six months of opening."}</small>
                     <small>
                       First is available within six months of opening. The date
                       is checked before your brief is saved.
@@ -447,6 +474,10 @@ export default function Onboarding({
                 <label>
                   Business name
                   <input
+                    id="brief-name"
+                    required
+                    aria-invalid={!!fieldErrors.name}
+                    aria-describedby="brief-name-error"
                     value={name}
                     onChange={(e) => {
                       setName(e.target.value);
@@ -454,10 +485,16 @@ export default function Onboarding({
                     }}
                     maxLength={160}
                   />
+                  {fieldErrors.name && <small id="brief-name-error">{fieldErrors.name}</small>}
                 </label>
                 <label>
                   What does your business do?
                   <textarea
+                    id="brief-description"
+                    required
+                    maxLength={3000}
+                    aria-invalid={!!fieldErrors.description}
+                    aria-describedby="brief-description-help"
                     value={description}
                     onChange={(e) => {
                       setDescription(e.target.value);
@@ -465,6 +502,7 @@ export default function Onboarding({
                     }}
                   />
                 </label>
+                <small id="brief-description-help">{fieldErrors.description || `${description.length} / 3,000 characters`}</small>
                 <fieldset>
                   <legend>What should your website help people do?</legend>
                   <div className="chips">
@@ -549,7 +587,7 @@ export default function Onboarding({
                 </div>
                 <div className="commit-card">
                   <div>
-                    <span>Site · up to 5 custom pages</span>
+                    <span>{packageName === "FIRST" ? "First · one custom page" : "Site · up to 5 custom pages"}</span>
                     <strong>
                       {packageName === "FIRST" ? "A$199" : "A$1,500"}
                     </strong>
@@ -579,7 +617,7 @@ export default function Onboarding({
                 </p>
                 <button
                   className="primary wide"
-                  disabled={busy}
+                  disabled={busy || payment.blocked}
                   onClick={() => void checkout()}
                 >
                   {busy

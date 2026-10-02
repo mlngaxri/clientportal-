@@ -9,10 +9,12 @@ export default function CustomerSite({
   site,
   pageId,
   review = false,
+  inline = false,
 }: {
   site: Site;
   pageId: string;
   review?: boolean;
+  inline?: boolean;
 }) {
   const { manifest, content, project } = site;
   const theme = manifest.theme || {
@@ -130,7 +132,7 @@ export default function CustomerSite({
             ) : null}
           </section>
         ))}
-      <ContactForm projectId={project.id} pageId={pageId} review={review} />
+      {!inline && <ContactForm projectId={project.id} pageId={pageId} review={review} />}
       <footer className="customer-footer">
         <strong>{theme.name}</strong>
         <div>
@@ -144,7 +146,7 @@ export default function CustomerSite({
           )}
         </div>
       </footer>
-      {review ? (
+      {inline ? null : review ? (
         <Script
           src="/review-bridge.js"
           strategy="afterInteractive"

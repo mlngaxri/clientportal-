@@ -63,13 +63,17 @@ export function admin() {
     { auth: { persistSession: false } },
   );
 }
+export class AccessError extends Error {
+  constructor(message: string, public status: 401 | 404 | 503) { super(message); }
+}
 export async function userDb() {
   const client = await db();
   const {
     data: { user },
     error,
   } = await client.auth.getUser();
-  if (error || !user) throw new Error("Please sign in to continue.");
+  if (error && !/session|JWT|refresh|token|not authenticated/i.test(error.message)) throw new AccessError("Account access is temporarily unavailable. Try again.", 503);
+  if (!user) throw new AccessError("Please sign in to continue.", 401);
   return { client, user };
 }
 export async function ownedProject(id: string) {
@@ -79,7 +83,8 @@ export async function ownedProject(id: string) {
     .select("*")
     .eq("id", id)
     .single();
-  if (error || !data) throw new Error("Project not found or access denied.");
+  if (error && error.code !== "PGRST116") throw new AccessError("Your project is temporarily unavailable. Try again.", 503);
+  if (!data) throw new AccessError("Project not found or access denied.", 404);
   return { client, user, project: data };
 }
 export function checkOrigin(req: Request) {

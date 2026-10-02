@@ -1,13 +1,16 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api } from "../lib/client";
 import type { SiteManifest, SiteContent } from "../lib/site/service";
 import type { Board } from "../lib/model";
 import {
   evaluateStates,
   validateState,
+  validateStates,
   type ScheduledState,
 } from "../lib/states";
+import Dialog from "./Dialog";
+import TimezonePicker from "./TimezonePicker";
 import RecoveryNotice from "./RecoveryNotice";
 import { useSave, SaveControl } from "./useSave";
 const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -20,7 +23,12 @@ export default function StateEditor({
   pro: boolean;
   onUpgrade: () => void;
 }) {
-  const editor = useSave(board, !pro);
+  const editor = useSave(board, !pro, { autosave: false, validate: data => validateStates(data.states || []) });
+  const [release, setRelease] = useState<{ states: ScheduledState[]; activated_at: string } | null>(null);
+  const [timezone, setTimezone] = useState("Australia/Brisbane");
+  const [activating, setActivating] = useState(false), [confirm, setConfirm] = useState(false);
+  const [removed, setRemoved] = useState<ScheduledState | null>(null);
+  const activateKey = useRef<{ expected: number; key: string } | null>(null);
   const [site, setSite] = useState<{
     manifest: SiteManifest;
     content: SiteContent;
@@ -28,6 +36,8 @@ export default function StateEditor({
   const [loadError, setLoadError] = useState("");
   useEffect(() => {
     let active = true;
+    void api(`/api/projects/${board.project_id}/states`).then(r => { if (active) setRelease(r.release); }).catch(e => { if (active) setLoadError(e.message); });
+    void api(`/api/projects/${board.project_id}/settings`).then(r => { if (active) setTimezone(r.settings.timezone); }).catch(e => { if (active) setLoadError(e.message); });
     void api<{ manifest: SiteManifest; content: SiteContent }>(
       `/api/projects/${board.project_id}/site`,
     )
@@ -50,12 +60,12 @@ export default function StateEditor({
   const defaultField =
     fields.find((f) => f.role === "heading")?.id || fields[0]?.id;
   const [selected, setSelected] = useState<string | null>(null);
-  const [at, setAt] = useState(() => new Date().toISOString().slice(0, 16));
+  const [at, setAt] = useState(() => new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16));
   const states = (
     Array.isArray(editor.data.states) ? editor.data.states : []
   ) as ScheduledState[];
   const state = states.find((s) => s.id === selected);
-  const preview = evaluateStates(states, new Date(`${at}:00Z`), {
+  const preview = evaluateStates(states, new Date(at), {
     ...(site?.content.fields || {}),
   });
   function change(patch: Partial<ScheduledState>) {
@@ -73,8 +83,8 @@ export default function StateEditor({
         {
           id,
           title: "New State",
-          enabled: true,
-          timezone: "Australia/Brisbane",
+          enabled: false,
+          timezone,
           days: [1, 2, 3, 4, 5],
           start: "11:00",
           end: "15:00",
@@ -94,14 +104,14 @@ export default function StateEditor({
           <span className="overline">Form / States · Pro</span>
           <h1>Content for the right moment.</h1>
           <p>
-            Save variations that appear during selected hours in each schedule’s
-            timezone. Your usual content returns outside those hours.
+            Save a draft, preview it, then activate your schedules when ready. Only activated schedules change your public website. Usual content returns outside their hours.
           </p>
         </div>
         {pro && (
           <SaveControl
             state={editor.state}
             error={editor.error}
+            label="Save State draft"
             onSave={() => void editor.save()}
             disabled={states.some((s) => validateState(s).length > 0)}
           />
@@ -109,6 +119,8 @@ export default function StateEditor({
       </header>
       <RecoveryNotice editor={editor} />
       {loadError && <p role="alert">{loadError}</p>}
+      {pro && <div className="connected-card"><span className="overline">Public schedules</span><p>{release ? `Last activated ${new Date(release.activated_at).toLocaleString()}. ${release.states.filter(s => s.enabled).length} enabled schedules.` : "No schedules are active on your website yet."}</p><button className="primary" disabled={activating || validateStates(states).length > 0 || (!!release && JSON.stringify(states) === JSON.stringify(release.states))} onClick={() => setConfirm(true)}>Review and activate schedules</button><p>Draft edits, pauses and deletions take effect on your website only after activation.</p></div>}
+      {removed && <p className="undo-notice" role="status">State removed from draft. <button onClick={() => { editor.update(d => ({ ...d, states: [...((d.states || []) as ScheduledState[]), removed] })); setRemoved(null); }}>Undo deletion</button></p>}
       {pro ? (
         <>
           <div className="chips">
@@ -118,13 +130,14 @@ export default function StateEditor({
                 aria-pressed={selected === s.id}
                 onClick={() => setSelected(s.id)}
               >
-                {s.title}
+                {s.title} · {s.enabled ? "Enabled in draft" : "Paused in draft"}
               </button>
             ))}
             <button onClick={add} disabled={!defaultField}>
               Add State
             </button>
           </div>
+          {!states.length && <p className="connected-empty">Start with a service window, announcement or seasonal offer. Add a State to try it without changing the live site.</p>}
           {state && (
             <fieldset className="state-fields">
               <legend>Schedule</legend>
@@ -135,14 +148,8 @@ export default function StateEditor({
                   onChange={(e) => change({ title: e.target.value })}
                 />
               </label>
-              <label>
-                Timezone
-                <input
-                  value={state.timezone}
-                  onChange={(e) => change({ timezone: e.target.value })}
-                  placeholder="Australia/Brisbane"
-                />
-              </label>
+              <TimezonePicker value={state.timezone} onChange={timezone => change({ timezone })} />
+              <p>{state.days.map(day => days[day]).join(", ") || "No days selected"} · {state.start} to {state.end} · {state.timezone}</p>
               <div className="chips">
                 {days.map((d, i) => (
                   <button
@@ -289,6 +296,7 @@ export default function StateEditor({
               ))}
               <button
                 onClick={() => {
+                  setRemoved(state);
                   editor.update((d) => ({
                     ...d,
                     states: states.filter((s) => s.id !== selected),
@@ -301,13 +309,14 @@ export default function StateEditor({
             </fieldset>
           )}
           <label>
-            Preview instant (UTC)
+            Preview date and time (your device timezone)
             <input
               type="datetime-local"
               value={at}
               onChange={(e) => setAt(e.target.value)}
             />
           </label>
+          <p>Preview in {Intl.DateTimeFormat().resolvedOptions().timeZone}. Active schedules: {preview.activeIds.map(id => states.find(s => s.id === id)?.title).join(", ") || "None"}.</p>
           <div className="state-live-demo">
             <span>State preview</span>
             {fields
@@ -324,7 +333,7 @@ export default function StateEditor({
             </p>
             {preview.conflicts.length > 0 && (
               <p role="alert">
-                Overlapping content: {preview.conflicts.join(", ")}
+                Overlapping content: {preview.conflicts.map(id => fields.find(f => f.id === id)?.label || id).join(", ")}
               </p>
             )}
           </div>
@@ -338,6 +347,7 @@ export default function StateEditor({
           <button onClick={onUpgrade}>Pro · A$39/month</button>
         </>
       )}
+      {confirm && <Dialog title="Activate these State schedules?" onClose={() => { if (!activating) setConfirm(false); }}><p>{states.filter(s => s.enabled).length} enabled schedules will replace the currently active set. Content changes appear during each schedule’s hours. Removing all schedules restores usual content.</p><ul>{states.map(s => <li key={s.id}>{s.title}: {s.enabled ? `${s.start} to ${s.end}, ${s.timezone}` : "Paused"}</li>)}</ul><div className="connected-actions"><button disabled={activating} onClick={() => setConfirm(false)}>Keep editing</button><button className="primary" disabled={activating} onClick={async () => { if (activating) return; setActivating(true); setLoadError(""); try { const saved = await editor.save(); if (!saved) return; if (activateKey.current?.expected !== saved.version) activateKey.current = { expected: saved.version, key: crypto.randomUUID() }; const r = await api(`/api/projects/${board.project_id}/states`, { boardId: board.id, expected: saved.version, key: activateKey.current.key }); setRelease(r.release); activateKey.current = null; setConfirm(false); } catch (e) { setLoadError((e as Error).message); } finally { setActivating(false); } }}>{activating ? "Activating…" : "Activate on website"}</button></div>{loadError && <p role="alert">{loadError}</p>}</Dialog>}
     </section>
   );
 }

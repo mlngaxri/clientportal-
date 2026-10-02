@@ -29,18 +29,20 @@ export default function AnalyticsWorkspace({
   const [days, setDays] = useState(30),
     [data, setData] = useState<Stats | null>(null),
     [error, setError] = useState(""),
-    [attempt, setAttempt] = useState(0);
+    [attempt, setAttempt] = useState(0),
+    [loading, setLoading] = useState(true),
+    [pro, setPro] = useState(false);
   useEffect(() => {
     let active = true;
     setError("");
-    setData(null);
+    setLoading(true);
     void api<Stats>(`/api/projects/${projectId}/analytics?days=${days}`)
       .then((d) => {
-        if (active) setData(d);
+        if (active) { setData(d); setPro(d.pro); }
       })
       .catch((e) => {
         if (active) setError(e.message);
-      });
+      }).finally(() => { if (active) setLoading(false); });
     return () => {
       active = false;
     };
@@ -53,27 +55,26 @@ export default function AnalyticsWorkspace({
           <span className="overline">Website / Analytics</span>
           <h1>Understand your audience.</h1>
           <p>
-            Real activity from your published website. Visitors are anonymous
-            daily estimates. Tracking respects Do Not Track and Global Privacy
-            Control.
+            Activity from your published website. Visitor days add each day’s anonymous visitor estimate, so a returning person may count on several days. Action clicks show intent, not completed bookings. Tracking respects browser privacy signals.
           </p>
         </div>
       </header>
       <div className="chips">
-        {(data?.pro ? [7, 30, 90] : [7, 30]).map((d) => (
-          <button aria-pressed={days === d} key={d} onClick={() => setDays(d)}>
+        {(pro ? [7, 30, 90] : [7, 30]).map((d) => (
+          <button aria-pressed={days === d} key={d} onClick={() => setDays(d)} disabled={loading && days === d}>
             {d} days
           </button>
         ))}
       </div>
       {error && <div role="alert"><p>{error}</p><button onClick={() => setAttempt((n) => n + 1)}>Reload report</button></div>}
-      {!data && !error && <p role="status">Loading your {days}-day report…</p>}
-      {data && (
+      {loading && !error && <p role="status">Loading your {days}-day report…</p>}
+      {data && !loading && (
         <>
+          <p className="overline">{data.daily[0]?.date || "Start of period"} to {data.daily.at(-1)?.date || "today"} · UTC reporting days</p>
           <div className="connected-metrics">
             {[
               ["Page views", data.views],
-              ["Daily visitors", data.visitors],
+              ["Visitor days", data.visitors],
               ["Action clicks", data.actions],
               ["Enquiries", data.forms],
             ].map(([label, value]) => (
@@ -102,6 +103,7 @@ export default function AnalyticsWorkspace({
               ))}
             </div>
           )}
+          <details className="connected-card"><summary>Daily page views as a table</summary><table className="connected-table"><thead><tr><th>Date (UTC)</th><th>Page views</th></tr></thead><tbody>{data.daily.map(d => <tr key={d.date}><td>{d.date}</td><td>{d.views}</td></tr>)}</tbody></table></details>
           <div className="connected-grid">
             {[
               ["Pages", data.pages.map((d) => [d.page, d.views])],
@@ -133,13 +135,7 @@ export default function AnalyticsWorkspace({
             <div className="connected-card">
               <span className="overline">Pro / Audience detail</span>
               <h2>What changed?</h2>
-              <p>
-                Previous {days} days: {data.comparison?.views || 0} page views,{" "}
-                {data.comparison?.actions || 0} action clicks and{" "}
-                {data.comparison?.forms || 0} enquiries. Current period:{" "}
-                {data.views} page views, {data.actions} action clicks and{" "}
-                {data.forms} enquiries.
-              </p>
+              <table className="connected-table"><thead><tr><th>Metric</th><th>Current {days} days</th><th>Previous {days} days</th><th>Change</th></tr></thead><tbody>{([ ["Page views", "views"], ["Visitor days", "visitors"], ["Action clicks", "actions"], ["Enquiries", "forms"] ] as const).map(([label, key]) => { const current = data[key], previous = data.comparison?.[key] || 0; return <tr key={key}><td>{label}</td><td>{current}</td><td>{previous}</td><td>{previous ? `${Math.round((current - previous) / previous * 100)}%` : current ? "New activity" : "No change"}</td></tr>; })}</tbody></table>
               <h3>Countries</h3>
               {data.countries?.length ? (
                 <ul>
@@ -179,18 +175,13 @@ export default function AnalyticsWorkspace({
           )}
           <button
             onClick={() => {
-              const blob = new Blob([JSON.stringify(data, null, 2)], {
-                  type: "application/json",
-                }),
-                url = URL.createObjectURL(blob),
-                a = document.createElement("a");
-              a.href = url;
-              a.download = `fourthform-analytics-${days}-days.json`;
-              a.click();
-              URL.revokeObjectURL(url);
+              const cell = (value: string | number) => `"${String(value).replaceAll('"', '""')}"`;
+              const rows = [["Fourthform analytics", `${days} days`, "UTC"], ["Metric", "Value"], ["Page views", data.views], ["Visitor days", data.visitors], ["Action clicks", data.actions], ["Enquiries", data.forms], [], ["Date", "Page views"], ...data.daily.map(d => [d.date, d.views]), [], ["Page", "Views"], ...data.pages.map(d => [d.page, d.views]), [], ["Source", "Views"], ...data.sources.map(d => [d.source, d.views])];
+              const url = URL.createObjectURL(new Blob([rows.map(row => row.map(cell).join(",")).join("\r\n")], { type: "text/csv;charset=utf-8" }));
+              const a = document.createElement("a"); a.href = url; a.download = `fourthform-analytics-${days}-days.csv`; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
             }}
           >
-            Export report
+            Export CSV report
           </button>
         </>
       )}

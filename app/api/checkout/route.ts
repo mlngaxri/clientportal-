@@ -131,8 +131,8 @@ export async function POST(req: Request) {
             quantity: 1,
           },
         ],
-        success_url: `${base}/projects/${projectId}/overview?payment=processing`,
-        cancel_url: `${base}/projects/${projectId}/overview?payment=cancelled`,
+        success_url: `${base}${kind === "initial" ? `/start?project=${projectId}&` : `/projects/${projectId}/overview?`}payment=processing&checkout=${intent.key}` ,
+        cancel_url: `${base}${kind === "initial" ? `/start?project=${projectId}&` : `/projects/${projectId}/overview?`}payment=cancelled`,
         expires_at: Math.floor(new Date(intent.expires_at).getTime() / 1000),
       },
       {

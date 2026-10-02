@@ -1,3 +1,4 @@
+import { capabilities } from "../../../../../lib/capabilities";
 import { z } from "zod";
 import { ownedProject, checkOrigin, failure } from "../../../../../lib/server";
 export async function GET(
@@ -22,6 +23,7 @@ export async function GET(
         connections: {},
       },
       email: user.email,
+      emailAvailable: capabilities().email,
     });
   } catch (e) {
     return failure(e);

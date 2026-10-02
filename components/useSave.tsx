@@ -10,7 +10,9 @@ import {
   recoveryKey,
   type RecoveryRecord,
 } from "../lib/recovery";
-export function useSave(board: Board, readOnly = false) {
+export function useSave(board: Board, readOnly = false, options: { autosave?: boolean; validate?: (data: DocumentData) => string[] } = {}) {
+  const optionsRef = useRef(options); optionsRef.current = options;
+  const [removed, setRemoved] = useState<{ object: DocumentData["objects"][number]; index: number }[]>([]);
   const [data, setData] = useState<DocumentData>(
     board.locked_at && board.submitted_data ? board.submitted_data : board.data,
   );
@@ -74,6 +76,8 @@ export function useSave(board: Board, readOnly = false) {
         return result;
       }
       const snapshot = structuredClone(latest.current);
+      const issues = optionsRef.current.validate?.(snapshot) || [];
+      if (issues.length) { setError(issues.join(" ")); setState("dirty"); return null; }
       const serial = JSON.stringify(snapshot);
       if (!pending.current || pending.current.snapshot !== serial)
         pending.current = { snapshot: serial, key: crypto.randomUUID() };
@@ -161,6 +165,7 @@ export function useSave(board: Board, readOnly = false) {
   );
   useEffect(() => {
     if (
+      options.autosave === false ||
       !loaded ||
       !dirty ||
       readOnly ||
@@ -172,7 +177,7 @@ export function useSave(board: Board, readOnly = false) {
       return;
     const t = setTimeout(() => void save(), 3000);
     return () => clearTimeout(t);
-  }, [data, dirty, save, readOnly, state, loaded, recovery, conflict]);
+  }, [data, dirty, save, readOnly, state, loaded, recovery, conflict, options.autosave]);
   useUnsavedGuard(dirty);
   useEffect(() => {
     if (!loaded || recovery || readOnly || !dirty) return;
@@ -260,7 +265,21 @@ export function useSave(board: Board, readOnly = false) {
       } catch {}
     }
   }
+  function removeObjects(ids: string[]) {
+    if (readOnly || blocked.current || recovery || conflict) return;
+    setRemoved(latest.current.objects.flatMap((object, index) => ids.includes(object.id) ? [{ object, index }] : []));
+    update(d => ({ ...d, objects: d.objects.filter(o => !ids.includes(o.id)) }));
+  }
+  function undoRemove() {
+    update(d => {
+      const objects = [...d.objects];
+      removed.forEach(({ object, index }) => { if (!objects.some(o => o.id === object.id)) objects.splice(Math.min(index, objects.length), 0, object); });
+      return { ...d, objects };
+    });
+    setRemoved([]);
+  }
   return {
+    removed, removeObjects, undoRemove,
     data,
     savedAt,
     update,

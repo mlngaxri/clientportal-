@@ -6,6 +6,7 @@ import type { Board, BoardObject } from "../lib/model";
 import { useSave, SaveControl } from "./useSave";
 import AnnotationLayer from "./AnnotationLayer";
 import Dialog from "./Dialog";
+import TextEntryDialog from "./TextEntryDialog";
 import RecoveryNotice from "./RecoveryNotice";
 export default function DirectionBoard({
   board,
@@ -32,7 +33,13 @@ export default function DirectionBoard({
   const sendKey = useRef<string | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
   const recorder = useRef<MediaRecorder | null>(null);
-  const [recording, setRecording] = useState(false);
+  const [recording, setRecording] = useState(false), [permission, setPermission] = useState(false), [seconds, setSeconds] = useState(0);
+  const [recordGuide, setRecordGuide] = useState<"audio" | "screen" | null>(null);
+  const [entry, setEntry] = useState<{ type: "link" | "group" | "note"; id?: string; time?: number } | null>(null);
+  const [mediaAvailable, setMediaAvailable] = useState({ audio: false, screen: false });
+  const recordingTask = useRef(0), discardRecording = useRef(false);
+  useEffect(() => { setMediaAvailable({ audio: typeof MediaRecorder !== "undefined" && !!navigator.mediaDevices?.getUserMedia, screen: typeof MediaRecorder !== "undefined" && !!navigator.mediaDevices?.getDisplayMedia }); }, []);
+  useEffect(() => { if (!recording) return; const timer = setInterval(() => setSeconds(s => { if (s >= 299) { recorder.current?.stop(); return s; } return s + 1; }), 1000); return () => clearInterval(timer); }, [recording]);
   const modify = (id: string, patch: Partial<BoardObject>) =>
     update((d) => ({
       ...d,
@@ -81,6 +88,7 @@ export default function DirectionBoard({
 
   useEffect(
     () => () => {
+      recordingTask.current++;
       const r = recorder.current;
       if (r) {
         r.onstop = null;
@@ -91,41 +99,23 @@ export default function DirectionBoard({
     [],
   );
   async function record(screen = false) {
+    if (recording || permission) return;
+    const task = ++recordingTask.current;
+    setPermission(true); setMessage(""); discardRecording.current = false;
+    let stream: MediaStream | null = null;
     try {
-      const stream = screen
-        ? await navigator.mediaDevices.getDisplayMedia({
-            video: true,
-            audio: true,
-          })
-        : await navigator.mediaDevices.getUserMedia({ audio: true });
-      const r = new MediaRecorder(stream);
-      recorder.current = r;
-      const chunks: BlobPart[] = [];
-      r.ondataavailable = (e) => chunks.push(e.data);
-      r.onstop = () => {
-        void upload(
-          new File(
-            chunks,
-            screen ? "Screen recording.webm" : "Voice note.webm",
-            { type: r.mimeType },
-          ),
-        );
-        stream.getTracks().forEach((t) => t.stop());
-        setRecording(false);
-      };
-      stream.getTracks().forEach(
-        (t) =>
-          (t.onended = () => {
-            if (r.state !== "inactive") r.stop();
-          }),
-      );
-      r.start();
-      setRecording(true);
+      stream = screen ? await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true }) : await navigator.mediaDevices.getUserMedia({ audio: true });
+      if (task !== recordingTask.current) { stream.getTracks().forEach(t => t.stop()); return; }
+      const r = new MediaRecorder(stream); recorder.current = r;
+      const chunks: BlobPart[] = []; let bytes = 0;
+      r.ondataavailable = e => { bytes += e.data.size; if (bytes > 100 * 1024 * 1024) { discardRecording.current = true; setMessage("Recording reached the 100 MB limit. Try a shorter recording."); if (r.state !== "inactive") r.stop(); } else chunks.push(e.data); };
+      r.onstop = () => { stream?.getTracks().forEach(t => t.stop()); setRecording(false); if (task === recordingTask.current && !discardRecording.current && chunks.length) void upload(new File(chunks, screen ? "Screen recording.webm" : "Voice note.webm", { type: r.mimeType })); };
+      stream.getTracks().forEach(t => { t.onended = () => { if (r.state !== "inactive") r.stop(); }; });
+      r.start(1000); setSeconds(0); setRecording(true);
     } catch {
-      setMessage(
-        "Recording could not start. Check browser permissions, or upload a recording.",
-      );
-    }
+      stream?.getTracks().forEach(t => t.stop());
+      if (task === recordingTask.current) setMessage("Recording could not start. Allow microphone or screen access in your browser, or upload an existing recording.");
+    } finally { if (task === recordingTask.current) setPermission(false); }
   }
   async function sendInitial() {
     setSending(true);
@@ -265,12 +255,7 @@ export default function DirectionBoard({
                 </button>
                 <button
                   aria-label="Delete object"
-                  onClick={() =>
-                    update((d) => ({
-                      ...d,
-                      objects: d.objects.filter((x) => x.id !== o.id),
-                    }))
-                  }
+                  onClick={() => editor.removeObjects([o.id])}
                 >
                   ×
                 </button>
@@ -304,14 +289,7 @@ export default function DirectionBoard({
                     onClick={(e) => {
                       const video =
                         e.currentTarget.parentElement?.querySelector("video");
-                      const text = prompt("Note at this moment");
-                      if (text)
-                        modify(o.id, {
-                          notes: [
-                            ...(o.notes || []),
-                            { time: video?.currentTime || 0, text },
-                          ],
-                        });
+                      setEntry({ type: "note", id: o.id, time: video?.currentTime || 0 });
                     }}
                   >
                     Add timestamped note
@@ -433,23 +411,18 @@ export default function DirectionBoard({
               <div className="add-menu">
                 <button
                   onClick={() => {
-                    const url = prompt("Website or reference URL");
-                    if (url && /^https?:\/\//.test(url))
-                      add("link", "", { url });
-                    else if (url)
-                      setMessage("Use a complete http or https URL.");
+                    setEntry({ type: "link" });
                   }}
                 >
                   Link
                 </button>
                 <button
-                  onClick={() =>
-                    recording ? recorder.current?.stop() : void record()
-                  }
+                  disabled={permission || !mediaAvailable.audio}
+                  onClick={() => recording ? recorder.current?.stop() : setRecordGuide("audio")}
                 >
                   {recording ? "Stop recording" : "Record audio"}
                 </button>
-                <button disabled={recording} onClick={() => void record(true)}>
+                <button disabled={recording || permission || !mediaAvailable.screen} onClick={() => setRecordGuide("screen")}>
                   Record screen
                 </button>
               </div>
@@ -457,20 +430,15 @@ export default function DirectionBoard({
             {selected.length > 1 && (
               <button
                 onClick={() => {
-                  const group = prompt("Group name") || "Group";
-                  update((d) => ({
-                    ...d,
-                    objects: d.objects.map((o) =>
-                      selected.includes(o.id) ? { ...o, group } : o,
-                    ),
-                  }));
-                  setSelected([]);
+                  setEntry({ type: "group" });
                 }}
               >
                 Group
               </button>
             )}
           </div>
+          {permission && <p role="status">Waiting for browser permission. Choose a microphone or screen in the browser prompt.</p>}
+          {recording && <div className="recording-notice" role="status">Recording · {Math.floor(seconds / 60)}:{String(seconds % 60).padStart(2, "0")} / 5:00<button onClick={() => recorder.current?.stop()}>Stop and attach</button><button onClick={() => { discardRecording.current = true; recorder.current?.stop(); }}>Discard recording</button></div>}
           <input
             hidden
             ref={fileInput}
@@ -495,6 +463,8 @@ export default function DirectionBoard({
           )}
         </>
       )}
+      {entry && <TextEntryDialog title={entry.type === "link" ? "Add a reference link" : entry.type === "group" ? "Name this group" : "Add a video note"} label={entry.type === "link" ? "Website URL" : entry.type === "group" ? "Group name" : `Note at ${Math.floor(entry.time || 0)} seconds`} type={entry.type === "link" ? "url" : "text"} placeholder={entry.type === "link" ? "https://example.com" : undefined} onClose={() => setEntry(null)} onSubmit={value => { if (entry.type === "link") { if (!/^https?:\/\//.test(value)) { setMessage("Use a complete HTTP or HTTPS URL."); return; } add("link", "", { url: value }); } else if (entry.type === "group") { update(d => ({ ...d, objects: d.objects.map(o => selected.includes(o.id) ? { ...o, group: value } : o) })); setSelected([]); } else { const object = data.objects.find(o => o.id === entry.id); if (object) modify(object.id, { notes: [...(object.notes || []), { time: entry.time || 0, text: value }] }); } setEntry(null); }} />}
+      {recordGuide && <Dialog title={recordGuide === "screen" ? "Record your screen" : "Record a voice note"} onClose={() => setRecordGuide(null)}><p>{recordGuide === "screen" ? "Choose a tab or window in the browser prompt. Audio is included only if the selected source supports it." : "Allow microphone access in the browser prompt. You can stop or discard your recording at any time."}</p><p>Keep it under five minutes and 100 MB. Stopping attaches it to this Direction draft; it is sent to Fourthform only when you submit.</p><button className="primary" onClick={() => { const screen = recordGuide === "screen"; setRecordGuide(null); void record(screen); }}>Choose source and record</button></Dialog>}
       {drag && <div className="drop-overlay">Drop into Direction</div>}
       {send && (
         <Dialog title="Send to Fourthform?" onClose={() => setSend(false)}>
