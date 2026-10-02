@@ -15,3 +15,10 @@ Latest known portal work includes complete interactive preview flows plus subseq
 - Source/test commits: `07c643845eb834e0f097b118aa46514d1d369da8`, `c7cc76151235a5b2cdfb1114c19ffa104594976c` (the intermediate test commit was immediately corrected before handoff).
 - Evidence: **S0 pending fresh CI**. Validation for the exact corrected source/test line was not complete when checked, so S1 is not inferred.
 - Next: after CI clears, continue auditing connected retry/status actions for form safety, announcements, keyboard focus and narrow-layout defects. Builder 5 owns deployment provenance.
+
+### 2026-10-03 — Launch action form safety
+- Continued the connected action audit at the Launch workspace while the repository-wide validation gate is independently red at isolated Supabase startup.
+- `LaunchWorkspace` had five action controls without explicit button types: save launch settings, run checks, open launch review, back, and launch. HTML defaults these to submit buttons, so composition inside a form could trigger an unrelated submission in addition to the intended launch action.
+- Added `type="button"` to every Launch workspace action and a static invariant in `tests/static-build.test.mjs` requiring every button in the component to remain non-submitting.
+- Evidence: **S0 pending fresh CI**. The current parent validation failure is at isolated Supabase startup after typecheck/tests, and does not provide exact-SHA evidence for this change.
+- Next: inspect fresh validation for this commit, then continue the connected action audit for form safety, announcements, focus and narrow-layout behavior. Builder 5 owns release provenance.

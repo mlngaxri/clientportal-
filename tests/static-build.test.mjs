@@ -80,3 +80,11 @@ test("build history retry cannot submit an enclosing form", async () => {
   const source = await readFile("components/BuildHistory.tsx", "utf8");
   assert.match(source, /<button type="button" onClick=\{\(\) => setAttempt\(\(n\) => n \+ 1\)\}>Try again<\/button>/);
 });
+
+test("launch actions cannot submit an enclosing form", async () => {
+  const source = await readFile("components/LaunchWorkspace.tsx", "utf8");
+  const buttons = source.match(/<button\b/g) ?? [];
+  const safeButtons = source.match(/<button(?:\s|\n)+type="button"/g) ?? [];
+  assert.ok(buttons.length > 0);
+  assert.equal(safeButtons.length, buttons.length);
+});

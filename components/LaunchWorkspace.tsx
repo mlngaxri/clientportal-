@@ -133,6 +133,7 @@ export default function LaunchWorkspace({
           connected in Domains after launch, or by the agency before launch.
         </p>
         <button
+          type="button"
           className="primary"
           disabled={!dirty}
           onClick={() =>
@@ -170,6 +171,7 @@ export default function LaunchWorkspace({
           })}
         </ul>
         <button
+          type="button"
           disabled={busy || dirty || !domain}
           onClick={async () => {
             setBusy(true);
@@ -190,6 +192,7 @@ export default function LaunchWorkspace({
         </button>
       </div>
       <button
+        type="button"
         className="primary"
         disabled={busy || dirty || !ready}
         onClick={() => setConfirm(true)}
@@ -207,10 +210,11 @@ export default function LaunchWorkspace({
           </p>
           <dl><dt>Public address</dt><dd className="connected-code">{destination}</dd><dt>Saved website revision</dt><dd>{siteRevision}</dd><dt>Verification</dt><dd>All five checks must match this version and address, and be less than 24 hours old.</dd></dl>
           <div className="connected-actions">
-            <button onClick={() => setConfirm(false)} disabled={busy}>
+            <button type="button" onClick={() => setConfirm(false)} disabled={busy}>
               Back
             </button>
             <button
+              type="button"
               className="primary"
               disabled={busy || !ready}
               onClick={() => void command("launch")}
