@@ -133,26 +133,33 @@ export default function DomainsWorkspace({ projectId }: { projectId: string }) {
             hosting ownership TXT record as well. Some registrars expect @ for a
             root domain or only the subdomain prefix.
           </p>
-          <table className="connected-table">
-            <thead>
-              <tr>
-                <th>Type</th>
-                <th>Name</th>
-                <th>Value</th>
-                <th>Purpose</th>
-              </tr>
-            </thead>
-            <tbody>
-              {instructions.rows.map((r) => (
-                <tr key={`${r.type}:${r.name}:${r.value}`}>
-                  <td>{r.type}</td>
-                  <td>{r.name}<button type="button" onClick={() => { void navigator.clipboard.writeText(r.name).then(() => setNotice("Record name copied.")).catch(() => setNotice("Select and copy the record name.")); }}>Copy name</button></td>
-                  <td className="dns-value">{r.value}<button type="button" onClick={() => { void navigator.clipboard.writeText(r.value).then(() => setNotice(`Copied ${r.type} value for ${instructions.host}.`)).catch(() => setNotice("Clipboard unavailable. Select and copy the value shown here.")); }}>Copy value</button></td>
-                  <td>{r.purpose}</td>
+          <div
+            role="region"
+            aria-label={`Hosting DNS records for ${instructions.host}`}
+            tabIndex={0}
+            style={{ overflowX: "auto" }}
+          >
+            <table className="connected-table">
+              <thead>
+                <tr>
+                  <th>Type</th>
+                  <th>Name</th>
+                  <th>Value</th>
+                  <th>Purpose</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {instructions.rows.map((r) => (
+                  <tr key={`${r.type}:${r.name}:${r.value}`}>
+                    <td>{r.type}</td>
+                    <td>{r.name}<button type="button" onClick={() => { void navigator.clipboard.writeText(r.name).then(() => setNotice("Record name copied.")).catch(() => setNotice("Select and copy the record name.")); }}>Copy name</button></td>
+                    <td className="dns-value">{r.value}<button type="button" onClick={() => { void navigator.clipboard.writeText(r.value).then(() => setNotice(`Copied ${r.type} value for ${instructions.host}.`)).catch(() => setNotice("Clipboard unavailable. Select and copy the value shown here.")); }}>Copy value</button></td>
+                    <td>{r.purpose}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </details>
       )}
     </section>

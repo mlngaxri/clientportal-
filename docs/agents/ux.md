@@ -29,3 +29,10 @@ Latest known portal work includes complete interactive preview flows plus subseq
 - Added a static regression requiring every domain button to declare its type and exactly one domain control to be a submit button.
 - Evidence: **S0 pending fresh CI**. Parent `ad1c68184a5acf77232b3aac90540983e2e254aa` validation run 169 is green, but exact-SHA validation for this change is still required before S1.
 - Next: continue the connected action audit for status announcements, keyboard focus and narrow-layout behavior. Builder 5 owns deployment provenance.
+
+### 2026-10-03 — Keyboard-scrollable domain DNS records
+- Followed the UX handoff into narrow-layout/accessibility reliability while the current release validation is independently exercising the auth recovery fix.
+- `DomainsWorkspace` rendered hosting DNS records as a four-column table with no overflow boundary. Long DNS values can force the connected workspace wider than a narrow viewport, and keyboard-only users had no focusable horizontal-scroll region.
+- Wrapped the DNS table in a named, focusable region with horizontal overflow so narrow layouts preserve the table without clipping the page and keyboard users can reach and scroll the records. Added focused static regression coverage.
+- Evidence: **S0 pending fresh CI**. Parent `0ddbb9c50a83614828433afdfc701918ac28ea89` validation run 174 was still in progress when this task was selected; exact-SHA validation is required before S1.
+- Next: continue auditing connected status/action surfaces for announcement, focus and narrow-layout defects. Builder 5 owns deployment provenance.
