@@ -13,7 +13,9 @@ export async function GET(req: Request) {
   try {
     if (code) {
       const jar = await cookies();
-      const remember = jar.get("ff-remember")?.value === "yes";
+      const returnPath = safeReturnPath(url.searchParams.get("next"));
+      const recovery = returnPath === "/account/password";
+      const remember = !recovery && jar.get("ff-remember")?.value === "yes";
       const expiry = sessionExpiry(remember);
       const client = await db({ remember, expiry });
       const { error } = await client.auth.exchangeCodeForSession(code);
@@ -24,10 +26,7 @@ export async function GET(req: Request) {
           sessionCookieOptions(remember, expiry),
         );
         return NextResponse.redirect(
-          new URL(
-            safeReturnPath(url.searchParams.get("next")),
-            process.env.APP_URL || url.origin,
-          ),
+          new URL(returnPath, process.env.APP_URL || url.origin),
         );
       }
     }
