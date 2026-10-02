@@ -66,3 +66,59 @@ test("operators cannot submit or withdraw customer revisions", async () => {
 
   await db.close();
 });
+
+test("operators cannot rewrite customer revision drafts", async () => {
+  const db = await database();
+  const owner = randomUUID();
+  const operator = randomUUID();
+  const project = randomUUID();
+  const original = { objects: [{ id: "text", type: "text", text: "Keep this customer direction" }] };
+  const replacement = { objects: [{ id: "text", type: "text", text: "Operator replacement" }] };
+
+  await db.query("insert into auth.users(id) values($1),($2)", [owner, operator]);
+  await db.query(
+    "insert into projects(id,owner_id,phase,revision_limit,revision_used) values($1,$2,'REVIEW',3,0)",
+    [project, owner],
+  );
+  const board = (
+    await db.query<{ id: string }>(
+      "insert into boards(project_id,kind,data) values($1,'revision',$2) returning id",
+      [project, JSON.stringify(original)],
+    )
+  ).rows[0];
+
+  await db.query("select set_config('test.uid',$1,false)", [operator]);
+  await db.query("select set_config('test.role','operator',false)");
+  await assert.rejects(
+    () => db.query("select project_command($1,'save_board',$2::jsonb,0,$3)", [project, JSON.stringify({ boardId: board.id, data: replacement }), randomUUID()]),
+    /Only the project owner can edit revision Directions/,
+  );
+
+  const rejected = (
+    await db.query<{ data: unknown; version: number; commands: number }>(
+      `select b.data,b.version,(select count(*)::int from commands c where c.project_id=$1) as commands
+       from boards b where b.id=$2`,
+      [project, board.id],
+    )
+  ).rows[0];
+  assert.deepEqual(rejected.data, original);
+  assert.equal(rejected.version, 0);
+  assert.equal(rejected.commands, 0);
+
+  await db.query("select set_config('test.uid',$1,false)", [owner]);
+  await db.query("select set_config('test.role','',false)");
+  await db.query("select project_command($1,'save_board',$2::jsonb,0,$3)", [project, JSON.stringify({ boardId: board.id, data: replacement }), randomUUID()]);
+
+  const saved = (
+    await db.query<{ data: unknown; version: number; commands: number }>(
+      `select b.data,b.version,(select count(*)::int from commands c where c.project_id=$1) as commands
+       from boards b where b.id=$2`,
+      [project, board.id],
+    )
+  ).rows[0];
+  assert.deepEqual(saved.data, replacement);
+  assert.equal(saved.version, 1);
+  assert.equal(saved.commands, 1);
+
+  await db.close();
+});
