@@ -31,6 +31,11 @@ test("Saved requires exact acknowledged board identity, version and semantic con
   ])
     assert.throws(() => verifySaveReceipt(receipt, "p", "b", 2, data));
 });
+test("State saves fail closed at both API and persistence boundaries", async () => {
+  const route = await readFile("app/api/projects/[id]/command/route.ts", "utf8");
+  assert.match(route, /body\.action === "save_board"[\s\S]*validateStates\([\s\S]*Invalid State schedules/);
+  assert.ok(route.indexOf("validateStates(") < route.indexOf('client.rpc("project_command"'));
+});
 test("SQL save validation, replay binding and atomic onboarding", async () => {
   const db = new PGlite();
   try {
@@ -42,6 +47,9 @@ test("SQL save validation, replay binding and atomic onboarding", async () => {
     );
     await db.exec(
       await readFile("supabase/migrations/002_auth_save_integrity.sql", "utf8"),
+    );
+    await db.exec(
+      await readFile("supabase/migrations/011_states_contract.sql", "utf8"),
     );
     const owner = randomUUID(),
       other = randomUUID();
@@ -126,6 +134,41 @@ test("SQL save validation, replay binding and atomic onboarding", async () => {
           board.version,
         ),
       /unique/,
+    );
+    await db.query("update projects set phase='LIVE',pro=true where id=$1", [p.id]);
+    const statesBoard = (
+      await db.query<any>(
+        "insert into boards(project_id,kind,data) values($1,'states',$2) returning *",
+        [p.id, JSON.stringify({ objects: [], states: [] })],
+      )
+    ).rows[0];
+    const malformedStateKey = randomUUID();
+    await assert.rejects(
+      () =>
+        command(
+          "save_board",
+          {
+            boardId: statesBoard.id,
+            data: { objects: [], states: [null] },
+          },
+          statesBoard.version,
+          malformedStateKey,
+        ),
+      /Invalid State schedule payload/,
+    );
+    const stateAfter = (
+      await db.query<any>("select version,data from boards where id=$1", [statesBoard.id])
+    ).rows[0];
+    assert.equal(stateAfter.version, statesBoard.version);
+    assert.deepEqual(stateAfter.data, { objects: [], states: [] });
+    assert.equal(
+      (
+        await db.query<any>(
+          "select count(*)::int as n from commands where project_id=$1 and key=$2",
+          [p.id, malformedStateKey],
+        )
+      ).rows[0].n,
+      0,
     );
     await db.query("select set_config('test.uid',$1,false)", [other]);
     await assert.rejects(
