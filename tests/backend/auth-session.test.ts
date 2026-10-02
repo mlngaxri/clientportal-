@@ -38,6 +38,7 @@ test("remembered sessions receive persistent cookie lifetime while normal sessio
   assert.equal(remembered.secure, true);
   assert.equal(remembered.sameSite, "lax");
   assert.equal(remembered.maxAge, 61);
+  assert.equal(transient.maxAge, undefined);
   assert.equal("expires" in transient ? transient.expires : undefined, undefined);
   assert.equal(
     transientProviderOptions.maxAge,
@@ -82,10 +83,14 @@ test("session lifetimes reject removed, forged, changed and expired proofs", asy
   );
 });
 
-test("auth cookie matching covers Supabase chunked session cookies only", () => {
+test("expired sessions clear only Supabase auth-token cookies while preserving unrelated and PKCE cookies", () => {
   assert.equal(isAuthSessionCookie("sb-project-auth-token"), true);
   assert.equal(isAuthSessionCookie("sb-project-auth-token.0"), true);
   assert.equal(isAuthSessionCookie("sb-project-auth-token.12"), true);
-  assert.equal(isAuthSessionCookie("sb-project-auth-token-extra"), false);
-  assert.equal(isAuthSessionCookie("ff-session-until"), false);
+  assert.equal(
+    isAuthSessionCookie("sb-project-auth-token-code-verifier"),
+    false,
+  );
+  assert.equal(isAuthSessionCookie("sb-project-preferences"), false);
+  assert.equal(isAuthSessionCookie("sb-unrelated-cookie"), false);
 });
