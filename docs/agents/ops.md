@@ -25,3 +25,11 @@ No autonomous run recorded under the refined protocol yet.
 - Boundary: this hardens request validation and its contract with the persisted State trigger; it does not claim a live scheduler, publishing operation or external provider acceptance.
 - Blockers: none for this source task; automated workflow evidence is pending.
 - Next: add authenticated `save_board` route/integration coverage proving friendly API rejection and database-trigger rejection agree on malformed State payloads without mutating the board.
+
+### 2026-10-02 — Explicit State activation contract regression
+- Added backend regression coverage for the newly separated State release boundary: activation must use the dedicated release table/RPC, require a live Pro project, pin the exact board version, preserve request identity for idempotent replay, and persist the command receipt.
+- Source commit: `12d921c1a5cd011bf24f1e881d2eaa446de584be`.
+- Evidence: **S0 pending CI**. Workflow run 77 was pending when checked; S1 is not claimed. The local runner could not reach GitHub to materialize dependencies, so no local test result is substituted for CI.
+- Boundary: this protects source-level activation semantics only. It does not claim a production scheduler, live publishing, billing entitlement, Vercel deployment or external provider acceptance.
+- Blockers: none in product source; automated evidence is pending.
+- Next: add authenticated malformed-State save coverage that proves both the HTTP validation boundary and database trigger reject the payload without changing the board version or creating a command receipt.
