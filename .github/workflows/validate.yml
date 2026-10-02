@@ -25,7 +25,10 @@ jobs:
         with:
           version: latest
       - name: Start isolated real Supabase
-        run: supabase start -x studio,imgproxy,edge-runtime,logflare,vector,supavisor > /tmp/fourthform-supabase.log
+        shell: bash
+        run: |
+          set -o pipefail
+          supabase start -x studio,imgproxy,edge-runtime,logflare,vector,supavisor 2>&1 | tee /tmp/fourthform-supabase.log
       - name: Configure disposable integration environment
         run: node scripts/ci-environment.mjs
       - run: npm run build
@@ -43,7 +46,9 @@ jobs:
         if: always()
         with:
           name: connected-system-evidence
-          path: test-results/
+          path: |
+            test-results/
+            /tmp/fourthform-supabase.log
       - name: Stop disposable services
         if: always()
         run: supabase stop --no-backup
