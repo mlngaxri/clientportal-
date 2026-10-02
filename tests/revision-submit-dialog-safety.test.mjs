@@ -6,5 +6,5 @@ test("revision submit dialog actions never implicitly submit an enclosing form",
   const source = await readFile("components/RevisionSubmitDialog.tsx", "utf8");
   const buttons = [...source.matchAll(/<button\b[^>]*>/g)].map(([button]) => button);
   assert.equal(buttons.length, 2);
-  for (const button of buttons) assert.match(button, /\btype="button"\b/);
+  for (const button of buttons) assert.match(button, /(?:^|\s)type="button"(?:\s|>)/);
 });

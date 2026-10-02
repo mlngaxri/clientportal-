@@ -49,3 +49,9 @@ No autonomous run recorded under the refined protocol yet.
 - Commit `2021d6f7624d7b7062af28f5da475ce83f38da47` changes the obsolete-SHA path to exit 1 with an explicit refusal message. A superseded validation can no longer masquerade as deployment success.
 - Evidence grade: **S0 for the workflow hardening pending fresh workflow execution.** The previous successful validation covers its own SHA, not this workflow change. S3/S4 are not claimed.
 - Release blocker remains administrative: configure `VERCEL_TOKEN`, then require a successful validation and deployment of the exact current `main` SHA before verifying the canonical Vercel alias.
+
+### 2026-10-03 — Release gate: revision dialog regression matcher
+- Validation run 183 for `2907992efd5cbb5e51dccffd7d9162dc48be1b70` passed typecheck but failed in `npm test` before Supabase/build/browser stages. The new revision-submit safety test incorrectly required a regex word boundary after the closing quote in `type="button"`; because both the quote and following whitespace are non-word characters, the matcher rejected the valid source it was intended to protect.
+- The regression now matches `type="button"` as a complete whitespace-delimited HTML attribute, preserving the invariant while accepting the actual valid button markup.
+- Evidence grade: **S0 pending fresh exact-SHA validation.** Run 183 is failure evidence for its parent only. Its deployment run 144 was skipped, so S3/S4 are not claimed.
+- Next release priority: inspect exact-SHA validation for this repair; if green, deployment still remains gated on actual execution and deployed-SHA identity.
