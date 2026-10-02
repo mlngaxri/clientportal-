@@ -122,3 +122,48 @@ test("operators cannot rewrite customer revision drafts", async () => {
 
   await db.close();
 });
+
+test("owners cannot rewrite revision work after it is submitted", async () => {
+  const db = await database();
+  const owner = randomUUID();
+  const operator = randomUUID();
+  const project = randomUUID();
+  const original = { objects: [{ id: "text", type: "text", text: "Submitted customer direction" }] };
+  const replacement = { objects: [{ id: "text", type: "text", text: "Late replacement" }] };
+
+  await db.query("insert into auth.users(id) values($1),($2)", [owner, operator]);
+  await db.query("insert into projects(id,owner_id,phase,revision_limit,revision_used) values($1,$2,'REVIEW',3,0)", [project, owner]);
+  const board = (await db.query<{ id: string }>("insert into boards(project_id,kind,data) values($1,'revision',$2) returning id", [project, JSON.stringify(original)])).rows[0];
+
+  await db.query("select set_config('test.uid',$1,false)", [owner]);
+  await db.query("select set_config('test.role','',false)");
+  await db.query("select project_command($1,'submit_revision',$2::jsonb,0,$3)", [project, JSON.stringify({ boardId: board.id }), randomUUID()]);
+
+  const rejectedKey = randomUUID();
+  await assert.rejects(
+    () => db.query("select project_command($1,'save_board',$2::jsonb,1,$3)", [project, JSON.stringify({ boardId: board.id, data: replacement }), rejectedKey]),
+    /Only a draft revision can be edited/,
+  );
+
+  await db.query("select set_config('test.uid',$1,false)", [operator]);
+  await db.query("select set_config('test.role','operator',false)");
+  await db.query("select project_command($1,'start_revision',$2::jsonb,1,$3)", [project, JSON.stringify({ boardId: board.id }), randomUUID()]);
+
+  await db.query("select set_config('test.uid',$1,false)", [owner]);
+  await db.query("select set_config('test.role','',false)");
+  await assert.rejects(
+    () => db.query("select project_command($1,'save_board',$2::jsonb,2,$3)", [project, JSON.stringify({ boardId: board.id, data: replacement }), randomUUID()]),
+    /Only a draft revision can be edited/,
+  );
+
+  const persisted = (await db.query<{ data: unknown; status: string; version: number; rejected: number }>(
+    `select b.data,b.status,b.version,(select count(*)::int from commands c where c.project_id=$1 and c.key=$3) as rejected from boards b where b.id=$2`,
+    [project, board.id, rejectedKey],
+  )).rows[0];
+  assert.deepEqual(persisted.data, original);
+  assert.equal(persisted.status, "IN_PROGRESS");
+  assert.equal(persisted.version, 2);
+  assert.equal(persisted.rejected, 0);
+
+  await db.close();
+});
