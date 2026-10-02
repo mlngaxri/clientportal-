@@ -149,7 +149,7 @@ test("stale owner saves cannot overwrite newer next-draft content after revision
 
   await assert.rejects(
     () => db.query("select project_command($1,'save_board',$2::jsonb,0,$3)", [project, JSON.stringify({ boardId: nextDraft.id, data: staleReplacement }), staleSaveKey]),
-    /Conflict/,
+    /conflict/i,
   );
 
   const afterStaleSave = (
