@@ -48,6 +48,52 @@ test("persisted revision submissions reject semantically empty Directions", asyn
   await db.close();
 });
 
+test("project_command rejects an incomplete revision without consuming entitlement", async () => {
+  const db = await database();
+  const owner = randomUUID();
+  const project = randomUUID();
+  const commandKey = randomUUID();
+  await db.query("insert into auth.users(id) values($1)", [owner]);
+  await db.query(
+    "insert into projects(id,owner_id,phase,revision_limit,revision_used) values($1,$2,'REVIEW',3,1)",
+    [project, owner],
+  );
+  const board = (
+    await db.query<{ id: string }>(
+      "insert into boards(project_id,kind,data) values($1,'revision',$2) returning id",
+      [project, data({ id: "empty", type: "text", text: "   ", target: { page: "/" } })],
+    )
+  ).rows[0];
+  await db.query("select set_config('test.uid',$1,false)", [owner]);
+
+  await assert.rejects(
+    () =>
+      db.query(
+        "select project_command($1,'submit_revision',$2::jsonb,0,$3)",
+        [project, JSON.stringify({ boardId: board.id }), commandKey],
+      ),
+    /revision_submission_requires_complete_directions/,
+  );
+
+  const persisted = (
+    await db.query<{ status: string; submitted_data: unknown; revision_used: number }>(
+      "select b.status,b.submitted_data,p.revision_used from boards b join projects p on p.id=b.project_id where b.id=$1",
+      [board.id],
+    )
+  ).rows[0];
+  assert.equal(persisted.status, "DRAFT");
+  assert.equal(persisted.submitted_data, null);
+  assert.equal(persisted.revision_used, 1);
+  const commands = (
+    await db.query<{ count: number }>(
+      "select count(*)::int as count from commands where project_id=$1 and key=$2",
+      [project, commandKey],
+    )
+  ).rows[0];
+  assert.equal(commands.count, 0);
+  await db.close();
+});
+
 test("persisted revision submissions accept each supported form of customer intent", async () => {
   const cases = [
     { id: "text", type: "text", text: "Change the heading" },
