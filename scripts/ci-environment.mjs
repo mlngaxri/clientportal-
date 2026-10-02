@@ -8,7 +8,7 @@ const result = JSON.parse(
 );
 const values = {
   APP_ENV: "development",
-  APP_URL: "http://localhost:4173",
+  APP_URL: "http://127.0.0.1:4173",
   NEXT_PUBLIC_SUPABASE_URL: result.API_URL,
   NEXT_PUBLIC_SUPABASE_ANON_KEY: result.ANON_KEY,
   SUPABASE_SERVICE_ROLE_KEY: result.SERVICE_ROLE_KEY,
