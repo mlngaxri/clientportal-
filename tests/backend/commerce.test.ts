@@ -114,11 +114,13 @@ test("payments and subscriptions require owner reservations and replay exactly o
   await db.close();
 });
 
-test("billing portal return URL is validated and normalized", async () => {
+test("billing portal return URL is validated and normalized before contacting Stripe", async () => {
   const source = await readFile("app/api/billing/route.ts", "utf8");
   assert.match(source, /if \(!base\) throw new Error\("Billing return address is not configured\."\)/);
   assert.match(source, /new URL\(`\/projects\/\$\{projectId\}\/overview`, base\)/);
   assert.match(source, /\["https:", "http:"\]\.includes\(returnUrl\.protocol\)/);
   assert.match(source, /return_url: returnUrl\.toString\(\)/);
   assert.doesNotMatch(source, /return_url: `\$\{process\.env\.APP_URL\}/);
+  assert.ok(source.indexOf("const returnUrl = new URL") < source.indexOf("const s = stripe()"));
+  assert.ok(source.indexOf("returnUrl.protocol") < source.indexOf("s.subscriptions.retrieve"));
 });

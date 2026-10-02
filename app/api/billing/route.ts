@@ -17,6 +17,11 @@ export async function POST(req: Request) {
       .maybeSingle();
     if (error) throw error;
     if (!data) throw new Error("There is no Pro subscription to manage.");
+    const base = process.env.APP_URL;
+    if (!base) throw new Error("Billing return address is not configured.");
+    const returnUrl = new URL(`/projects/${projectId}/overview`, base);
+    if (!["https:", "http:"].includes(returnUrl.protocol))
+      throw new Error("Billing return address is not configured.");
     const s = stripe();
     const subscription = await s.subscriptions.retrieve(data.id);
     if (subscription.metadata.projectId !== projectId)
@@ -25,11 +30,6 @@ export async function POST(req: Request) {
       typeof subscription.customer === "string"
         ? subscription.customer
         : subscription.customer.id;
-    const base = process.env.APP_URL;
-    if (!base) throw new Error("Billing return address is not configured.");
-    const returnUrl = new URL(`/projects/${projectId}/overview`, base);
-    if (!["https:", "http:"].includes(returnUrl.protocol))
-      throw new Error("Billing return address is not configured.");
     const session = await s.billingPortal.sessions.create({
       customer,
       return_url: returnUrl.toString(),
