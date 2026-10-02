@@ -1,4 +1,5 @@
 "use client";
+import { useEffect, useRef } from "react";
 import { downloadDraft } from "../lib/recovery";
 import type { useSave } from "./useSave";
 export default function RecoveryNotice({
@@ -15,6 +16,12 @@ export default function RecoveryNotice({
     data,
     localWarning,
   } = editor;
+  const recoveryAction = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (recovery) recoveryAction.current?.focus();
+  }, [recovery]);
+
   return (
     <>
       {editor.error.includes("session ended") && <p><a href={`/start?mode=signin&next=${encodeURIComponent(typeof window === "undefined" ? "/app" : location.pathname + location.search)}`}>Sign in and return to this draft ↗</a></p>}
@@ -23,14 +30,14 @@ export default function RecoveryNotice({
       {recovery && (
         <section
           className="recovery-notice"
-          aria-label="Recover unfinished work"
+          aria-labelledby="recovery-heading"
         >
-          <p>
+          <p id="recovery-heading">
             Unfinished work was found on this device. It has not been saved to
             Fourthform.
           </p>
           <small>Local draft: {new Date(recovery.updatedAt).toLocaleString()} · Saved version {recovery.version}</small>
-          <button onClick={recover}>Restore draft</button>
+          <button ref={recoveryAction} onClick={recover}>Restore draft</button>
           <button onClick={() => downloadDraft(recovery)}>Export draft</button>
           <button onClick={discardRecovery}>Discard local copy</button>
         </section>
