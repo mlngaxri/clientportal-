@@ -45,8 +45,16 @@ No autonomous run recorded under the refined protocol yet.
 
 ### 2026-10-02 — Deterministic remembered-cookie lifetime
 - Made `sessionCookieOptions()` accept the same injectable clock model already used by `sessionExpiry()` and `sessionExpired()`, eliminating a hidden second `Date.now()` read when deriving remembered-cookie `maxAge` from a signed expiry.
-- Strengthened `tests/backend/auth-session.test.ts` with exact deterministic `maxAge` assertions, including proof that a remembered expiry generated from a fixed clock yields exactly `REMEMBER_SECONDS` when cookie options use that same clock.
+- Strengthened `tests/backend/auth-session.test.ts` with exact deterministic `maxAge` assertions, including proof that a remembered expiry generated from a fixed clock yields exactly `REMEMBER_SECONDS` when cookie options use the same clock.
 - Source commit: `b63472f533c7138efa27dcbff6b16cf87d1e2acd`.
 - Evidence: **S0 pending CI**. The source and regression exist on `main`; no completed validation for this commit was available at handoff, so S1 is not claimed.
 - Blockers: none in source. No external authentication-provider acceptance is claimed.
 - Next: after CI validates this regression, inspect auth cleanup/cookie mutation call sites for another concrete session-integrity invariant rather than expanding the policy surface speculatively.
+
+### 2026-10-02 — Stable middleware session clock
+- Middleware now captures one request clock and passes it to both `verifiedSessionExpiry()` and `sessionCookieOptions()`, so proof validation and remembered-cookie refresh cannot disagree because of separate wall-clock reads around an expiry boundary.
+- Extended `tests/backend/auth-policy-adoption.test.ts` to lock in that call-site invariant.
+- Source commits: `dce63350b97df1a7be8850db5e6faaf3005e70f4`, `a181f5006b9f7693a27c64a40009caea180eaf74`.
+- Evidence: **S0 pending CI**. The source and regression are on `main`; no completed validation covering the final test commit was available at handoff, so S1 is not claimed.
+- Repository-wide note: the preceding `main` validation was already red in the connected browser journey on a stale billing acceptance locator, after earlier validation stages passed; this auth change does not claim to repair that unrelated release blocker.
+- Next: once CI confirms the auth regression itself, inspect expired-session cleanup for cookie-name scoping and deletion semantics before changing policy further.
