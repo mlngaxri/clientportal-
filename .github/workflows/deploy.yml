@@ -27,8 +27,8 @@ jobs:
           VERIFIED_SHA: ${{ github.event.workflow_run.head_sha }}
         run: |
           if [ -z "$VERCEL_TOKEN" ]; then
-            printf '%s\n' 'Vercel deployment is not configured. Add the repository VERCEL_TOKEN secret after staging acceptance.'
-            exit 0
+            printf '%s\n' 'Vercel deployment is not configured. Add the repository VERCEL_TOKEN secret after staging acceptance.' >&2
+            exit 1
           fi
           current=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" --jq .object.sha)
           if [ "$current" != "$VERIFIED_SHA" ]; then
