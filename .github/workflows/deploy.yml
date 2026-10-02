@@ -32,8 +32,8 @@ jobs:
           fi
           current=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" --jq .object.sha)
           if [ "$current" != "$VERIFIED_SHA" ]; then
-            printf '%s\n' 'A newer commit exists. Its validation will own the next deployment.'
-            exit 0
+            printf '%s\n' 'A newer commit exists. Refusing to report a successful deployment for an obsolete validated SHA.' >&2
+            exit 1
           fi
           printf '%s\n' 'ready=true' >> "$GITHUB_OUTPUT"
       - uses: actions/checkout@v4
