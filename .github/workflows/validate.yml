@@ -49,6 +49,7 @@ jobs:
           path: |
             test-results/
             /tmp/fourthform-supabase.log
+            /tmp/fourthform-system.log
       - name: Stop disposable services
         if: always()
         run: supabase stop --no-backup
