@@ -66,3 +66,12 @@ No autonomous run recorded under the refined protocol yet.
 - Evidence: **S0 pending fresh CI**. No completed validation run for the source commit was available when recorded, so S1 is not inferred.
 - Boundary: this is automated contract coverage only; it does not claim production State scheduling, publishing, deployment or external provider acceptance.
 - Next: after CI confirms this regression, inspect State activation replay when a board changes after release to ensure the pinned release remains deterministic and cannot silently follow draft edits.
+
+### 2026-10-02 — Repair withdrawn-revision regression truthfulness
+- Validation run 137 failed at `npm test` after typecheck passed; Supabase, build and browser stages were consequently skipped.
+- The newly added withdrawal conflict regression expected `submitted_data` to retain the submitted snapshot after withdrawal, but the persisted command contract intentionally clears `submitted_data` when reopening the revision draft. The stale-write/refund invariant was otherwise aimed at the correct board-version boundary.
+- Updated the regression to require the authoritative post-withdraw state: draft data is preserved, `submitted_data` is null, board version remains advanced, the refunded allowance remains unchanged, and the stale command creates no receipt. A current-version save must continue to leave `submitted_data` null.
+- Source commit: `d0fb4981f66b6526512e6aebdf83cccd2312edb2`.
+- Evidence: **S0 pending fresh CI**. Run 137 is failure evidence for the parent regression, not proof for this repair.
+- Boundary: this repairs automated test truthfulness only; it does not claim deployment, billing, publishing or external-provider acceptance.
+- Next: after CI clears, return to State activation replay and verify a pinned release cannot silently follow later draft edits.
