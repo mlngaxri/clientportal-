@@ -37,7 +37,7 @@ test("remembered sessions receive persistent cookie lifetime while normal sessio
   assert.equal(remembered.sameSite, "lax");
   assert.equal(remembered.maxAge, 61);
   assert.equal(transient.maxAge, undefined);
-  assert.equal(transient.expires, undefined);
+  assert.equal("expires" in transient ? transient.expires : undefined, undefined);
   assert.equal(
     { maxAge: 86400, expires: new Date(now + 86400_000), ...transient }.maxAge,
     undefined,
