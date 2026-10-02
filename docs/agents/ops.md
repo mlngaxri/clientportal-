@@ -33,3 +33,11 @@ No autonomous run recorded under the refined protocol yet.
 - Boundary: this protects source-level activation semantics only. It does not claim a production scheduler, live publishing, billing entitlement, Vercel deployment or external provider acceptance.
 - Blockers: none in product source; automated evidence is pending.
 - Next: add authenticated malformed-State save coverage that proves both the HTTP validation boundary and database trigger reject the payload without changing the board version or creating a command receipt.
+
+### 2026-10-02 — Restore inbox enquiry heading semantics
+- Current `main` validation run 87 passed install, typecheck, unit/integration tests, isolated Supabase startup, build and application startup, then failed the connected phone journey because the acceptance test could not find the visible enquiry name `Alex Visitor` by heading role.
+- Restored level-2 heading semantics to each enquiry name inside the existing expandable inbox button without changing its visual treatment or interaction. This aligns the rendered accessibility tree with the existing connected-browser regression and makes message cards navigable by heading for assistive technology.
+- Source commit: `b78fb0ebc3a2dddb9135b3395dd508fbbbd67cc1`.
+- Evidence: **S0 pending fresh CI**. Run 87 is failure evidence for the parent state, not proof for this repair; S1 is withheld until validation completes on the repair commit.
+- Boundary: this is an inbox accessibility/browser-regression repair. It does not claim email delivery, external provider acceptance or deployed production identity.
+- Next: after CI clears this browser blocker, return to authenticated malformed-State save coverage proving HTTP/database rejection agreement without board mutation or command receipts.
