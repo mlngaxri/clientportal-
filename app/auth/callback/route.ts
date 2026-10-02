@@ -26,15 +26,11 @@ export async function GET(req: Request) {
           await signSessionExpiry(expiry),
           sessionCookieOptions(remember, expiry),
         );
-        return NextResponse.redirect(
-          new URL(returnPath, process.env.APP_URL || url.origin),
-        );
+        return NextResponse.redirect(new URL(returnPath, url.origin));
       }
     }
   } catch {
     /* Invalid/expired recovery or OAuth links return to a recoverable sign-in. */
   }
-  return NextResponse.redirect(
-    new URL("/start?error=signin", process.env.APP_URL || url.origin),
-  );
+  return NextResponse.redirect(new URL("/start?error=signin", url.origin));
 }

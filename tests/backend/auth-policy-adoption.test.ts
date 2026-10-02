@@ -30,7 +30,13 @@ test("password recovery callbacks cannot inherit a stale remembered-session poli
   assert.match(text, /const recovery = returnPath === "\/account\/password";/);
   assert.match(text, /const remember = !recovery && jar\.get\("ff-remember"\)\?\.value === "yes";/);
   assert.match(text, /if \(recovery\) jar\.delete\("ff-remember"\);/);
-  assert.match(text, /new URL\(returnPath, process\.env\.APP_URL \|\| url\.origin\)/);
+});
+
+test("auth callback preserves the request origin that owns its session cookies", async () => {
+  const text = await source(callbackRoute);
+  assert.match(text, /NextResponse\.redirect\(new URL\(returnPath, url\.origin\)\)/);
+  assert.match(text, /NextResponse\.redirect\(new URL\("\/start\?error=signin", url\.origin\)\)/);
+  assert.doesNotMatch(text, /new URL\(returnPath, process\.env\.APP_URL/);
 });
 
 test("password recovery redirect remains an absolute callback without APP_URL", async () => {

@@ -78,3 +78,10 @@ No autonomous run recorded under the refined protocol yet.
 - Signup now builds the callback with `new URL()`, preserves the sanitized `next` parameter via `URLSearchParams`, and has regression coverage preventing direct APP_URL interpolation from returning.
 - Evidence: **S0 pending fresh CI**. No external Supabase/Auth acceptance is claimed.
 - Next: inspect recovery-session privilege scoping before password-update completion, or another concrete auth integrity boundary.
+
+### 2026-10-03 — Preserve auth callback cookie origin
+- Connected validation remained red in password recovery after the loopback callback was allowlisted. The callback exchanged the code on the request host, then redirected through `APP_URL`; when acceptance entered through `127.0.0.1` but APP_URL named `localhost`, host-only Supabase session cookies were lost before `/account/password` loaded.
+- Successful and failed auth callbacks now redirect on the callback request origin. Provider callback generation still uses configured APP_URL where appropriate; only the post-exchange browser navigation preserves the cookie-owning host.
+- Added regression coverage locking request-origin redirects and preventing APP_URL from being reintroduced into the post-exchange redirect.
+- Evidence: **S0 pending fresh CI**. No external Supabase/Auth acceptance is claimed.
+- Next: verify the connected recovery journey on this exact SHA; then inspect recovery-session privilege scoping or another concrete auth integrity boundary.
