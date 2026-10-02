@@ -110,7 +110,7 @@ export function failure(error: unknown) {
     }),
   );
   const known =
-    /^(Please sign in|Project not found|Invalid request origin|Save conflict|This Direction is locked|Invalid Direction|Direction |Invalid project asset|Business |Initial Direction|Additional notes|Revisions |Revision |Work has begun|Pro is required|Live management|An additional revision|Add |Resolve or remove|Approval and payment|Launch |The current domain|Only Fourthform|Unknown action|Idempotency key|Enter |Use a password|Recovery is|Sign-in failed|Sign out could|Account creation|Google sign-in|Check your email|Account services|Server integration|Website |Your website|The website|This website|Domain |The domain|Hosting |Choose your|Invalid website|Invalid connection|Invalid State|Search inspection|Unknown website|Uploaded |Choose a document|Document uploads|Document scanning|Payment is being|This payment|Live payments|First applications|Pro billing)/.test(
+    /^(Please sign in|Project not found|Invalid request origin|Save conflict|This Direction is locked|Invalid Direction|Direction |Invalid project asset|Business |Initial Direction|Additional notes|Revisions |Revision |Only a draft revision|Work has begun|Pro is required|Live management|An additional revision|Add |Resolve or remove|Approval and payment|Launch |The current domain|Only Fourthform|Unknown action|Idempotency key|Enter |Use a password|Recovery is|Sign-in failed|Sign out could|Account creation|Google sign-in|Check your email|Account services|Server integration|Website |Your website|The website|This website|Domain |The domain|Hosting |Choose your|Invalid website|Invalid connection|Invalid State|Search inspection|Unknown website|Uploaded |Choose a document|Document uploads|Document scanning|Payment is being|This payment|Live payments|First applications|Pro billing)/.test(
       raw,
     );
   const message = limited
@@ -131,7 +131,7 @@ export function failure(error: unknown) {
             ? 401
             : /not found or access denied/i.test(raw)
               ? 404
-              : /conflict|locked|not editable|not available|cannot be|Work has begun|onboarding is complete/i.test(
+              : /conflict|locked|not editable|not available|cannot be|Only a draft revision|Work has begun|onboarding is complete/i.test(
                     raw,
                   )
                 ? 409
