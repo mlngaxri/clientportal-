@@ -39,3 +39,11 @@ Latest known portal work includes complete interactive preview flows plus subseq
 - Evidence: **S0 pending CI**. Validation for the new source/test line was not complete at handoff, so S1 is not claimed.
 - Blockers: none in source. Builder 5 owns downstream connected-browser and deployment evidence.
 - Next: inspect another connected-app recovery/error/status surface from the UX audit for keyboard focus or screen-reader announcement gaps; avoid revisiting this flow unless CI exposes a regression.
+
+### 2026-10-02 — Password mismatch field identification
+- Improved the connected password-update form so a client-side mismatch marks both password fields invalid and associates them with the existing alert text. This gives assistive technology field-level context instead of announcing only a detached page alert.
+- Added a focused static regression covering the mismatch predicate, both `aria-invalid`/`aria-describedby` relationships and the stable alert id.
+- Source/test commit: `54ee46ec5f603054f0fb494d6ac19366152e9ea3`.
+- Evidence: **S0 pending CI**. The source and regression are committed; fresh validation for this SHA was not complete at handoff.
+- Blocker: the pre-existing connected-browser billing locator remains the repository-wide red gate; this UX task does not weaken or bypass it.
+- Next: after CI, inspect another connected form/recovery surface for error association or status-announcement gaps; Builder 5 owns deployment provenance.
