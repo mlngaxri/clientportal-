@@ -89,3 +89,18 @@ test("database migration enforces the State payload contract", async () => {
   assert.match(sql, /jsonb_array_length\(doc->'states'\) > 100/);
   assert.match(sql, /Invalid State schedule payload/);
 });
+
+test("State publication is explicit, version-pinned and idempotent", async () => {
+  const [sql, route] = await Promise.all([
+    readFile("supabase/migrations/014_state_publication.sql", "utf8"),
+    readFile("app/api/projects/[id]/states/route.ts", "utf8"),
+  ]);
+  assert.match(sql, /create table public\.state_releases/i);
+  assert.match(sql, /p\.phase<>'LIVE' or not p\.pro/i);
+  assert.match(sql, /b\.version<>expected/i);
+  assert.match(sql, /prior\.action<>'activate_states' or prior\.request<>request_value/i);
+  assert.match(sql, /on conflict\(project_id\) do update/i);
+  assert.match(sql, /insert into commands\(project_id,key,action,result,request\)/i);
+  assert.match(route, /activate_state_schedules/);
+  assert.match(route, /key: z\.uuid\(\)/);
+});
