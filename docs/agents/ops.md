@@ -81,3 +81,9 @@ No autonomous run recorded under the refined protocol yet.
 - Evidence: **S0 pending fresh CI**. The parent `main` run 162 passed typecheck and `npm test` but failed while starting isolated real Supabase, so build/browser stages were skipped; that failure is not proof for this change.
 - Boundary: this strengthens source-level State activation/idempotency evidence only. It does not claim production scheduling, publishing, deployment or provider acceptance.
 - Next: after CI validates this regression, inspect activation with a reused idempotency key whose request differs after a draft edit and ensure it continues to fail without mutating the pinned release.
+
+### 2026-10-03 — State activation idempotency mismatch coverage
+- Extended the State activation regression after a draft edit so reusing the original activation key with the newer board version must fail as a different request, while the pinned release remains unchanged and exactly one receipt exists for that key.
+- Evidence: **S0 pending fresh CI**. Current main validation run 167 is green for the parent `94a5c8f56e5dc7a82fee5800b740ae63db70a0cb`; this new commit requires exact-SHA validation before S1.
+- Boundary: source-level idempotency/state-release coverage only; no production scheduling, publishing, billing, deployment or external-provider acceptance is claimed.
+- Next: inspect Pro entitlement loss after activation and prove request-time rendering falls back to usual content without deleting or mutating the pinned release snapshot.
