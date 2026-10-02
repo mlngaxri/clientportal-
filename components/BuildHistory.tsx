@@ -51,7 +51,7 @@ export default function BuildHistory({ projectId }: { projectId: string }) {
       {error && (
         <div role="alert">
           <p>{error}</p>
-          <button onClick={() => setAttempt((n) => n + 1)}>Try again</button>
+          <button type="button" onClick={() => setAttempt((n) => n + 1)}>Try again</button>
         </div>
       )}
       {!loading && !error && <ol className="connected-checks">
