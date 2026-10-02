@@ -25,7 +25,7 @@ export default function RecoveryNotice({
   return (
     <>
       {editor.error.includes("session ended") && <p><a href={`/start?mode=signin&next=${encodeURIComponent(typeof window === "undefined" ? "/app" : location.pathname + location.search)}`}>Sign in and return to this draft ↗</a></p>}
-      {editor.removed.length > 0 && <div className="undo-notice" role="status">{editor.removed.length} Direction{editor.removed.length === 1 ? "" : "s"} removed. <button onClick={editor.undoRemove}>Undo deletion</button></div>}
+      {editor.removed.length > 0 && <div className="undo-notice" role="status">{editor.removed.length} Direction{editor.removed.length === 1 ? "" : "s"} removed. <button type="button" onClick={editor.undoRemove}>Undo deletion</button></div>}
       {localWarning && <p role="status">{localWarning}</p>}
       {recovery && (
         <section
@@ -37,9 +37,9 @@ export default function RecoveryNotice({
             Fourthform.
           </p>
           <small>Local draft: {new Date(recovery.updatedAt).toLocaleString()} · Saved version {recovery.version}</small>
-          <button ref={recoveryAction} onClick={recover}>Restore draft</button>
-          <button onClick={() => downloadDraft(recovery)}>Export draft</button>
-          <button onClick={discardRecovery}>Discard local copy</button>
+          <button type="button" ref={recoveryAction} onClick={recover}>Restore draft</button>
+          <button type="button" onClick={() => downloadDraft(recovery)}>Export draft</button>
+          <button type="button" onClick={discardRecovery}>Discard local copy</button>
         </section>
       )}
       {conflict && (
@@ -56,20 +56,22 @@ export default function RecoveryNotice({
           {!conflict.locked && (
             <>
               <button
+                type="button"
                 onClick={() => resolveConflict("merge")}
                 disabled={conflict.conflicts.length > 0}
               >
                 Merge separate changes
               </button>
-              <button onClick={() => resolveConflict("local")}>
+              <button type="button" onClick={() => resolveConflict("local")}>
                 Continue with my draft
               </button>
             </>
           )}
-          <button onClick={() => resolveConflict("remote")}>
+          <button type="button" onClick={() => resolveConflict("remote")}>
             Use server version
           </button>
           <button
+            type="button"
             onClick={() =>
               downloadDraft({ data, remote: conflict.remote.data })
             }

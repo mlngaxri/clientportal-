@@ -45,7 +45,15 @@ test("connected draft recovery moves keyboard focus to the primary choice", asyn
   assert.match(source, /if \(recovery\) recoveryAction\.current\?\.focus\(\)/);
   assert.match(source, /aria-labelledby="recovery-heading"/);
   assert.match(source, /<p id="recovery-heading">/);
-  assert.match(source, /<button ref=\{recoveryAction\} onClick=\{recover\}>Restore draft<\/button>/);
+  assert.match(source, /<button type="button" ref=\{recoveryAction\} onClick=\{recover\}>Restore draft<\/button>/);
+});
+
+test("recovery actions cannot submit an enclosing editor form", async () => {
+  const source = await readFile("components/RecoveryNotice.tsx", "utf8");
+  const buttons = source.match(/<button\b/g) ?? [];
+  const safeButtons = source.match(/<button(?:\s|\n)+type="button"/g) ?? [];
+  assert.ok(buttons.length > 0);
+  assert.equal(safeButtons.length, buttons.length);
 });
 
 test("password mismatch identifies the affected fields", async () => {
