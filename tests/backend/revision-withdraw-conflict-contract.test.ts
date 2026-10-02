@@ -77,7 +77,7 @@ test("withdrawn revision drafts reject stale pre-withdraw saves without disturbi
     )
   ).rows[0];
   assert.deepEqual(persisted.data, submittedData);
-  assert.deepEqual(persisted.submitted_data, submittedData);
+  assert.equal(persisted.submitted_data, null);
   assert.equal(persisted.status, "DRAFT");
   assert.equal(persisted.version, 2);
   assert.equal(persisted.revision_used, 1);
@@ -104,7 +104,7 @@ test("withdrawn revision drafts reject stale pre-withdraw saves without disturbi
     )
   ).rows[0];
   assert.deepEqual(persisted.data, currentData);
-  assert.deepEqual(persisted.submitted_data, submittedData);
+  assert.equal(persisted.submitted_data, null);
   assert.equal(persisted.status, "DRAFT");
   assert.equal(persisted.version, 3);
   assert.equal(persisted.revision_used, 1);
