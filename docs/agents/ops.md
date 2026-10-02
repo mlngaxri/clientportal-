@@ -58,3 +58,11 @@ No autonomous run recorded under the refined protocol yet.
 - Evidence: **S0 pending fresh CI**. Run 122 is failure evidence for the parent test, not proof for this repair.
 - Boundary: this repairs test truthfulness and preserves the existing board-version concurrency contract; it does not claim deployment or provider acceptance.
 - Next: after CI clears, return to authenticated malformed-State save coverage proving HTTP/database rejection agreement without board mutation or command receipts.
+
+### 2026-10-02 — Malformed State save boundary coverage
+- Added a focused regression that locks the HTTP command route's friendly `validateStates()` rejection before the persistence RPC, then exercises the database State trigger through an authenticated `project_command` save on a live Pro project.
+- The malformed `[null]` State payload must fail at persistence, leave the State board data/version unchanged, and create no command receipt, proving alternate writers cannot bypass the same fail-closed contract.
+- Source commit: `343b8587cb4ea3f42549d41f9e0e5363bd3ac616`.
+- Evidence: **S0 pending fresh CI**. No completed validation run for the source commit was available when recorded, so S1 is not inferred.
+- Boundary: this is automated contract coverage only; it does not claim production State scheduling, publishing, deployment or external provider acceptance.
+- Next: after CI confirms this regression, inspect State activation replay when a board changes after release to ensure the pinned release remains deterministic and cannot silently follow draft edits.
