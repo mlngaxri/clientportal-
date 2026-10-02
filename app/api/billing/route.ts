@@ -25,9 +25,14 @@ export async function POST(req: Request) {
       typeof subscription.customer === "string"
         ? subscription.customer
         : subscription.customer.id;
+    const base = process.env.APP_URL;
+    if (!base) throw new Error("Billing return address is not configured.");
+    const returnUrl = new URL(`/projects/${projectId}/overview`, base);
+    if (!["https:", "http:"].includes(returnUrl.protocol))
+      throw new Error("Billing return address is not configured.");
     const session = await s.billingPortal.sessions.create({
       customer,
-      return_url: `${process.env.APP_URL}/projects/${projectId}/overview`,
+      return_url: returnUrl.toString(),
     });
     return Response.json({ url: session.url });
   } catch (e) {
