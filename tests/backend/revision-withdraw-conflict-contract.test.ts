@@ -17,11 +17,12 @@ async function database() {
   return db;
 }
 
-test("withdrawn revision drafts reject stale pre-withdraw saves without disturbing the refund", async () => {
+test("withdrawn revision drafts reject stale pre-withdraw saves and submits without disturbing the refund", async () => {
   const db = await database();
   const owner = randomUUID();
   const project = randomUUID();
   const staleSaveKey = randomUUID();
+  const staleSubmitKey = randomUUID();
   const currentSaveKey = randomUUID();
   const submittedData = { objects: [{ id: "text", type: "text", text: "Submitted direction" }] };
   const staleData = { objects: [{ id: "text", type: "text", text: "Stale pre-withdraw edit" }] };
@@ -60,6 +61,15 @@ test("withdrawn revision drafts reject stale pre-withdraw saves without disturbi
       ]),
     /conflict/i,
   );
+  await assert.rejects(
+    () =>
+      db.query("select project_command($1,'submit_revision',$2::jsonb,1,$3)", [
+        project,
+        JSON.stringify({ boardId: board.id }),
+        staleSubmitKey,
+      ]),
+    /conflict/i,
+  );
 
   let persisted = (
     await db.query<{
@@ -71,9 +81,9 @@ test("withdrawn revision drafts reject stale pre-withdraw saves without disturbi
       stale_receipts: number;
     }>(
       `select b.data,b.submitted_data,b.status,b.version,p.revision_used,
-        (select count(*)::int from commands c where c.project_id=$1 and c.key=$3) as stale_receipts
+        (select count(*)::int from commands c where c.project_id=$1 and c.key in ($3,$4)) as stale_receipts
        from boards b join projects p on p.id=b.project_id where b.id=$2`,
-      [project, board.id, staleSaveKey],
+      [project, board.id, staleSaveKey, staleSubmitKey],
     )
   ).rows[0];
   assert.deepEqual(persisted.data, submittedData);
@@ -98,9 +108,9 @@ test("withdrawn revision drafts reject stale pre-withdraw saves without disturbi
       stale_receipts: number;
     }>(
       `select b.data,b.submitted_data,b.status,b.version,p.revision_used,
-        (select count(*)::int from commands c where c.project_id=$1 and c.key=$3) as stale_receipts
+        (select count(*)::int from commands c where c.project_id=$1 and c.key in ($3,$4)) as stale_receipts
        from boards b join projects p on p.id=b.project_id where b.id=$2`,
-      [project, board.id, staleSaveKey],
+      [project, board.id, staleSaveKey, staleSubmitKey],
     )
   ).rows[0];
   assert.deepEqual(persisted.data, currentData);
