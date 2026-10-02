@@ -27,7 +27,8 @@ test("session expiry rejects malformed and elapsed values", () => {
 
 test("remembered sessions receive persistent cookie lifetime while normal sessions stay browser-scoped", () => {
   const previous = process.env.NODE_ENV;
-  Object.assign(process.env, { NODE_ENV: "production" });
+  const previousAppEnv = process.env.APP_ENV;
+  Object.assign(process.env, { NODE_ENV: "production", APP_ENV: "production" });
   const now = 1_800_000_000_000;
   const expiry = String(now + 60_001);
   const remembered = sessionCookieOptions(true, expiry, now);
@@ -52,6 +53,19 @@ test("remembered sessions receive persistent cookie lifetime while normal sessio
   );
   if (previous === undefined) Reflect.deleteProperty(process.env, "NODE_ENV");
   else Object.assign(process.env, { NODE_ENV: previous });
+  if (previousAppEnv === undefined) Reflect.deleteProperty(process.env, "APP_ENV");
+  else Object.assign(process.env, { APP_ENV: previousAppEnv });
+});
+
+test("development app sessions remain usable in a production build over local HTTP", () => {
+  const previous = process.env.NODE_ENV;
+  const previousAppEnv = process.env.APP_ENV;
+  Object.assign(process.env, { NODE_ENV: "production", APP_ENV: "development" });
+  assert.equal(sessionCookieOptions(true).secure, false);
+  if (previous === undefined) Reflect.deleteProperty(process.env, "NODE_ENV");
+  else Object.assign(process.env, { NODE_ENV: previous });
+  if (previousAppEnv === undefined) Reflect.deleteProperty(process.env, "APP_ENV");
+  else Object.assign(process.env, { APP_ENV: previousAppEnv });
 });
 
 test("remembered cookie lifetime is derived from the same injected clock as its expiry", () => {

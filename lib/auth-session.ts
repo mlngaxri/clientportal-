@@ -8,7 +8,8 @@ export function sessionExpired(expiry: string | undefined, now = Date.now()) {
 }
 export function sessionCookieOptions(remember: boolean, expiry?: string, now = Date.now()) {
   const remaining = expiry ? Math.max(0, Math.ceil((Number(expiry) - now) / 1000)) : remember ? REMEMBER_SECONDS : SESSION_SECONDS;
-  return { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax" as const, path: "/", ...(remember ? { maxAge: remaining } : { maxAge: undefined, expires: undefined }) };
+  const secure = process.env.APP_ENV === "development" ? false : process.env.NODE_ENV === "production";
+  return { httpOnly: true, secure, sameSite: "lax" as const, path: "/", ...(remember ? { maxAge: remaining } : { maxAge: undefined, expires: undefined }) };
 }
 function signingSecret() { return process.env.SESSION_SIGNING_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY; }
 async function signingKey(secret: string) { return crypto.subtle.importKey("raw", new TextEncoder().encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign", "verify"]); }
