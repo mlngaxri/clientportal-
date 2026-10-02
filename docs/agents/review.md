@@ -66,3 +66,11 @@ No autonomous run recorded under the refined protocol yet.
 - Evidence: **S0 pending CI**. The prior main validation passed typecheck, unit/integration tests, isolated Supabase and build but failed later in the shared connected-browser journey; no completed validation yet covers this new regression commit.
 - Boundary: database authorization evidence only; no external review/upload provider or live deployment acceptance is claimed.
 - Next: after CI covers this regression, inspect stale owner save behavior across completion-created next drafts and ensure an old board/version cannot overwrite the new customer draft.
+
+### 2026-10-02 — Protect completion-created drafts from stale owner saves
+- Extended `tests/backend/revision-completion-contract.test.ts` through the completion-created next draft and the real `project_command(..., 'save_board', ...)` boundary.
+- The regression proves a customer save carrying the pre-completion project version is rejected as a conflict, leaves the new draft data/version unchanged, and creates no idempotency receipt; the same owner can then save successfully with the current post-completion version.
+- Source test commit: `c8efcac94270f286f7c2f1301448e91c874a5993`.
+- Evidence: **S0 pending CI**. The immediately preceding main commit `8b49acc7342e6fdf2eb5f70c2b6985e96b0d93dc` has a green validation run, but no completed workflow yet covers this new regression commit, so S1 is not inferred.
+- Boundary: database conflict/revision integrity evidence only; no external review/upload provider or live deployment acceptance is claimed.
+- Next: once CI covers this regression, inspect stale submit behavior on the completion-created draft so an old client cannot consume another revision allowance after the transition.
