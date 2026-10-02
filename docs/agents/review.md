@@ -82,3 +82,11 @@ No autonomous run recorded under the refined protocol yet.
 - Evidence: **S0 pending CI**. The preceding main SHA `4ed486cd348544f6bec124f1738c1898d9f74a3e` completed validation successfully, but no completed workflow was visible for this new test commit at handoff, so S1 is not inferred.
 - Boundary: database conflict/revision-accounting evidence only; no external review/upload provider, deployment, or live-provider acceptance is claimed.
 - Next: inspect cross-session withdraw/re-save behavior after a submitted next draft is withdrawn, ensuring a stale pre-withdraw client cannot overwrite the reopened draft or disturb the refunded allowance.
+
+### 2026-10-02 — Protect withdrawn drafts from stale resubmission
+- Extended `tests/backend/revision-withdraw-conflict-contract.test.ts` across both stale `save_board` and stale `submit_revision` calls after withdrawal reopens a revision draft.
+- The regression proves both version-1 commands conflict after withdrawal advances the board to version 2, leave the reopened draft `DRAFT` with `submitted_data` cleared, preserve the refunded `revision_used=1`, and create no failed-command receipts; a current version-2 save still succeeds without consuming the refund.
+- Source test commit: `3f1c590f18aab25ecba061e727410d8edaa9d61f`.
+- Evidence: **S0 pending CI**. Main was already red at typecheck on parent commit `0983bb6c4fde0459115ef0218f4f32625af05a33`; do not infer validation for this test change until an exact-SHA run passes.
+- Boundary: database conflict/revision-accounting evidence only; no external review/upload provider, deployment, or live-provider acceptance is claimed.
+- Next: after CI is green, inspect stale/replayed withdrawal after a current post-withdraw save or resubmit so an old withdrawal command cannot refund an allowance twice or roll back newer customer intent.
