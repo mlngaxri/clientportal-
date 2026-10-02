@@ -41,3 +41,11 @@ No autonomous run recorded under the refined protocol yet.
 - Evidence grade: **S0 pending fresh exact-SHA validation.** Run 146 is failure evidence for its parent only and cannot promote the repair.
 - Deployment remains fail-closed: no canonical Vercel alias is tied to this SHA, and S3/S4 are not claimed.
 - Next release priority: inspect exact-SHA validation for `8541b3e4...`; only after it is green should deployment evidence be considered, and only with actual deployed-SHA identity.
+
+### 2026-10-03 — Release gate: obsolete validated SHA must fail closed
+- Validation run 152 completed successfully for `76b086cf0b2d8d1746d883e5bc55c76ea09c68c8`, clearing the repository-wide typecheck/test/build/browser gate on that exact line.
+- Its deployment run 113 failed at the credential gate because `VERCEL_TOKEN` is absent; checkout, production configuration, build and deployment were skipped. This remains correct fail-closed behavior and provides no S3 evidence.
+- During release-workflow audit, the current-commit race gate was still fail-open: when `main` had advanced beyond the validated SHA, it printed that a newer commit would own deployment and exited 0. Because every later step is conditional on `ready=true`, that path could produce a green deployment workflow while checkout/build/deploy were all skipped.
+- Commit `2021d6f7624d7b7062af28f5da475ce83f38da47` changes the obsolete-SHA path to exit 1 with an explicit refusal message. A superseded validation can no longer masquerade as deployment success.
+- Evidence grade: **S0 for the workflow hardening pending fresh workflow execution.** The previous successful validation covers its own SHA, not this workflow change. S3/S4 are not claimed.
+- Release blocker remains administrative: configure `VERCEL_TOKEN`, then require a successful validation and deployment of the exact current `main` SHA before verifying the canonical Vercel alias.
