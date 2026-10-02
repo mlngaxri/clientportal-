@@ -75,3 +75,9 @@ No autonomous run recorded under the refined protocol yet.
 - Evidence: **S0 pending fresh CI**. Run 137 is failure evidence for the parent regression, not proof for this repair.
 - Boundary: this repairs automated test truthfulness only; it does not claim deployment, billing, publishing or external-provider acceptance.
 - Next: after CI clears, return to State activation replay and verify a pinned release cannot silently follow later draft edits.
+
+### 2026-10-03 — State activation replay after draft edits
+- Extended the State release regression so an idempotent replay of the original activation request is exercised after the draft board has changed. The replay must return the original release snapshot and the persisted public release must remain pinned to the activated State rather than following later draft edits.
+- Evidence: **S0 pending fresh CI**. The parent `main` run 162 passed typecheck and `npm test` but failed while starting isolated real Supabase, so build/browser stages were skipped; that failure is not proof for this change.
+- Boundary: this strengthens source-level State activation/idempotency evidence only. It does not claim production scheduling, publishing, deployment or provider acceptance.
+- Next: after CI validates this regression, inspect activation with a reused idempotency key whose request differs after a draft edit and ensure it continues to fail without mutating the pinned release.

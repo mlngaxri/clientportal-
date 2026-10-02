@@ -46,6 +46,7 @@ test("new briefs are independent and retry safe; State drafts need explicit auth
   assert.deepEqual((await activate(board.version, activationKey)).rows[0].result, release);
   await assert.rejects(() => activate(board.version + 1, randomUUID()), /Save conflict/);
   await db.query("update boards set data=$2,version=version+1 where id=$1", [board.id, JSON.stringify({ objects: [], states: [{ ...states[0], title: "Changed draft", overrides: { heading: "Changed draft" } }] })]);
+  assert.deepEqual((await activate(board.version, activationKey)).rows[0].result, release);
   assert.equal((await db.query<any>("select states from state_releases where project_id=$1", [first.id])).rows[0].states[0].title, "Lunch");
   await db.query("select set_config('test.uid',$1,false)", [other]);
   await assert.rejects(() => activate(board.version + 1, randomUUID()), /not found or access denied/);
