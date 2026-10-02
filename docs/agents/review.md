@@ -42,3 +42,11 @@ No autonomous run recorded under the refined protocol yet.
 - Evidence: **S0 pending CI**. Do not promote to S1 until automated validation covers the source commit.
 - Boundary: this is database transaction/idempotency evidence only. No external review/upload provider or live deployment acceptance is claimed.
 - Next: cover the lock boundary: once `start_revision` marks work `IN_PROGRESS`/locked, owner withdrawal must fail without changing revision accounting or command receipts.
+
+### 2026-10-02 — Protect revision accounting after work is locked
+- Added `tests/backend/revision-lock-contract.test.ts` covering the real submit → operator `start_revision` → owner withdrawal path through `project_command`.
+- The regression proves that once work is `IN_PROGRESS` and `locked_at` is set, owner withdrawal is rejected, the consumed allowance remains consumed, the board version does not advance, and the failed withdrawal creates no idempotency command receipt.
+- Source commit: `08ea0f4af80a99b912fba6b29eb7dbcdd4424405`.
+- Evidence: **S0 pending CI**. No completed status was available for the source commit at handoff, so S1 is not claimed.
+- Boundary: database transaction/locking evidence only; no external review/upload provider or live deployment acceptance is claimed.
+- Next: inspect completion/review-return behavior for stale or replayed operator commands, especially whether completing a locked revision can accidentally strand or duplicate the next draft revision.
