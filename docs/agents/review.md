@@ -50,3 +50,11 @@ No autonomous run recorded under the refined protocol yet.
 - Evidence: **S0 pending CI**. No completed status was available for the source commit at handoff, so S1 is not claimed.
 - Boundary: database transaction/locking evidence only; no external review/upload provider or live deployment acceptance is claimed.
 - Next: inspect completion/review-return behavior for stale or replayed operator commands, especially whether completing a locked revision can accidentally strand or duplicate the next draft revision.
+
+### 2026-10-02 — Protect revision completion replay integrity
+- Added `tests/backend/revision-completion-contract.test.ts` covering submit → operator start → operator completion, same-key completion replay, and a fresh-key stale completion attempt.
+- The regression proves completion returns the project to `REVIEW`, leaves the completed board `DONE`, consumes exactly one revision allowance, preserves exactly one next `DRAFT` revision, records the successful completion command exactly once, and rolls back a stale fresh-key completion without a command receipt.
+- Source commit: `c91b27d08f7ce3e9502459c27223ff7d3bec139e`.
+- Evidence: **S0 pending CI**. No completed automated status was available for the source commit at handoff, so S1 is not claimed.
+- Boundary: database transaction/idempotency evidence only; no external review/upload provider, deployment, or live-provider acceptance is claimed.
+- Next: inspect the next-draft lifecycle after completion for customer save/submit conflict behavior, especially stale board versions across the `REVISION_IN_PROGRESS` → `REVIEW` transition.
