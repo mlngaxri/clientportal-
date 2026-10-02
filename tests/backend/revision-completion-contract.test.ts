@@ -103,13 +103,16 @@ test("revision completion replay cannot duplicate or strand the next draft", asy
   await db.close();
 });
 
-test("stale owner saves cannot overwrite the draft created by revision completion", async () => {
+test("stale owner saves cannot overwrite newer next-draft content after revision completion", async () => {
   const db = await database();
   const owner = randomUUID();
   const project = randomUUID();
   const staleSaveKey = randomUUID();
+  const firstSaveKey = randomUUID();
   const original = { objects: [] };
-  const replacement = { objects: [{ id: "text", type: "text", text: "Fresh follow-up direction" }] };
+  const firstReplacement = { objects: [{ id: "text", type: "text", text: "Fresh follow-up direction" }] };
+  const staleReplacement = { objects: [{ id: "text", type: "text", text: "Stale follow-up direction" }] };
+  const finalReplacement = { objects: [{ id: "text", type: "text", text: "Latest follow-up direction" }] };
 
   await db.query("insert into auth.users(id) values($1)", [owner]);
   await db.query(
@@ -139,29 +142,36 @@ test("stale owner saves cannot overwrite the draft created by revision completio
   assert.equal(nextDraft.version, 0);
 
   await db.query("select set_config('test.role','',false)");
+  await db.query(
+    "select project_command($1,'save_board',$2::jsonb,0,$3)",
+    [project, JSON.stringify({ boardId: nextDraft.id, data: firstReplacement }), firstSaveKey],
+  );
+
   await assert.rejects(
-    () => db.query("select project_command($1,'save_board',$2::jsonb,2,$3)", [project, JSON.stringify({ boardId: nextDraft.id, data: replacement }), staleSaveKey]),
+    () => db.query("select project_command($1,'save_board',$2::jsonb,0,$3)", [project, JSON.stringify({ boardId: nextDraft.id, data: staleReplacement }), staleSaveKey]),
     /Conflict/,
   );
 
   const afterStaleSave = (
-    await db.query<{ data: unknown; version: number; stale_receipts: number }>(
+    await db.query<{ data: unknown; version: number; first_receipts: number; stale_receipts: number }>(
       `select b.data,b.version,
-        (select count(*)::int from commands c where c.project_id=$1 and c.key=$3) as stale_receipts
+        (select count(*)::int from commands c where c.project_id=$1 and c.key=$3) as first_receipts,
+        (select count(*)::int from commands c where c.project_id=$1 and c.key=$4) as stale_receipts
        from boards b where b.id=$2`,
-      [project, nextDraft.id, staleSaveKey],
+      [project, nextDraft.id, firstSaveKey, staleSaveKey],
     )
   ).rows[0];
-  assert.deepEqual(afterStaleSave.data, original);
-  assert.equal(afterStaleSave.version, 0);
+  assert.deepEqual(afterStaleSave.data, firstReplacement);
+  assert.equal(afterStaleSave.version, 1);
+  assert.equal(afterStaleSave.first_receipts, 1);
   assert.equal(afterStaleSave.stale_receipts, 0);
 
-  await db.query("select project_command($1,'save_board',$2::jsonb,3,$3)", [project, JSON.stringify({ boardId: nextDraft.id, data: replacement }), randomUUID()]);
+  await db.query("select project_command($1,'save_board',$2::jsonb,1,$3)", [project, JSON.stringify({ boardId: nextDraft.id, data: finalReplacement }), randomUUID()]);
   const saved = (
     await db.query<{ data: unknown; version: number }>("select data,version from boards where id=$1", [nextDraft.id])
   ).rows[0];
-  assert.deepEqual(saved.data, replacement);
-  assert.equal(saved.version, 1);
+  assert.deepEqual(saved.data, finalReplacement);
+  assert.equal(saved.version, 2);
 
   await db.close();
 });
