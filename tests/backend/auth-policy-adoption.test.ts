@@ -39,12 +39,12 @@ test("auth callback preserves the request origin that owns its session cookies",
   assert.doesNotMatch(text, /new URL\(returnPath, process\.env\.APP_URL/);
 });
 
-test("password recovery redirect remains an absolute callback without APP_URL", async () => {
+test("password recovery callback returns to the request origin that owns its PKCE verifier", async () => {
   const text = await source(accountRoute);
-  assert.match(text, /const callback = new URL\(\s*"\/auth\/callback",\s*process\.env\.APP_URL \|\| new URL\(req\.url\)\.origin\s*\);/);
+  assert.match(text, /const callback = new URL\("\/auth\/callback", new URL\(req\.url\)\.origin\);/);
   assert.match(text, /callback\.searchParams\.set\("next", "\/account\/password"\);/);
   assert.match(text, /redirectTo: callback\.toString\(\)/);
-  assert.doesNotMatch(text, /redirectTo:\s*`\$\{process\.env\.APP_URL\}/);
+  assert.doesNotMatch(text, /const callback = new URL\([^;]*process\.env\.APP_URL/);
 });
 
 test("signup callback normalizes APP_URL before provider handoff", async () => {

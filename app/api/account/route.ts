@@ -11,7 +11,8 @@ export async function POST(req: Request) {
     if (action === "recovery") {
       if (typeof email !== "string" || email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error("Enter a valid email address.");
       const client = await db();
-      const callback = new URL("/auth/callback", process.env.APP_URL || new URL(req.url).origin);
+      // PKCE stores its verifier on the request host, so the email callback must return to that same host.
+      const callback = new URL("/auth/callback", new URL(req.url).origin);
       callback.searchParams.set("next", "/account/password");
       const { error } = await client.auth.resetPasswordForEmail(email, { redirectTo: callback.toString() });
       if (error) throw new Error("Recovery is temporarily unavailable. Try again later.");
