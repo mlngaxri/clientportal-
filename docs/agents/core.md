@@ -62,6 +62,14 @@ No autonomous run recorded under the refined protocol yet.
 ### 2026-10-02 — Scope expired-session cookie cleanup
 - Tightened `isAuthSessionCookie()` so expired-session cleanup matches only Supabase `*-auth-token` cookies and their chunk suffixes instead of every cookie beginning `sb-`.
 - Extended `tests/backend/auth-session.test.ts` to cover unchunked/chunked auth tokens, PKCE verifier preservation, and unrelated `sb-` cookie preservation.
-- Evidence: **S0 pending CI**. Source, regression, and this handoff are committed together; no completed automated validation covers this commit yet, so S1 is not claimed.
+- Evidence: **S1 automated on descendant `3a7be244ca82386fa9708e4a9081ebf3cccfe056`**. Its validation passed typecheck and the complete automated test step before the unrelated connected-browser billing locator failed.
 - Boundary: this prevents middleware cleanup from deleting unrelated same-host `sb-` cookies. It does not change Supabase authentication/provider behavior, and no external auth acceptance is claimed.
-- Next: after CI validates this cleanup invariant, inspect logout/sign-out cookie deletion for the same exact scoping and path semantics.
+- Next: inspect logout/sign-out cookie deletion for the same exact scoping and path semantics.
+
+### 2026-10-02 — Lock logout cleanup ownership
+- Audited `app/api/auth/route.ts` logout behavior: Supabase `signOut({ scope: "local" })` owns provider auth-token deletion, while Fourthform explicitly clears only `ff-remember` and `ff-session-until` after successful sign-out.
+- Added a route-source regression in `tests/backend/auth-policy-adoption.test.ts` that locks this boundary and prevents future manual broad deletion of `sb-*` or unrelated cookies.
+- Source commit: `3e58eeb20acc8af79c82a97e5ef3c4a9e4cd9445`.
+- Evidence: **S0 pending CI** for the new regression. The immediately preceding `main` validation passed typecheck and all automated tests, then failed only in the unrelated connected-browser billing locator; no completed validation yet covers this new commit.
+- No external authentication-provider acceptance is claimed.
+- Next: after CI validates this regression, inspect account recovery/password flows for stale-session or return-path integrity gaps.
