@@ -28,15 +28,23 @@ test("session expiry rejects malformed and elapsed values", () => {
 test("remembered sessions receive persistent cookie lifetime while normal sessions stay browser-scoped", () => {
   const previous = process.env.NODE_ENV;
   Object.assign(process.env, { NODE_ENV: "production" });
-  const remembered = sessionCookieOptions(true, String(Date.now() + 60_000));
-  const transient = sessionCookieOptions(false, String(Date.now() + 60_000));
+  const now = 1_800_000_000_000;
+  const expiry = String(now + 60_001);
+  const remembered = sessionCookieOptions(true, expiry, now);
+  const transient = sessionCookieOptions(false, expiry, now);
   assert.equal(remembered.httpOnly, true);
   assert.equal(remembered.secure, true);
   assert.equal(remembered.sameSite, "lax");
-  assert.ok((remembered.maxAge ?? 0) > 0);
+  assert.equal(remembered.maxAge, 61);
   assert.equal("maxAge" in transient, false);
   if (previous === undefined) Reflect.deleteProperty(process.env, "NODE_ENV");
   else Object.assign(process.env, { NODE_ENV: previous });
+});
+
+test("remembered cookie lifetime is derived from the same injected clock as its expiry", () => {
+  const now = 1_800_000_000_000;
+  const expiry = sessionExpiry(true, now);
+  assert.equal(sessionCookieOptions(true, expiry, now).maxAge, REMEMBER_SECONDS);
 });
 
 test("session lifetimes reject removed, forged, changed and expired proofs", async () => {

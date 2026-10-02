@@ -8,9 +8,13 @@ export function sessionExpired(expiry: string | undefined, now = Date.now()) {
     expiry !== undefined && (!/^\d+$/.test(expiry) || Number(expiry) <= now)
   );
 }
-export function sessionCookieOptions(remember: boolean, expiry?: string) {
+export function sessionCookieOptions(
+  remember: boolean,
+  expiry?: string,
+  now = Date.now(),
+) {
   const remaining = expiry
-    ? Math.max(0, Math.ceil((Number(expiry) - Date.now()) / 1000))
+    ? Math.max(0, Math.ceil((Number(expiry) - now) / 1000))
     : remember
       ? REMEMBER_SECONDS
       : SESSION_SECONDS;
