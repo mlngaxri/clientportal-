@@ -26,3 +26,11 @@ No autonomous run recorded under the refined protocol yet.
 - Evidence: **S0 pending CI**. Validation run 36940741987 was pending at handoff; do not promote to S1 until it passes.
 - Boundary: this proves source/database contract only. No external review bridge, upload provider or live deployment acceptance is claimed.
 - Next: once CI is green, test the `project_command` submit/withdraw replay path specifically against an incomplete saved draft and verify revision entitlement remains unchanged after rejection.
+
+### 2026-10-02 — Protect revision entitlement on rejected command submission
+- Extended `tests/backend/revision-submission-contract.test.ts` through the real `project_command(..., 'submit_revision', ...)` transaction boundary for a semantically incomplete saved draft.
+- The regression asserts rejection leaves the board `DRAFT`, leaves `submitted_data` null, preserves the pre-existing `revision_used` count, and does not persist an idempotency command receipt for the failed command. This protects both revision allowance accounting and retry semantics when the database completeness constraint aborts submission.
+- Source commit: `df4f726da3d2a46afa4942d12122c7cf5ab48a57`.
+- Evidence: **S0 pending CI**. No completed validation for this source commit was available at handoff, so S1 is not claimed.
+- Boundary: no external review bridge, upload provider, deployment or live-provider acceptance is claimed.
+- Next: add focused successful submit → idempotent replay → withdraw coverage proving a replay cannot double-consume an allowance and withdrawal refunds exactly one allowance before work is locked.
