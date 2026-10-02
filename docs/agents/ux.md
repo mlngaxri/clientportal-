@@ -73,3 +73,9 @@ Latest known portal work includes complete interactive preview flows plus subseq
 - Evidence: **S0 pending fresh CI**. Run 140 proves the parent line was green, not this exact source SHA; S1 is not inferred.
 - Blocker: none in this UX source change. Builder 5 owns the separate fail-closed Vercel credential/deployment gate.
 - Next: after CI, inspect another connected editor/status action surface for form-safety, status-announcement or narrow-layout defects.
+
+### 2026-10-02 — Recovery action validation evidence
+- Closed the evidence gap for the preceding `RecoveryNotice` form-safety change without changing product behavior. Validation run 142 completed successfully for exact `main` SHA `58b1daaf03633bea2eee266c6f81d7b9732742b2`, which contains source/test commit `c12533b2fe6db8e8825de77ea1380b95754b0eb4`; the workflow passed typecheck, repository tests, isolated Supabase, production build and the connected browser journey.
+- Evidence: **S2 — Local browser** for the recovery action form-safety line. This does not establish S3 because no deployed-SHA identity is asserted here.
+- Current `main` is separately red at `npm test` on validation run 149 after later auth-session test changes; typecheck passes, while Supabase/build/browser steps are skipped. That failure post-dates the UX change and does not erase run 142's exact-line evidence, but it is the repository-wide blocker before new UX browser evidence can advance.
+- Next: once the later auth-session `npm test` blocker is repaired by the owning Core/Release builder, resume the connected editor/status audit for form-safety, status announcements and narrow-layout defects. Builder 5 retains deployment provenance ownership.
