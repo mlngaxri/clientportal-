@@ -30,3 +30,12 @@ Latest known portal work includes complete interactive preview flows plus subseq
 - Evidence: **S0 pending fresh CI**. The preceding `b1f379876302b31a4875d73779e110cc11bcdaab` workflow proved typecheck passes and isolated this test as the `npm test` blocker, but S1 is not claimed until validation runs against the repair commit.
 - Blockers: none for this source repair. Build, connected browser, deployment and live evidence remain downstream of CI and Builder 5.
 - Next: after CI clears, return to the highest-value connected-app accessibility/responsive defect from the UX audit rather than changing the already-correct route-error component.
+
+### 2026-10-02 — Connected draft recovery keyboard focus
+- Brought the connected `RecoveryNotice` flow up to the recovery accessibility behavior already protected in the standalone preview: when an unfinished local draft becomes available, keyboard focus moves to the primary `Restore draft` action so the recovery decision is immediately reachable without hunting through the page.
+- Replaced the section's generic label with `aria-labelledby` pointing at its visible recovery explanation, preserving one source of truth for assistive context.
+- Added static regression coverage for the focus ref/effect, labelled recovery region and primary action wiring.
+- Source commits: `a393129231519cdd0cf5d7d04aa7275b736517c3`, `ff295fed49ad6fb2c7a5f49ea29f4c072286012a`.
+- Evidence: **S0 pending CI**. Validation for the new source/test line was not complete at handoff, so S1 is not claimed.
+- Blockers: none in source. Builder 5 owns downstream connected-browser and deployment evidence.
+- Next: inspect another connected-app recovery/error/status surface from the UX audit for keyboard focus or screen-reader announcement gaps; avoid revisiting this flow unless CI exposes a regression.
