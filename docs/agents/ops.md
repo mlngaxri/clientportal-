@@ -41,3 +41,11 @@ No autonomous run recorded under the refined protocol yet.
 - Evidence: **S0 pending fresh CI**. Run 87 is failure evidence for the parent state, not proof for this repair; S1 is withheld until validation completes on the repair commit.
 - Boundary: this is an inbox accessibility/browser-regression repair. It does not claim email delivery, external provider acceptance or deployed production identity.
 - Next: after CI clears this browser blocker, return to authenticated malformed-State save coverage proving HTTP/database rejection agreement without board mutation or command receipts.
+
+### 2026-10-02 — Repair revision-command migration chain
+- Validation run 101 failed `npm test` before Supabase/build/browser stages because migration 015 attempted to rename `project_command` to `project_command_validated`, but migration 008 already owns a function with that signature. Every fresh migration-backed test therefore stopped with PostgreSQL `42723` before exercising its invariant.
+- Renamed migration 015's predecessor to the distinct `project_command_customer_validated` and routed its owner-only wrapper through that function, preserving migration 008's existing validation wrapper rather than replacing or bypassing it.
+- Source commit: `dbda0402d8d7279b942422d086feeddc03f9267a`.
+- Evidence: **S0 pending CI**. No workflow run existed for the repair commit when checked, so S1 is not claimed.
+- Boundary: this repairs fresh migration application and preserves the revision authorization chain. It does not claim a live database migration, deployment, billing/provider acceptance or production State activation.
+- Next: once CI confirms migrations and backend tests pass, return to authenticated malformed-State save coverage proving HTTP/database rejection agreement without board mutation or command receipts.
