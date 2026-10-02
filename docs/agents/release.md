@@ -33,3 +33,11 @@ No autonomous run recorded under the refined protocol yet.
 - Evidence grade: **S0 for deployment readiness; S3/S4 are not claimed.** A successful validation run does not establish deployment, and no canonical Vercel alias has been tied to the current main SHA.
 - Release blocker: configure the repository `VERCEL_TOKEN` secret through the repository/provider administration boundary, then allow a green `Validate Fourthform system` push run on current main to trigger deployment. The deployment workflow must execute checkout, production configuration validation, production build and exact prebuilt deployment before it can count as deployment evidence.
 - Next release priority: after credentials are configured, inspect the next deployment run and verify the actual deployed SHA on the canonical client portal alias before assigning S3. Until then, keep the release gate failed closed rather than retrying source changes for a provider credential that is intentionally unavailable to repository code.
+
+### 2026-10-02 — Release gate: transient cookie regression typecheck
+- Validation run 146 for `d6d3768d5b8dcfdde3a6a0d5c79ea0864eedbd7d` failed at `npm run typecheck`; tests, isolated Supabase, build and connected browser validation were skipped.
+- The transient-cookie regression constructed provider options with an object literal followed by `...transient`, while `transient` always contains `maxAge`; TypeScript reports the statically duplicated property before tests can run. The test now uses `Object.assign({}, providerOptions, transient)`, preserving the runtime override contract without the duplicate-property diagnostic.
+- Final repair commit `8541b3e412621832743293fed620d67e804abf75` also preserves the pre-existing auth-cookie matching regression coverage unchanged.
+- Evidence grade: **S0 pending fresh exact-SHA validation.** Run 146 is failure evidence for its parent only and cannot promote the repair.
+- Deployment remains fail-closed: no canonical Vercel alias is tied to this SHA, and S3/S4 are not claimed.
+- Next release priority: inspect exact-SHA validation for `8541b3e4...`; only after it is green should deployment evidence be considered, and only with actual deployed-SHA identity.
