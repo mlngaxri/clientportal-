@@ -94,6 +94,75 @@ test("project_command rejects an incomplete revision without consuming entitleme
   await db.close();
 });
 
+test("revision submit replay cannot double-consume and withdrawal refunds exactly once", async () => {
+  const db = await database();
+  const owner = randomUUID();
+  const project = randomUUID();
+  const submitKey = randomUUID();
+  const withdrawKey = randomUUID();
+  await db.query("insert into auth.users(id) values($1)", [owner]);
+  await db.query(
+    "insert into projects(id,owner_id,phase,revision_limit,revision_used) values($1,$2,'REVIEW',3,1)",
+    [project, owner],
+  );
+  const board = (
+    await db.query<{ id: string }>(
+      "insert into boards(project_id,kind,data) values($1,'revision',$2) returning id",
+      [project, data({ id: "text", type: "text", text: "Change the heading" })],
+    )
+  ).rows[0];
+  await db.query("select set_config('test.uid',$1,false)", [owner]);
+
+  const submit = await db.query<{ project_command: unknown }>(
+    "select project_command($1,'submit_revision',$2::jsonb,0,$3)",
+    [project, JSON.stringify({ boardId: board.id }), submitKey],
+  );
+  const replay = await db.query<{ project_command: unknown }>(
+    "select project_command($1,'submit_revision',$2::jsonb,0,$3)",
+    [project, JSON.stringify({ boardId: board.id }), submitKey],
+  );
+  assert.deepEqual(replay.rows[0].project_command, submit.rows[0].project_command);
+
+  let persisted = (
+    await db.query<{ status: string; revision_used: number; version: number }>(
+      "select b.status,p.revision_used,b.version from boards b join projects p on p.id=b.project_id where b.id=$1",
+      [board.id],
+    )
+  ).rows[0];
+  assert.equal(persisted.status, "SUBMITTED");
+  assert.equal(persisted.revision_used, 2);
+  assert.equal(persisted.version, 1);
+
+  await db.query(
+    "select project_command($1,'withdraw_revision',$2::jsonb,$3,$4)",
+    [project, JSON.stringify({ boardId: board.id }), persisted.version, withdrawKey],
+  );
+  persisted = (
+    await db.query<{ status: string; revision_used: number; version: number }>(
+      "select b.status,p.revision_used,b.version from boards b join projects p on p.id=b.project_id where b.id=$1",
+      [board.id],
+    )
+  ).rows[0];
+  assert.equal(persisted.status, "DRAFT");
+  assert.equal(persisted.revision_used, 1);
+  assert.equal(persisted.version, 2);
+
+  await db.query(
+    "select project_command($1,'withdraw_revision',$2::jsonb,$3,$4)",
+    [project, JSON.stringify({ boardId: board.id }), 1, withdrawKey],
+  );
+  const afterReplay = (
+    await db.query<{ status: string; revision_used: number; version: number }>(
+      "select b.status,p.revision_used,b.version from boards b join projects p on p.id=b.project_id where b.id=$1",
+      [board.id],
+    )
+  ).rows[0];
+  assert.equal(afterReplay.status, "DRAFT");
+  assert.equal(afterReplay.revision_used, 1);
+  assert.equal(afterReplay.version, 2);
+  await db.close();
+});
+
 test("persisted revision submissions accept each supported form of customer intent", async () => {
   const cases = [
     { id: "text", type: "text", text: "Change the heading" },
