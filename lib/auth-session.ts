@@ -81,5 +81,5 @@ export async function verifiedSessionExpiry(
 }
 
 export function isAuthSessionCookie(name: string) {
-  return name.startsWith("sb-") && !name.includes("code-verifier");
+  return /^sb-.+-auth-token(?:\.\d+)?$/.test(name);
 }

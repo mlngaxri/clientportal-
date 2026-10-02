@@ -70,10 +70,14 @@ test("session lifetimes reject removed, forged, changed and expired proofs", asy
   );
 });
 
-test("expired sessions clear credential cookies while preserving the PKCE recovery verifier", () => {
+test("expired sessions clear only Supabase auth-token cookies while preserving unrelated and PKCE cookies", () => {
+  assert.equal(isAuthSessionCookie("sb-project-auth-token"), true);
   assert.equal(isAuthSessionCookie("sb-project-auth-token.0"), true);
+  assert.equal(isAuthSessionCookie("sb-project-auth-token.12"), true);
   assert.equal(
     isAuthSessionCookie("sb-project-auth-token-code-verifier"),
     false,
   );
+  assert.equal(isAuthSessionCookie("sb-project-preferences"), false);
+  assert.equal(isAuthSessionCookie("sb-unrelated-cookie"), false);
 });

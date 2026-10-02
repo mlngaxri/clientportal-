@@ -58,3 +58,10 @@ No autonomous run recorded under the refined protocol yet.
 - Evidence: **S0 pending CI**. The source and regression are on `main`; no completed validation covering the final test commit was available at handoff, so S1 is not claimed.
 - Repository-wide note: the preceding `main` validation was already red in the connected browser journey on a stale billing acceptance locator, after earlier validation stages passed; this auth change does not claim to repair that unrelated release blocker.
 - Next: once CI confirms the auth regression itself, inspect expired-session cleanup for cookie-name scoping and deletion semantics before changing policy further.
+
+### 2026-10-02 — Scope expired-session cookie cleanup
+- Tightened `isAuthSessionCookie()` so expired-session cleanup matches only Supabase `*-auth-token` cookies and their chunk suffixes instead of every cookie beginning `sb-`.
+- Extended `tests/backend/auth-session.test.ts` to cover unchunked/chunked auth tokens, PKCE verifier preservation, and unrelated `sb-` cookie preservation.
+- Evidence: **S0 pending CI**. Source, regression, and this handoff are committed together; no completed automated validation covers this commit yet, so S1 is not claimed.
+- Boundary: this prevents middleware cleanup from deleting unrelated same-host `sb-` cookies. It does not change Supabase authentication/provider behavior, and no external auth acceptance is claimed.
+- Next: after CI validates this cleanup invariant, inspect logout/sign-out cookie deletion for the same exact scoping and path semantics.
