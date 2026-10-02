@@ -55,3 +55,12 @@ Latest known portal work includes complete interactive preview flows plus subseq
 - Evidence: **S0 pending fresh CI**. The preceding run proves the old locator was the active browser blocker, but S1/S2 are not claimed until validation executes against the repair commit.
 - Blockers: none known in this bounded acceptance contract. Builder 5 owns release provenance and any downstream failure exposed after this locator clears.
 - Next: after CI, return to a connected-app accessibility/responsive defect rather than revisiting billing unless fresh evidence identifies a product issue.
+
+### 2026-10-02 — Payment status action form safety
+- Current validation for preceding `main` SHA `b94c6658569fb22403cadadff23f3355832d5934` completed successfully, so this run moved down the ladder to connected-app UX reliability.
+- `PaymentReturn` rendered its `Check confirmation` action without an explicit button type. HTML buttons default to submit inside a form, so reusing this status component within form context could accidentally submit unrelated customer data while checking payment state.
+- Added `type="button"` and a focused static regression requiring the non-submit contract.
+- Source/test commit: `7c90980699ab39d54e58c3566e3c7f441f756d13`.
+- Evidence: **S0 pending fresh CI**. No check result existed for the exact source/test SHA when checked, so S1 is not claimed.
+- Blockers: none in source. Builder 5 owns deployment provenance; the release workflow is separately failing closed while Vercel credentials are absent.
+- Next: inspect another connected status/recovery action for form-safety, focus, announcement or narrow-layout defects after CI clears.
