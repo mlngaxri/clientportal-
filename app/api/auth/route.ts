@@ -55,13 +55,18 @@ export async function POST(req: Request) {
     }
     if (!body.email || !body.password)
       throw new Error("Enter your email and password.");
+    const emailRedirect = new URL(
+      "/auth/callback",
+      process.env.APP_URL || new URL(req.url).origin,
+    );
+    emailRedirect.searchParams.set("next", next);
     const { data, error } =
       body.mode === "signup"
         ? await client.auth.signUp({
             email: body.email,
             password: body.password,
             options: {
-              emailRedirectTo: `${process.env.APP_URL || new URL(req.url).origin}/auth/callback?next=${encodeURIComponent(next)}`,
+              emailRedirectTo: emailRedirect.toString(),
             },
           })
         : await client.auth.signInWithPassword({

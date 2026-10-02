@@ -71,3 +71,10 @@ No autonomous run recorded under the refined protocol yet.
 - Added auth-policy regression coverage for the absolute callback construction and removal of direct APP_URL interpolation.
 - Evidence: **S0 pending fresh CI**. No external Supabase/Auth acceptance is claimed.
 - Next: inspect recovery-session privilege scoping before password-update completion, or another concrete auth integrity boundary.
+
+### 2026-10-03 — Normalize signup callback construction
+- Audited auth provider handoffs after the recovery callback fixes and found signup still built `emailRedirectTo` by string concatenation while Google, confirmation resend and recovery use URL construction.
+- A configured `APP_URL` with a trailing slash could therefore produce a double-slash callback path and miss the provider redirect allowlist.
+- Signup now builds the callback with `new URL()`, preserves the sanitized `next` parameter via `URLSearchParams`, and has regression coverage preventing direct APP_URL interpolation from returning.
+- Evidence: **S0 pending fresh CI**. No external Supabase/Auth acceptance is claimed.
+- Next: inspect recovery-session privilege scoping before password-update completion, or another concrete auth integrity boundary.

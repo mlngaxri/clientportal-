@@ -41,6 +41,14 @@ test("password recovery redirect remains an absolute callback without APP_URL", 
   assert.doesNotMatch(text, /redirectTo:\s*`\$\{process\.env\.APP_URL\}/);
 });
 
+test("signup callback normalizes APP_URL before provider handoff", async () => {
+  const text = await source(authRoute);
+  assert.match(text, /const emailRedirect = new URL\([\s\S]*?"\/auth\/callback",[\s\S]*?process\.env\.APP_URL \|\| new URL\(req\.url\)\.origin,[\s\S]*?\);/);
+  assert.match(text, /emailRedirect\.searchParams\.set\("next", next\);/);
+  assert.match(text, /emailRedirectTo: emailRedirect\.toString\(\)/);
+  assert.doesNotMatch(text, /emailRedirectTo:\s*`\$\{process\.env\.APP_URL/);
+});
+
 test("local Supabase allows the exact recovery callback on both acceptance hosts", async () => {
   const text = await source(supabaseConfig);
   for (const host of ["localhost", "127.0.0.1"]) {
