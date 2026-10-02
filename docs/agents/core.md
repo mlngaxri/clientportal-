@@ -42,3 +42,11 @@ No autonomous run recorded under the refined protocol yet.
 - Evidence: **S0 pending CI for the final tested source commit**. A validation run was already pending for the callback source commit when checked; no completed workflow yet covered the newly added regression test, so S1 is not promoted by inference.
 - Blockers: none for this source-level policy adoption. No external auth-provider acceptance is claimed.
 - Next: after CI validates the policy-adoption regression, inspect session cookie lifetime calculation for deterministic clock injection so expiry and persistent-cookie `maxAge` cannot diverge around boundary timing.
+
+### 2026-10-02 — Deterministic remembered-cookie lifetime
+- Made `sessionCookieOptions()` accept the same injectable clock model already used by `sessionExpiry()` and `sessionExpired()`, eliminating a hidden second `Date.now()` read when deriving remembered-cookie `maxAge` from a signed expiry.
+- Strengthened `tests/backend/auth-session.test.ts` with exact deterministic `maxAge` assertions, including proof that a remembered expiry generated from a fixed clock yields exactly `REMEMBER_SECONDS` when cookie options use that same clock.
+- Source commit: `b63472f533c7138efa27dcbff6b16cf87d1e2acd`.
+- Evidence: **S0 pending CI**. The source and regression exist on `main`; no completed validation for this commit was available at handoff, so S1 is not claimed.
+- Blockers: none in source. No external authentication-provider acceptance is claimed.
+- Next: after CI validates this regression, inspect auth cleanup/cookie mutation call sites for another concrete session-integrity invariant rather than expanding the policy surface speculatively.
