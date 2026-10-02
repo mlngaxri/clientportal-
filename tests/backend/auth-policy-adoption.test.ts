@@ -43,3 +43,23 @@ test("middleware verifies and refreshes a session from one stable clock", async 
     "cookie refresh must use the same request clock",
   );
 });
+
+test("logout delegates Supabase token cleanup and clears only Fourthform session proofs", async () => {
+  const text = await source(authRoute);
+  const logout = text.match(
+    /if \(body\.mode === "logout"\) \{([\s\S]*?)\n    \}/,
+  )?.[1];
+  assert.ok(logout, "logout branch must remain explicit");
+  assert.match(
+    logout,
+    /client\.auth\.signOut\(\{ scope: "local" \}\)/,
+    "Supabase must own deletion of its auth-token cookies",
+  );
+  assert.match(logout, /jar\.delete\("ff-remember"\)/);
+  assert.match(logout, /jar\.delete\("ff-session-until"\)/);
+  assert.doesNotMatch(
+    logout,
+    /jar\.delete\([^)]*sb-|getAll\(\)[\s\S]*?delete/,
+    "logout must not broaden manual deletion to unrelated or provider cookies",
+  );
+});
