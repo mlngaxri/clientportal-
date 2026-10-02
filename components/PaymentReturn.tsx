@@ -37,5 +37,5 @@ export default function PaymentReturn({ payment }: { payment: ReturnType<typeof 
     expired: "This checkout expired without a confirmed payment. You can start a new checkout.",
     unknown: "This checkout could not be matched to a payment. Check Billing before paying again. If confirmation is delayed, contact Fourthform through your project.",
   };
-  return <section className="recovery-notice" aria-label="Payment status"><p role="status">{messages[payment.state]}</p>{payment.blocked && <button disabled={payment.checking} onClick={() => void payment.check()}>{payment.checking ? "Checking payment…" : "Check confirmation"}</button>}{payment.error && <p role="alert">{payment.error}</p>}</section>;
+  return <section className="recovery-notice" aria-label="Payment status"><p role="status">{messages[payment.state]}</p>{payment.blocked && <button type="button" disabled={payment.checking} onClick={() => void payment.check()}>{payment.checking ? "Checking payment…" : "Check confirmation"}</button>}{payment.error && <p role="alert">{payment.error}</p>}</section>;
 }

@@ -62,3 +62,8 @@ test("timezone field keeps an exact accessible name and separate guidance", asyn
   assert.match(source, /<input id=\{inputId\} aria-describedby=\{descriptionId\}/);
   assert.match(source, /<small id=\{descriptionId\}>Use a city timezone\./);
 });
+
+test("payment confirmation check cannot submit an enclosing form", async () => {
+  const source = await readFile("components/PaymentReturn.tsx", "utf8");
+  assert.match(source, /<button type="button" disabled=\{payment\.checking\} onClick=/);
+});
