@@ -55,3 +55,10 @@ test("password mismatch identifies the affected fields", async () => {
   assert.equal((source.match(/aria-describedby=\{passwordMismatch \? "password-error" : undefined\}/g) ?? []).length, 2);
   assert.match(source, /<p id="password-error" role="alert">\{error\}<\/p>/);
 });
+
+test("timezone field keeps an exact accessible name and separate guidance", async () => {
+  const source = await readFile("components/TimezonePicker.tsx", "utf8");
+  assert.match(source, /<label htmlFor=\{inputId\}>Business timezone<\/label>/);
+  assert.match(source, /<input id=\{inputId\} aria-describedby=\{descriptionId\}/);
+  assert.match(source, /<small id=\{descriptionId\}>Use a city timezone\./);
+});
