@@ -33,3 +33,12 @@ No autonomous run recorded under the refined protocol yet.
 - Evidence: **S0 pending CI**. The previous exact-main validation failed at typecheck; a validation run for this repair was not yet visible when the handoff was written, so S1 is not claimed.
 - Blocker/regression status: this removes the known repository-wide compile blocker that had prevented all backend tests, Supabase startup, build and browser acceptance from running. Those later stages still require a fresh successful workflow.
 - Next: once CI is green through the repaired database suite, return to the auth policy drift item: adopt `sessionExpiry(remember)` in both auth entry paths with route-level regression coverage.
+
+### 2026-10-02 — Adopt shared auth session expiry policy
+- The latest complete validation on `025b0027cbb970bc6476da6d09f3cd905aee5358` passed the full repository workflow, clearing the earlier database/typecheck and UX-test blockers.
+- Replaced duplicated 8-hour/30-day expiry arithmetic in both `app/api/auth/route.ts` and `app/auth/callback/route.ts` with the tested `sessionExpiry(remember)` policy helper. Successful-auth proof ordering remains unchanged.
+- Added `tests/backend/auth-policy-adoption.test.ts` so both auth entry paths must consume `sessionExpiry()` and cannot reintroduce local lifetime constants/arithmetic.
+- Source commits: `e5d9d966bf5635fb72ba3eaa84efd720f86752cc`, `79848a1c09f3a1aedf96b04e9a319006210828a9`, `765b64d2c344765d553617973c29001348825400`.
+- Evidence: **S0 pending CI for the final tested source commit**. A validation run was already pending for the callback source commit when checked; no completed workflow yet covered the newly added regression test, so S1 is not promoted by inference.
+- Blockers: none for this source-level policy adoption. No external auth-provider acceptance is claimed.
+- Next: after CI validates the policy-adoption regression, inspect session cookie lifetime calculation for deterministic clock injection so expiry and persistent-cookie `maxAge` cannot diverge around boundary timing.
