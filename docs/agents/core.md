@@ -73,3 +73,12 @@ No autonomous run recorded under the refined protocol yet.
 - Evidence: **S0 pending CI** for the new regression. The immediately preceding `main` validation passed typecheck and all automated tests, then failed only in the unrelated connected-browser billing locator; no completed validation yet covers this new commit.
 - No external authentication-provider acceptance is claimed.
 - Next: after CI validates this regression, inspect account recovery/password flows for stale-session or return-path integrity gaps.
+
+### 2026-10-02 — Keep password recovery sessions transient
+- Recovery callbacks previously inherited `ff-remember=yes`, so a stale cookie from an earlier remembered sign-in could turn a password-reset exchange into a 30-day session.
+- `app/auth/callback/route.ts` now validates the return path first and forces `/account/password` callbacks onto the transient session policy while preserving remembered OAuth callbacks elsewhere.
+- Added source-level regression coverage in `tests/backend/auth-policy-adoption.test.ts` locking the recovery-path policy and validated-path redirect coupling.
+- Source commits: `44763d69c8e84017d01348967f521489ff0215d8`, `30eeb67690c487efb702c46185a17b55af050b33`.
+- Evidence: **S0 pending CI**. Validation run 107 began for the source commit before the regression commit landed; no completed workflow covering the tested head was available when this handoff was written.
+- No external authentication-provider acceptance is claimed.
+- Next: after CI covers the regression head, inspect password-update completion for stale recovery-session cleanup or privilege-extension behavior.
