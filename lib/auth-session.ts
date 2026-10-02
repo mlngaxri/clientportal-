@@ -23,8 +23,10 @@ export function sessionCookieOptions(
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax" as const,
     path: "/",
-    // Unchecked means a browser session cookie, with an independent server expiry.
-    ...(remember ? { maxAge: remaining } : {}),
+    // Override provider persistence too: unchecked sessions must die with the browser.
+    ...(remember
+      ? { maxAge: remaining }
+      : { maxAge: undefined, expires: undefined }),
   };
 }
 

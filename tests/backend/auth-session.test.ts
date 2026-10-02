@@ -36,7 +36,18 @@ test("remembered sessions receive persistent cookie lifetime while normal sessio
   assert.equal(remembered.secure, true);
   assert.equal(remembered.sameSite, "lax");
   assert.equal(remembered.maxAge, 61);
-  assert.equal("maxAge" in transient, false);
+  assert.equal(transient.maxAge, undefined);
+  assert.equal(transient.expires, undefined);
+  assert.equal(
+    { maxAge: 86400, expires: new Date(now + 86400_000), ...transient }.maxAge,
+    undefined,
+    "transient policy must override provider maxAge persistence",
+  );
+  assert.equal(
+    { maxAge: 86400, expires: new Date(now + 86400_000), ...transient }.expires,
+    undefined,
+    "transient policy must override provider expires persistence",
+  );
   if (previous === undefined) Reflect.deleteProperty(process.env, "NODE_ENV");
   else Object.assign(process.env, { NODE_ENV: previous });
 });
