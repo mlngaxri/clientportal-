@@ -11,7 +11,9 @@ test("session expiry is absolute and unchecked sessions have no persistent cooki
   assert.equal(sessionExpired(String(Date.now() - 1)), true);
   assert.equal(sessionExpired("invalid"), true);
   assert.equal(sessionExpired(String(Date.now() + 10000)), false);
-  assert.equal("maxAge" in sessionCookieOptions(false), false);
+  const transient = sessionCookieOptions(false);
+  assert.equal(transient.maxAge, undefined);
+  assert.equal(transient.expires, undefined);
   assert.ok(sessionCookieOptions(true).maxAge! > 0);
 });
 test("Saved requires exact acknowledged board identity, version and semantic content", () => {
