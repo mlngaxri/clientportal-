@@ -103,12 +103,14 @@ test("revision completion replay cannot duplicate or strand the next draft", asy
   await db.close();
 });
 
-test("stale owner saves cannot overwrite newer next-draft content after revision completion", async () => {
+test("stale owner writes cannot overwrite or submit a newer next draft after revision completion", async () => {
   const db = await database();
   const owner = randomUUID();
   const project = randomUUID();
   const staleSaveKey = randomUUID();
+  const staleSubmitKey = randomUUID();
   const firstSaveKey = randomUUID();
+  const submitKey = randomUUID();
   const original = { objects: [] };
   const firstReplacement = { objects: [{ id: "text", type: "text", text: "Fresh follow-up direction" }] };
   const staleReplacement = { objects: [{ id: "text", type: "text", text: "Stale follow-up direction" }] };
@@ -151,27 +153,44 @@ test("stale owner saves cannot overwrite newer next-draft content after revision
     () => db.query("select project_command($1,'save_board',$2::jsonb,0,$3)", [project, JSON.stringify({ boardId: nextDraft.id, data: staleReplacement }), staleSaveKey]),
     /conflict/i,
   );
+  await assert.rejects(
+    () => db.query("select project_command($1,'submit_revision',$2::jsonb,0,$3)", [project, JSON.stringify({ boardId: nextDraft.id }), staleSubmitKey]),
+    /conflict/i,
+  );
 
-  const afterStaleSave = (
-    await db.query<{ data: unknown; version: number; first_receipts: number; stale_receipts: number }>(
-      `select b.data,b.version,
+  const afterStaleWrites = (
+    await db.query<{ data: unknown; version: number; revision_used: number; first_receipts: number; stale_save_receipts: number; stale_submit_receipts: number }>(
+      `select b.data,b.version,p.revision_used,
         (select count(*)::int from commands c where c.project_id=$1 and c.key=$3) as first_receipts,
-        (select count(*)::int from commands c where c.project_id=$1 and c.key=$4) as stale_receipts
-       from boards b where b.id=$2`,
-      [project, nextDraft.id, firstSaveKey, staleSaveKey],
+        (select count(*)::int from commands c where c.project_id=$1 and c.key=$4) as stale_save_receipts,
+        (select count(*)::int from commands c where c.project_id=$1 and c.key=$5) as stale_submit_receipts
+       from boards b join projects p on p.id=b.project_id where b.id=$2`,
+      [project, nextDraft.id, firstSaveKey, staleSaveKey, staleSubmitKey],
     )
   ).rows[0];
-  assert.deepEqual(afterStaleSave.data, firstReplacement);
-  assert.equal(afterStaleSave.version, 1);
-  assert.equal(afterStaleSave.first_receipts, 1);
-  assert.equal(afterStaleSave.stale_receipts, 0);
+  assert.deepEqual(afterStaleWrites.data, firstReplacement);
+  assert.equal(afterStaleWrites.version, 1);
+  assert.equal(afterStaleWrites.revision_used, 1);
+  assert.equal(afterStaleWrites.first_receipts, 1);
+  assert.equal(afterStaleWrites.stale_save_receipts, 0);
+  assert.equal(afterStaleWrites.stale_submit_receipts, 0);
 
   await db.query("select project_command($1,'save_board',$2::jsonb,1,$3)", [project, JSON.stringify({ boardId: nextDraft.id, data: finalReplacement }), randomUUID()]);
-  const saved = (
-    await db.query<{ data: unknown; version: number }>("select data,version from boards where id=$1", [nextDraft.id])
+  await db.query("select project_command($1,'submit_revision',$2::jsonb,2,$3)", [project, JSON.stringify({ boardId: nextDraft.id }), submitKey]);
+  const submitted = (
+    await db.query<{ data: unknown; submitted_data: unknown; version: number; status: string; revision_used: number; submit_receipts: number }>(
+      `select b.data,b.submitted_data,b.version,b.status,p.revision_used,
+        (select count(*)::int from commands c where c.project_id=$1 and c.key=$3) as submit_receipts
+       from boards b join projects p on p.id=b.project_id where b.id=$2`,
+      [project, nextDraft.id, submitKey],
+    )
   ).rows[0];
-  assert.deepEqual(saved.data, finalReplacement);
-  assert.equal(saved.version, 2);
+  assert.deepEqual(submitted.data, finalReplacement);
+  assert.deepEqual(submitted.submitted_data, finalReplacement);
+  assert.equal(submitted.version, 3);
+  assert.equal(submitted.status, "SUBMITTED");
+  assert.equal(submitted.revision_used, 2);
+  assert.equal(submitted.submit_receipts, 1);
 
   await db.close();
 });
