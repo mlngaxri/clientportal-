@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import {
   sessionCookieOptions,
   sessionExpiry,
+  signRecoveryExpiry,
   signSessionExpiry,
 } from "../../../lib/auth-session";
 import { NextResponse } from "next/server";
@@ -20,7 +21,10 @@ export async function GET(req: Request) {
       const client = await db({ remember, expiry });
       const { error } = await client.auth.exchangeCodeForSession(code);
       if (!error) {
-        if (recovery) jar.delete("ff-remember");
+        if (recovery) {
+          jar.delete("ff-remember");
+          jar.set("ff-recovery-until", await signRecoveryExpiry(expiry), sessionCookieOptions(false, expiry));
+        }
         jar.set(
           "ff-session-until",
           await signSessionExpiry(expiry),
