@@ -29,7 +29,7 @@ test("password recovery callbacks cannot inherit a stale remembered-session poli
   assert.match(text, /const returnPath = safeReturnPath\(url\.searchParams\.get\("next"\)\);/);
   assert.match(text, /const recovery = returnPath === "\/account\/password";/);
   assert.match(text, /const remember = !recovery && jar\.get\("ff-remember"\)\?\.value === "yes";/);
-  assert.match(text, /if \(recovery\) jar\.delete\("ff-remember"\);/);
+  assert.match(text, /if \(recovery\) \{[\s\S]*?jar\.delete\("ff-remember"\);[\s\S]*?\}/);
 });
 
 test("auth callback preserves the request origin that owns its session cookies", async () => {
@@ -41,7 +41,7 @@ test("auth callback preserves the request origin that owns its session cookies",
 
 test("password recovery redirect remains an absolute callback without APP_URL", async () => {
   const text = await source(accountRoute);
-  assert.match(text, /const callback = new URL\([\s\S]*?"\/auth\/callback",[\s\S]*?process\.env\.APP_URL \|\| new URL\(req\.url\)\.origin,[\s\S]*?\);/);
+  assert.match(text, /const callback = new URL\(\s*"\/auth\/callback",\s*process\.env\.APP_URL \|\| new URL\(req\.url\)\.origin\s*\);/);
   assert.match(text, /callback\.searchParams\.set\("next", "\/account\/password"\);/);
   assert.match(text, /redirectTo: callback\.toString\(\)/);
   assert.doesNotMatch(text, /redirectTo:\s*`\$\{process\.env\.APP_URL\}/);
