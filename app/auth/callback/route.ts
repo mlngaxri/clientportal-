@@ -1,9 +1,8 @@
 import { cookies } from "next/headers";
 import {
   sessionCookieOptions,
+  sessionExpiry,
   signSessionExpiry,
-  REMEMBER_SECONDS,
-  SESSION_SECONDS,
 } from "../../../lib/auth-session";
 import { NextResponse } from "next/server";
 import { safeReturnPath } from "../../../lib/navigation";
@@ -15,9 +14,7 @@ export async function GET(req: Request) {
     if (code) {
       const jar = await cookies();
       const remember = jar.get("ff-remember")?.value === "yes";
-      const expiry = String(
-        Date.now() + (remember ? REMEMBER_SECONDS : SESSION_SECONDS) * 1000,
-      );
+      const expiry = sessionExpiry(remember);
       const client = await db({ remember, expiry });
       const { error } = await client.auth.exchangeCodeForSession(code);
       if (!error) {
