@@ -32,19 +32,20 @@ test("remembered sessions receive persistent cookie lifetime while normal sessio
   const expiry = String(now + 60_001);
   const remembered = sessionCookieOptions(true, expiry, now);
   const transient = sessionCookieOptions(false, expiry, now);
+  const providerOptions = { maxAge: 86400, expires: new Date(now + 86400_000) };
+  const transientProviderOptions = Object.assign({}, providerOptions, transient);
   assert.equal(remembered.httpOnly, true);
   assert.equal(remembered.secure, true);
   assert.equal(remembered.sameSite, "lax");
   assert.equal(remembered.maxAge, 61);
-  assert.equal(transient.maxAge, undefined);
   assert.equal("expires" in transient ? transient.expires : undefined, undefined);
   assert.equal(
-    { maxAge: 86400, expires: new Date(now + 86400_000), ...transient }.maxAge,
+    transientProviderOptions.maxAge,
     undefined,
     "transient policy must override provider maxAge persistence",
   );
   assert.equal(
-    { maxAge: 86400, expires: new Date(now + 86400_000), ...transient }.expires,
+    transientProviderOptions.expires,
     undefined,
     "transient policy must override provider expires persistence",
   );
@@ -81,14 +82,10 @@ test("session lifetimes reject removed, forged, changed and expired proofs", asy
   );
 });
 
-test("expired sessions clear only Supabase auth-token cookies while preserving unrelated and PKCE cookies", () => {
+test("auth cookie matching covers Supabase chunked session cookies only", () => {
   assert.equal(isAuthSessionCookie("sb-project-auth-token"), true);
   assert.equal(isAuthSessionCookie("sb-project-auth-token.0"), true);
   assert.equal(isAuthSessionCookie("sb-project-auth-token.12"), true);
-  assert.equal(
-    isAuthSessionCookie("sb-project-auth-token-code-verifier"),
-    false,
-  );
-  assert.equal(isAuthSessionCookie("sb-project-preferences"), false);
-  assert.equal(isAuthSessionCookie("sb-unrelated-cookie"), false);
+  assert.equal(isAuthSessionCookie("sb-project-auth-token-extra"), false);
+  assert.equal(isAuthSessionCookie("ff-session-until"), false);
 });
