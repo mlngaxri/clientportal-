@@ -5,6 +5,7 @@ import { readFile } from "node:fs/promises";
 const authRoute = new URL("../../app/api/auth/route.ts", import.meta.url);
 const callbackRoute = new URL("../../app/auth/callback/route.ts", import.meta.url);
 const middleware = new URL("../../middleware.ts", import.meta.url);
+const server = new URL("../../lib/server.ts", import.meta.url);
 
 async function source(url: URL) {
   return readFile(url, "utf8");
@@ -70,6 +71,21 @@ test("middleware verifies and refreshes a session from one stable clock", async 
     text,
     /sessionCookieOptions\(remember, expiry, sessionNow\)/,
     "cookie refresh must use the same request clock",
+  );
+});
+
+test("server Supabase cookies verify and refresh from one stable clock", async () => {
+  const text = await source(server);
+  assert.match(text, /const sessionNow = Date\.now\(\);/);
+  assert.match(
+    text,
+    /verifiedSessionExpiry\([\s\S]*?undefined,\s*sessionNow,\s*\)/,
+    "server session proof verification must use the request clock",
+  );
+  assert.match(
+    text,
+    /sessionCookieOptions\([\s\S]*?newSession\?\.expiry \?\? expiry \?\? undefined,\s*sessionNow,\s*\)/,
+    "server provider-cookie refresh must use the same request clock",
   );
 });
 

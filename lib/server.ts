@@ -21,8 +21,11 @@ export async function db(newSession?: { remember: boolean; expiry: string }) {
       "Account services are not configured yet. Your work has not been saved.",
     );
   const jar = await cookies();
+  const sessionNow = Date.now();
   const expiry = await verifiedSessionExpiry(
     jar.get("ff-session-until")?.value,
+    undefined,
+    sessionNow,
   );
   const remember = jar.get("ff-remember")?.value === "yes";
   return createServerClient(
@@ -42,6 +45,7 @@ export async function db(newSession?: { remember: boolean; expiry: string }) {
                 ...sessionCookieOptions(
                   newSession?.remember ?? remember,
                   newSession?.expiry ?? expiry ?? undefined,
+                  sessionNow,
                 ),
                 ...(value ? {} : { maxAge: 0 }),
               }),
