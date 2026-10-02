@@ -9,15 +9,10 @@ const supabaseConfig = new URL("../../supabase/config.toml", import.meta.url);
 const middleware = new URL("../../middleware.ts", import.meta.url);
 const server = new URL("../../lib/server.ts", import.meta.url);
 
-async function source(url: URL) {
-  return readFile(url, "utf8");
-}
+async function source(url: URL) { return readFile(url, "utf8"); }
 
 test("auth entry paths derive expiry from the shared session policy", async () => {
-  for (const [name, text] of [
-    ["password/OAuth entry", await source(authRoute)],
-    ["OAuth callback", await source(callbackRoute)],
-  ] as const) {
+  for (const [name, text] of [["password/OAuth entry", await source(authRoute)], ["OAuth callback", await source(callbackRoute)]] as const) {
     assert.match(text, /sessionExpiry\s*\(/, `${name} must use sessionExpiry()`);
     assert.doesNotMatch(text, /Date\.now\(\)\s*\+\s*\([^\n]*REMEMBER_SECONDS|Date\.now\(\)\s*\+\s*\([^\n]*SESSION_SECONDS/, `${name} must not duplicate session lifetime arithmetic`);
     assert.doesNotMatch(text, /\b(?:REMEMBER_SECONDS|SESSION_SECONDS)\b/, `${name} must not own session lifetime constants`);
@@ -47,19 +42,18 @@ test("password recovery callback returns to the request origin that owns its PKC
   assert.doesNotMatch(text, /const callback = new URL\([^;]*process\.env\.APP_URL/);
 });
 
-test("signup callback normalizes APP_URL before provider handoff", async () => {
+test("auth provider callbacks stay on the request origin that owns PKCE and session cookies", async () => {
   const text = await source(authRoute);
-  assert.match(text, /const emailRedirect = new URL\([\s\S]*?"\/auth\/callback",[\s\S]*?process\.env\.APP_URL \|\| new URL\(req\.url\)\.origin,[\s\S]*?\);/);
-  assert.match(text, /emailRedirect\.searchParams\.set\("next", next\);/);
+  assert.match(text, /const requestOrigin = new URL\(req\.url\)\.origin;/);
+  assert.match(text, /const redirect = new URL\("\/auth\/callback", requestOrigin\);/);
+  assert.match(text, /const emailRedirect = new URL\("\/auth\/callback", requestOrigin\);/);
   assert.match(text, /emailRedirectTo: emailRedirect\.toString\(\)/);
-  assert.doesNotMatch(text, /emailRedirectTo:\s*`\$\{process\.env\.APP_URL/);
+  assert.doesNotMatch(text, /new URL\("\/auth\/callback",\s*process\.env\.APP_URL/);
 });
 
 test("local Supabase allows the exact recovery callback on both acceptance hosts", async () => {
   const text = await source(supabaseConfig);
-  for (const host of ["localhost", "127.0.0.1"]) {
-    assert.match(text, new RegExp(`http://${host.replaceAll(".", "\\.")}:4173/auth/callback\\?next=/account/password`));
-  }
+  for (const host of ["localhost", "127.0.0.1"]) assert.match(text, new RegExp(`http://${host.replaceAll(".", "\\.")}:4173/auth/callback\\?next=/account/password`));
 });
 
 test("middleware verifies and refreshes a session from one stable clock", async () => {

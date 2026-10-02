@@ -29,11 +29,9 @@ export async function POST(req: Request) {
       return Response.json({ ok: true });
     }
     const next = safeReturnPath("next" in body ? body.next : undefined);
+    const requestOrigin = new URL(req.url).origin;
     if (body.mode === "google") {
-      const redirect = new URL(
-        "/auth/callback",
-        process.env.APP_URL || new URL(req.url).origin,
-      );
+      const redirect = new URL("/auth/callback", requestOrigin);
       redirect.searchParams.set("next", next);
       const { data, error } = await client.auth.signInWithOAuth({
         provider: "google",
@@ -47,7 +45,7 @@ export async function POST(req: Request) {
       return Response.json({ url: data.url });
     }
     if (body.mode === "confirmation") {
-      const redirect = new URL("/auth/callback", process.env.APP_URL || new URL(req.url).origin);
+      const redirect = new URL("/auth/callback", requestOrigin);
       redirect.searchParams.set("next", next);
       const { error } = await client.auth.resend({ type: "signup", email: body.email, options: { emailRedirectTo: redirect.toString() } });
       if (error) throw new Error("Account creation confirmation could not be resent. Wait a moment and try again.");
@@ -55,10 +53,7 @@ export async function POST(req: Request) {
     }
     if (!body.email || !body.password)
       throw new Error("Enter your email and password.");
-    const emailRedirect = new URL(
-      "/auth/callback",
-      process.env.APP_URL || new URL(req.url).origin,
-    );
+    const emailRedirect = new URL("/auth/callback", requestOrigin);
     emailRedirect.searchParams.set("next", next);
     const { data, error } =
       body.mode === "signup"
