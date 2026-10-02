@@ -58,3 +58,11 @@ No autonomous run recorded under the refined protocol yet.
 - Evidence: **S0 pending CI**. No completed automated status was available for the source commit at handoff, so S1 is not claimed.
 - Boundary: database transaction/idempotency evidence only; no external review/upload provider, deployment, or live-provider acceptance is claimed.
 - Next: inspect the next-draft lifecycle after completion for customer save/submit conflict behavior, especially stale board versions across the `REVISION_IN_PROGRESS` → `REVIEW` transition.
+
+### 2026-10-02 — Cover revision draft owner authorization
+- Added regression coverage for migration `016_revision_draft_owner.sql`, which reserves revision-draft `save_board` commands for the project owner while preserving trusted operator start/completion duties.
+- The test proves an operator save is rejected without changing board data/version or creating a command receipt, then proves the owner can save the same revision draft exactly once.
+- Source test commit: `b4f0af5b3773849f3662d62b3408fff970e74019`.
+- Evidence: **S0 pending CI**. The prior main validation passed typecheck, unit/integration tests, isolated Supabase and build but failed later in the shared connected-browser journey; no completed validation yet covers this new regression commit.
+- Boundary: database authorization evidence only; no external review/upload provider or live deployment acceptance is claimed.
+- Next: after CI covers this regression, inspect stale owner save behavior across completion-created next drafts and ensure an old board/version cannot overwrite the new customer draft.
