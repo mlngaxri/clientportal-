@@ -695,6 +695,9 @@ try {
         },
         states,
       );
+      assert.ok(!(await (await fetch(`${base}/sites/${id}`)).text()).includes("Today in the workshop."), "Saving a State draft must not activate it");
+      const savedState = (await current()).boards.find((b) => b.kind === "states");
+      await ok(ownerPage, `/api/projects/${id}/states`, { boardId: savedState.id, expected: savedState.version, key: randomUUID() });
       assert.ok(
         (await (await fetch(`${base}/sites/${id}`)).text()).includes(
           "Today in the workshop.",
