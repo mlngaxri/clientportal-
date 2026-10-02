@@ -74,3 +74,11 @@ No autonomous run recorded under the refined protocol yet.
 - Evidence: **S0 pending CI**. The immediately preceding main commit `8b49acc7342e6fdf2eb5f70c2b6985e96b0d93dc` has a green validation run, but no completed workflow yet covers this new regression commit, so S1 is not inferred.
 - Boundary: database conflict/revision integrity evidence only; no external review/upload provider or live deployment acceptance is claimed.
 - Next: once CI covers this regression, inspect stale submit behavior on the completion-created draft so an old client cannot consume another revision allowance after the transition.
+
+### 2026-10-02 — Protect completion-created drafts from stale submission
+- Extended `tests/backend/revision-completion-contract.test.ts` across the next-draft submit boundary after revision completion.
+- The regression now proves both a stale save and a stale `submit_revision` using board version 0 reject after a newer owner save, preserve the current draft and existing `revision_used=1`, and create no failed-command receipts. A current-version save followed by submit then freezes exactly that latest content and increments the allowance exactly once to 2.
+- Source test commit: `6f0e5b1dda16333299391933e1fdc3d842c60f4c`.
+- Evidence: **S0 pending CI**. The preceding main SHA `4ed486cd348544f6bec124f1738c1898d9f74a3e` completed validation successfully, but no completed workflow was visible for this new test commit at handoff, so S1 is not inferred.
+- Boundary: database conflict/revision-accounting evidence only; no external review/upload provider, deployment, or live-provider acceptance is claimed.
+- Next: inspect cross-session withdraw/re-save behavior after a submitted next draft is withdrawn, ensuring a stale pre-withdraw client cannot overwrite the reopened draft or disturb the refunded allowance.
