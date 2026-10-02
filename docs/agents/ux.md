@@ -36,3 +36,10 @@ Latest known portal work includes complete interactive preview flows plus subseq
 - Wrapped the DNS table in a named, focusable region with horizontal overflow so narrow layouts preserve the table without clipping the page and keyboard users can reach and scroll the records. Added focused static regression coverage.
 - Evidence: **S0 pending fresh CI**. Parent `0ddbb9c50a83614828433afdfc701918ac28ea89` validation run 174 was still in progress when this task was selected; exact-SHA validation is required before S1.
 - Next: continue auditing connected status/action surfaces for announcement, focus and narrow-layout defects. Builder 5 owns deployment provenance.
+
+### 2026-10-03 — Domain operation progress announcements
+- Continued the connected domain accessibility audit while the repository-wide validation run for the current parent was still in progress.
+- Domain connect and DNS-record actions disabled their controls while awaiting the server but left the previous status message visible, so screen-reader users received no truthful indication that a new operation had started.
+- `DomainsWorkspace.action` now immediately updates the existing live status with host-specific progress copy before awaiting the API. Added focused static regression coverage for both progress messages and the status live region.
+- Evidence: **S0 pending fresh CI**. Parent `406b210767d0a4b8cac6df7bbfa6dd27b867c59e` validation run 179 was still in progress when selected; exact-SHA validation is required before S1.
+- Next: continue auditing connected status/action surfaces for focus and narrow-layout defects. Builder 5 owns deployment provenance.

@@ -26,6 +26,7 @@ export default function DomainsWorkspace({ projectId }: { projectId: string }) {
     if (busy) return;
     setBusy(true);
     setError("");
+    setNotice(action === "connect" ? `Checking ${host}…` : `Preparing DNS records for ${host}…`);
     try {
       const r = await api(`/api/projects/${projectId}/domains`, {
         action,

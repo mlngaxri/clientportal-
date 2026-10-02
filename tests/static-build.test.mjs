@@ -115,3 +115,9 @@ test("domain DNS records stay keyboard-scrollable on narrow layouts", async () =
   assert.match(source, /style=\{\{ overflowX: "auto" \}\}/);
   assert.match(source, /<table className="connected-table">/);
 });
+
+test("domain operations announce their in-progress state", async () => {
+  const source = await readFile("components/DomainsWorkspace.tsx", "utf8");
+  assert.match(source, /setNotice\(action === "connect" \? `Checking \$\{host\}…` : `Preparing DNS records for \$\{host\}…`\)/);
+  assert.match(source, /\{notice && <p role="status">\{notice\}<\/p>\}/);
+});
