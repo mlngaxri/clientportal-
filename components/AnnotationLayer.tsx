@@ -66,6 +66,7 @@ export default function AnnotationLayer({
         <div className="annotation-tools">
           {(["pen", "arrow", "rect", "text"] as const).map((t) => (
             <button
+              type="button"
               key={t}
               aria-pressed={tool === t}
               onClick={() => setTool(t)}
@@ -74,6 +75,7 @@ export default function AnnotationLayer({
             </button>
           ))}
           <button
+            type="button"
             onClick={() => onChange(strokes.slice(0, -1))}
             disabled={!strokes.length}
           >

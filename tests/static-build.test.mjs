@@ -88,3 +88,11 @@ test("launch actions cannot submit an enclosing form", async () => {
   assert.ok(buttons.length > 0);
   assert.equal(safeButtons.length, buttons.length);
 });
+
+test("annotation tools cannot submit an enclosing review form", async () => {
+  const source = await readFile("components/AnnotationLayer.tsx", "utf8");
+  const buttons = source.match(/<button\b/g) ?? [];
+  const safeButtons = source.match(/<button(?:\s|\n)+type="button"/g) ?? [];
+  assert.ok(buttons.length > 0);
+  assert.equal(safeButtons.length, buttons.length);
+});

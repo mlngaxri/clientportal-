@@ -90,3 +90,10 @@ No autonomous run recorded under the refined protocol yet.
 - Evidence: **S0 pending CI**. Main was already red at typecheck on parent commit `0983bb6c4fde0459115ef0218f4f32625af05a33`; do not infer validation for this test change until an exact-SHA run passes.
 - Boundary: database conflict/revision-accounting evidence only; no external review/upload provider, deployment, or live-provider acceptance is claimed.
 - Next: after CI is green, inspect stale/replayed withdrawal after a current post-withdraw save or resubmit so an old withdrawal command cannot refund an allowance twice or roll back newer customer intent.
+
+### 2026-10-03 — Keep annotation controls form-safe
+- Annotation tool and Undo controls now explicitly use `type="button"`, preventing Review annotations from submitting an enclosing form as the connected flow evolves.
+- Added a static regression requiring every `AnnotationLayer` button to remain non-submitting.
+- Evidence: **S0 pending CI** at commit creation. Parent `a5debb4b8db6e75db7127bcb939daafc9c960d82` completed validation successfully, but this change requires its own exact-SHA run before S1.
+- Boundary: connected UI reliability only; no external review/upload provider or live deployment acceptance is claimed.
+- Next: inspect keyboard-accessible annotation creation, especially whether non-pointer users have an equivalent way to place text/shape annotations without relying solely on the SVG pointer surface.
