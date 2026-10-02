@@ -38,3 +38,12 @@ test("connected route errors announce context before recovery actions", async ()
   assert.match(source, /<h1 ref=\{heading\} tabIndex=\{-1\}>/);
   assert.match(source, />\s*Try again\s*<\/button>/);
 });
+
+test("connected draft recovery moves keyboard focus to the primary choice", async () => {
+  const source = await readFile("components/RecoveryNotice.tsx", "utf8");
+  assert.match(source, /const recoveryAction = useRef<HTMLButtonElement>\(null\)/);
+  assert.match(source, /if \(recovery\) recoveryAction\.current\?\.focus\(\)/);
+  assert.match(source, /aria-labelledby="recovery-heading"/);
+  assert.match(source, /<p id="recovery-heading">/);
+  assert.match(source, /<button ref=\{recoveryAction\} onClick=\{recover\}>Restore draft<\/button>/);
+});
