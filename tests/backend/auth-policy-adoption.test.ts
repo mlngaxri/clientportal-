@@ -5,6 +5,7 @@ import { readFile } from "node:fs/promises";
 const authRoute = new URL("../../app/api/auth/route.ts", import.meta.url);
 const accountRoute = new URL("../../app/api/account/route.ts", import.meta.url);
 const callbackRoute = new URL("../../app/auth/callback/route.ts", import.meta.url);
+const supabaseConfig = new URL("../../supabase/config.toml", import.meta.url);
 const middleware = new URL("../../middleware.ts", import.meta.url);
 const server = new URL("../../lib/server.ts", import.meta.url);
 
@@ -38,6 +39,13 @@ test("password recovery redirect remains an absolute callback without APP_URL", 
   assert.match(text, /callback\.searchParams\.set\("next", "\/account\/password"\);/);
   assert.match(text, /redirectTo: callback\.toString\(\)/);
   assert.doesNotMatch(text, /redirectTo:\s*`\$\{process\.env\.APP_URL\}/);
+});
+
+test("local Supabase allows the exact recovery callback on both acceptance hosts", async () => {
+  const text = await source(supabaseConfig);
+  for (const host of ["localhost", "127.0.0.1"]) {
+    assert.match(text, new RegExp(`http://${host.replaceAll(".", "\\.")}:4173/auth/callback\\?next=/account/password`));
+  }
 });
 
 test("middleware verifies and refreshes a session from one stable clock", async () => {

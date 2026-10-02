@@ -20,7 +20,7 @@ file_size_limit = "100MiB"
 [auth]
 enabled = true
 site_url = "http://127.0.0.1:4173"
-additional_redirect_urls = ["http://localhost:4173/auth/callback", "http://127.0.0.1:4173/auth/callback", "http://localhost:4173/auth/callback?next=/account/password"]
+additional_redirect_urls = ["http://localhost:4173/auth/callback", "http://127.0.0.1:4173/auth/callback", "http://localhost:4173/auth/callback?next=/account/password", "http://127.0.0.1:4173/auth/callback?next=/account/password"]
 jwt_expiry = 3600
 enable_signup = true
 [auth.email]
