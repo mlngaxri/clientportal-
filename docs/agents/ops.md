@@ -87,3 +87,10 @@ No autonomous run recorded under the refined protocol yet.
 - Evidence: **S0 pending fresh CI**. Current main validation run 167 is green for the parent `94a5c8f56e5dc7a82fee5800b740ae63db70a0cb`; this new commit requires exact-SHA validation before S1.
 - Boundary: source-level idempotency/state-release coverage only; no production scheduling, publishing, billing, deployment or external-provider acceptance is claimed.
 - Next: inspect Pro entitlement loss after activation and prove request-time rendering falls back to usual content without deleting or mutating the pinned release snapshot.
+
+### 2026-10-03 — Billing workspace project-switch isolation
+- Reconciled source commit `a26c3d159e79032cffa1763471f66a13c10252ed`, which clears payment receipts, subscription records, the open receipt dialog and billing-portal loading state before each project-scoped billing refresh. Its focused regression requires those resets to occur before the new project's billing request, preventing stale commerce records from being shown under another project.
+- Evidence: **S1 — Automated for the billing change.** Validation run 202 on current `main` passed typecheck, `npm test`, isolated Supabase startup and the production build; the later connected-browser failure is in password recovery, not this billing invariant.
+- Current blocker: run 202 fails only in the final connected-browser password-recovery check while waiting for the New password field. Builder 5/Core own that cross-cutting auth release blocker; no billing/provider failure is evidenced by the run.
+- Boundary: this proves the billing isolation source and its automated regression on a descendant SHA only. It does not claim Stripe acceptance, live deployment or provider behavior.
+- Next: inspect Pro entitlement loss after State activation and prove request-time rendering falls back to usual content without deleting or mutating the pinned release snapshot.
