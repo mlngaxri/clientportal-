@@ -58,3 +58,11 @@ Latest known portal work includes complete interactive preview flows plus subseq
 - Moved the disposable app/auth callback origin to `http://localhost:4173` while leaving Supabase services on their CLI `127.0.0.1` endpoints, and replaced the old same-host regression with a host-isolation invariant.
 - Evidence: **S0 pending exact-SHA validation**. The parent browser failure is the evidence motivating this repair; a fresh workflow must prove the recovery journey before S1.
 - Next: inspect exact-SHA validation. If recovery clears, resume the connected focus/announcement/narrow-layout audit. Builder 5 owns deployment provenance.
+
+### 2026-10-03 — Clear stale Review upload errors after retry
+- Latest `main` validation is green, so resumed the Review reliability audit after the recent same-file upload retry work.
+- `Review.replacement` preserved its prior upload failure in the shared alert even after a retry uploaded successfully, leaving customers and assistive technology with a false error state beside the newly added Direction.
+- Clear the shared message only after `uploadAsset` succeeds and the replacement Direction is added. Failure behavior and same-file retry behavior remain unchanged.
+- Added focused regression coverage in `tests/review-upload-retry.test.mjs` requiring success to clear stale retry errors while failures still publish the retry alert.
+- Evidence: **S0 pending exact-SHA validation**. Parent `43eb11add12cb6e4948f919e2bf1535da26b979a` validation run 228 is green; exact-SHA validation is still required before S1.
+- Next: after exact-SHA validation, continue auditing connected Review focus, announcements and narrow-layout behavior. Builder 5 owns deployment provenance.

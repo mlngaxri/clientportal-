@@ -57,6 +57,7 @@ export default function Review({
         assetId: asset.id,
         target,
       });
+      setMessage("");
     } catch (e) {
       setMessage(`${(e as Error).message} Your existing Directions are preserved; choose the file again to retry.`);
     } finally {
