@@ -7,7 +7,7 @@ Initial Direction, media and annotation UX, Review, revision lifecycle, locking/
 The connected application persists Review/revision state through Supabase-backed project commands, with database constraints and regression coverage for completeness, owner authorization, idempotency, locking, completion, stale-write conflicts, withdrawal and revision accounting. Annotation and revision-submit UI also has focused keyboard/semantic/form-safety coverage. External review/upload provider acceptance remains unproven and must not be inferred from local or CI behavior.
 
 ## Current evidence
-- Latest main inspected before this change: `ee1dca8a34b403e417ed024d741f0ce5648b3d53`; no exact-SHA combined status was attached when this task was selected.
+- Latest main inspected before this change: `533498f38dd161fae7fa50f587e2d521108b1512`; no exact-SHA combined status was attached when this task was selected.
 - Review attachment retry text promises that a failed upload can be retried by choosing the file again. The file input clears its native selection immediately after capturing the File, so selecting the same file after a failed upload fires a fresh change event without mutating existing Directions.
 - Successful retry clears the stale upload error only after the asset is uploaded and the replacement Direction is added.
 - Replacement uploads initiated by `ReviewCanvas` pass the validated bridge-event context into `Review.replacement`; focused source regression coverage locks that captured target through the asynchronous upload instead of allowing completion to consult mutable current Review context.
@@ -15,7 +15,8 @@ The connected application persists Review/revision state through Supabase-backed
 - A selected Direction that disappears from acknowledged board data is cleared; editable Review restores focus to Add Direction, while locked Review truthfully announces only that the selection disappeared.
 - Reattachment is canceled when its target disappears or when Review becomes locked, preventing stale website clicks from remaining actionable.
 - Upload completion re-checks current lock state before adding a Direction, with focused regression coverage.
-- An open revision submission dialog now closes and announces the reason if acknowledged board state becomes locked before submission completes, preventing stale submit UI from remaining actionable.
+- An open revision submission dialog closes and announces the reason if acknowledged board state becomes locked before submission completes, preventing stale submit UI from remaining actionable.
+- Submit/withdraw commands release their busy lock on success and failure; a successful command retry now clears any stale failure alert before parent refresh acknowledgement.
 - No live or external-provider acceptance is claimed.
 
 ## Recent Review work
@@ -42,12 +43,13 @@ The connected application persists Review/revision state through Supabase-backed
 - `babdea28fa2fa9afd6126c109e685649561097a8`: cancel and announce stale reattachment when acknowledged board data removes its target, with focused regression coverage.
 - `683e8036eac4ef12a5672857e8ae83471fbe3e98`, covered by `18da75cccccca5734ff226478c9fe7d60b5b4417`: cancel active reattachment when Review becomes locked.
 - `3cd256d9d8751eeaa75ef728ddd940e7ba16acde`, covered by `b4077213501817169ca6d36d19d58cfd7a13dc3e`: re-check Review lock state after asynchronous upload completion before adding a Direction.
+- `905c699d842f85060b52f3a9b6373d2b3078c493`: cover command busy recovery and withdrawal failure alerts.
 
 ## Evidence grade
 **S0 — Source.** Fresh exact-SHA automation for this change is not yet proven. No S2/S3/S4 claim is made.
 
 ## Boundary
-Never double-consume or double-refund revision entitlements. Failed/stale commands must roll back state/accounting and must not create successful command receipts. Successful idempotent replays must return their original result without mutating newer lifecycle state. Review workspace and canvas controls must not accidentally cross a surrounding native form boundary. Failed attachment uploads must preserve existing Directions and leave the chooser capable of retrying the same file. Replacement uploads must retain the validated target captured when the upload began even if selection or current preview context changes before completion, and must not add a Direction after Review locks. Reattachment intent must be canceled when its Direction is deleted locally, disappears from acknowledged server data, or Review becomes locked. Deleting the selected Direction must not strand keyboard focus in removed DOM and must expose the state change to assistive technology. A submission dialog must not remain actionable after acknowledged state locks the Review. Do not claim external review/upload acceptance without real provider evidence.
+Never double-consume or double-refund revision entitlements. Failed/stale commands must roll back state/accounting and must not create successful command receipts. Successful idempotent replays must return their original result without mutating newer lifecycle state. Review workspace and canvas controls must not accidentally cross a surrounding native form boundary. Failed attachment uploads must preserve existing Directions and leave the chooser capable of retrying the same file. Replacement uploads must retain the validated target captured when the upload began even if selection or current preview context changes before completion, and must not add a Direction after Review locks. Reattachment intent must be canceled when its Direction is deleted locally, disappears from acknowledged server data, or Review becomes locked. Deleting the selected Direction must not strand keyboard focus in removed DOM and must expose the state change to assistive technology. A submission dialog must not remain actionable after acknowledged state locks the Review. Successful command retries must clear stale command failure alerts before refresh acknowledgement. Do not claim external review/upload acceptance without real provider evidence.
 
 ## Next recommended action
-Continue the Review async-transition audit: inspect whether an in-flight submit/withdraw command can leave stale dialog, busy, alert or focus state after acknowledged refresh changes the active board, and fix only a concrete defect or add focused evidence for the invariant.
+Continue the Review async-transition audit: inspect whether submit/withdraw completion after acknowledged refresh changes the active board can leave stale announcement, focus, or dialog state; fix only a concrete defect or add focused evidence for the invariant.
