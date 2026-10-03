@@ -82,3 +82,12 @@ Latest known portal work includes complete interactive preview flows plus subseq
 - Regression commit: `b4077213501817169ca6d36d19d58cfd7a13dc3e`.
 - Evidence: **S0 pending exact-SHA validation**. Parent `568a733dd95473d77f7df97a900fde0497963c57` validation run 261 is green, but parent evidence is not promoted to this regression commit. The separate deployment workflow is red and is not live acceptance.
 - Next: after exact-SHA validation, continue the Review reliability/accessibility audit, especially async transitions and narrow-layout behavior. Builder 5 owns deployment provenance.
+
+### 2026-10-03 — Close Review submit dialog on confirmed command
+- Followed the Review async-transition handoff after exact-main validation returned green.
+- A successful `submit_revision` command previously relied on the parent refresh/lock transition to close `RevisionSubmitDialog`. If refresh acknowledgement was delayed or failed after the API had already confirmed submission, the stale dialog remained actionable and could invite a second submit attempt with a new idempotency key.
+- `Review.command` now closes the submission dialog immediately after the command API succeeds, announces that submission succeeded and Review status is refreshing, then requests the parent refresh. Failed commands still leave the dialog available for deliberate retry.
+- Added focused regression coverage in `tests/review-delete-focus.test.mjs` requiring dialog closure and progress announcement before `onRefresh()`.
+- Source/test commits: `9fa9d7d32e53955ac548fac41fccdef552a9b0ff`, `a04ca4f0d5361b05db3876e15f8f931a47ce3e26`.
+- Evidence: **S0 pending exact-SHA validation**. Parent `6bf8fcbe32ee96ed157d8c3e42bfe0fef503e77d` validation run 266 is green, but parent evidence is not promoted to these commits. Its separate deployment workflow is red and is not live acceptance.
+- Next: after exact-SHA validation, continue the Review async-transition audit, especially successful withdrawal while refresh acknowledgement is delayed. Builder 5 owns deployment provenance.
