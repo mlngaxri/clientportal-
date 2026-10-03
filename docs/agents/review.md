@@ -7,11 +7,11 @@ Initial Direction, media and annotation UX, Review, revision lifecycle, locking/
 The connected application persists Review/revision state through Supabase-backed project commands, with database constraints and regression coverage for completeness, owner authorization, idempotency, locking, completion, stale-write conflicts, withdrawal and revision accounting. Annotation and revision-submit UI also has focused keyboard/semantic/form-safety coverage. External review/upload provider acceptance remains unproven and must not be inferred from local or CI behavior.
 
 ## Current evidence
-- Latest main inspected before this change: `653c10b007d86b3ef5648b4692580182c6ebbb99`; no exact-SHA combined status was available when this task was selected.
+- Latest main inspected before this change: `321eeeabfe69589ea34e48f88b6e941a8517ce63`; no exact-SHA combined status was available when this task was selected.
 - Review attachment retry text promises that a failed upload can be retried by choosing the file again. The file input clears its native selection immediately after capturing the File, so selecting the same file after a failed upload fires a fresh change event without mutating existing Directions.
 - Successful retry clears the stale upload error only after the asset is uploaded and the replacement Direction is added.
 - Replacement uploads initiated by `ReviewCanvas` pass the validated bridge-event context into `Review.replacement`; focused source regression coverage locks that captured target through the asynchronous upload instead of allowing completion to consult mutable current Review context.
-- Deleting the selected Direction now restores keyboard focus to the visible Add Direction control on the next animation frame; `tests/review-delete-focus.test.mjs` locks the focus target and delete-transition behavior added by `eff7d97882da185b8faacd0400a91aac7d827b57`.
+- Deleting the selected Direction restores keyboard focus to the visible Add Direction control on the next animation frame and announces `Direction deleted. Focus moved to Add Direction.` through a polite `role="status"` live region. `tests/review-delete-focus.test.mjs` locks both the focus transition and announcement, and creating a new Direction clears stale deletion feedback.
 - No live or external-provider acceptance is claimed.
 
 ## Recent Review work
@@ -31,13 +31,14 @@ The connected application persists Review/revision state through Supabase-backed
 - `d0e27c7a733072834cdcc8a86ee3f6bbac9e1647`, repaired by `9b7959234c39db7a278668111c012bafe1b47cc7` and `3a6128b28c329c4fc2434b0ce9eeb92982b6d1c4`: allow same-file Review upload retries and keep the regression matcher aligned with the source.
 - `6be23906f589547d241172b3bb77a13d42cf1715`: clear stale Review upload errors after a successful retry and cover the success/failure messaging boundary.
 - `17eb8ad438de7c3ed3688b339bfddea65af433d2`: lock replacement uploads to the validated target captured when upload begins.
-- `eff7d97882da185b8faacd0400a91aac7d827b57`: restore keyboard focus to Add Direction after deleting the selected Direction; now covered by a focused source regression.
+- `eff7d97882da185b8faacd0400a91aac7d827b57`, covered by `a843f6f113df5debd8e50801055c37f18cdd506f`: restore keyboard focus to Add Direction after deleting the selected Direction.
+- `42e9e632c20a6745e18e572f2dffa28a866dbf45`: announce Direction deletion through a polite live status, clear stale feedback when a new Direction begins, and extend the focused deletion regression to cover both behaviors.
 
 ## Evidence grade
-**S0 — Source.** Fresh exact-SHA automation for the current change is not yet proven. No S2/S3/S4 claim is made.
+**S0 — Source.** Fresh exact-SHA automation for the current documentation reconciliation is not yet proven. No S2/S3/S4 claim is made.
 
 ## Boundary
-Never double-consume or double-refund revision entitlements. Failed/stale commands must roll back state/accounting and must not create successful command receipts. Successful idempotent replays must return their original result without mutating newer lifecycle state. Review workspace and canvas controls must not accidentally cross a surrounding native form boundary. Failed attachment uploads must preserve existing Directions and leave the chooser capable of retrying the same file. Replacement uploads must retain the validated target captured when the upload began even if selection or current preview context changes before completion. Deleting the selected Direction must not strand keyboard focus in removed DOM. Do not claim external review/upload acceptance without real provider evidence.
+Never double-consume or double-refund revision entitlements. Failed/stale commands must roll back state/accounting and must not create successful command receipts. Successful idempotent replays must return their original result without mutating newer lifecycle state. Review workspace and canvas controls must not accidentally cross a surrounding native form boundary. Failed attachment uploads must preserve existing Directions and leave the chooser capable of retrying the same file. Replacement uploads must retain the validated target captured when the upload began even if selection or current preview context changes before completion. Deleting the selected Direction must not strand keyboard focus in removed DOM and must expose the state change to assistive technology. Do not claim external review/upload acceptance without real provider evidence.
 
 ## Next recommended action
-Audit whether deleting a Direction also gives screen-reader users an explicit state-change announcement, especially when focus returns to Add Direction on narrow layouts; fix the smallest concrete accessibility defect or add regression evidence for the invariant.
+Inspect Review selection recovery when a selected Direction disappears because the board is refreshed or replaced by a newer acknowledged server snapshot, and either fix a concrete stale-selection/focus defect or add focused regression evidence proving the invariant.
