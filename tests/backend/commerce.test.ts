@@ -33,6 +33,18 @@ test("payments and subscriptions require owner reservations and replay exactly o
     pid,
     reservation.key,
   ]);
+  await db.query("select bind_checkout($1,'initial',$2,'cs')", [
+    pid,
+    reservation.key,
+  ]);
+  await assert.rejects(
+    () => db.query("select bind_checkout($1,'initial',$2,'cs_rebound')", [pid, reservation.key]),
+    /Checkout reservation mismatch/,
+  );
+  assert.equal(
+    (await db.query<any>("select session_id from checkout_intents where project_id=$1 and kind='initial'", [pid])).rows[0].session_id,
+    "cs",
+  );
   await db.query("select record_payment('e','cs',$1,'initial',20000,'aud')", [
     pid,
   ]);
