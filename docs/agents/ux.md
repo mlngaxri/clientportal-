@@ -75,3 +75,10 @@ Latest known portal work includes complete interactive preview flows plus subseq
 - Source/test commit: `7b17973272bbe40b5f89401b23be12be124df2ac`.
 - Evidence: **S0 pending exact-SHA validation**. Parent evidence is not promoted to the new source commit.
 - Next: after exact-SHA validation, continue the Review accessibility/narrow-layout audit. Builder 5 owns deployment provenance.
+
+### 2026-10-03 — Review upload completion lock regression
+- Recent commit `3cd256d9d8751eeaa75ef728ddd940e7ba16acde` correctly re-checks Review lock state after an asynchronous upload finishes, preventing an attachment Direction from being added after submission/lock, but landed without focused regression coverage.
+- Added a static invariant in `tests/review-delete-focus.test.mjs` requiring the latest lock state to be retained across the in-flight upload and re-checked after `uploadAsset` resolves before `add` can run.
+- Regression commit: `b4077213501817169ca6d36d19d58cfd7a13dc3e`.
+- Evidence: **S0 pending exact-SHA validation**. Parent `568a733dd95473d77f7df97a900fde0497963c57` validation run 261 is green, but parent evidence is not promoted to this regression commit. The separate deployment workflow is red and is not live acceptance.
+- Next: after exact-SHA validation, continue the Review reliability/accessibility audit, especially async transitions and narrow-layout behavior. Builder 5 owns deployment provenance.
