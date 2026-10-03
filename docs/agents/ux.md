@@ -43,3 +43,11 @@ Latest known portal work includes complete interactive preview flows plus subseq
 - `DomainsWorkspace.action` now immediately updates the existing live status with host-specific progress copy before awaiting the API. Added focused static regression coverage for both progress messages and the status live region.
 - Evidence: **S0 pending fresh CI**. Parent `406b210767d0a4b8cac6df7bbfa6dd27b867c59e` validation run 179 was still in progress when selected; exact-SHA validation is required before S1.
 - Next: continue auditing connected status/action surfaces for focus and narrow-layout defects. Builder 5 owns deployment provenance.
+
+### 2026-10-03 — Inbox status progress announcements
+- Current `main` validation passes install, typecheck, unit tests, isolated Supabase startup, build and application startup, but remains red in the connected-browser workflow; this bounded UX change does not claim to resolve that auth/recovery-class failure.
+- Inbox row actions disabled while awaiting persistence but left the previous status announcement visible. Screen-reader users therefore had no truthful feedback that mark-read/unread/archive work had begun.
+- `InboxWorkspace.status` now announces the requested operation before awaiting the API, replaces it with completion copy on success, and clears the progress message when the request fails so the alert is not contradicted by stale success-oriented status text.
+- Added focused source regression coverage in `tests/inbox-accessibility.test.mjs`.
+- Evidence: **S0 pending exact-SHA validation**. Parent validation is red at the connected-browser customer workflow, so S1 is not inferred.
+- Next: continue the connected action audit for focus, announcement and narrow-layout defects after higher-priority red workflow work is resolved. Builder 5 owns deployment provenance.

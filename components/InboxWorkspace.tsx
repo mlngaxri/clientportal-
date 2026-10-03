@@ -42,6 +42,7 @@ export default function InboxWorkspace({ projectId }: { projectId: string }) {
     if (pendingRows.includes(id)) return;
     setPendingRows(rows => [...rows, id]);
     setError("");
+    setNotice(value === "new" ? "Marking enquiry unread…" : value === "read" ? "Marking enquiry read…" : "Archiving enquiry…");
     try {
       await api(`/api/projects/${projectId}/forms`, { id, status: value });
       setNotice(`Enquiry ${value === "new" ? "marked unread" : value === "read" ? "marked read" : "archived"}.`);
@@ -50,6 +51,7 @@ export default function InboxWorkspace({ projectId }: { projectId: string }) {
       );
     } catch (e) {
       setError((e as Error).message);
+      setNotice("");
     } finally {
       setPendingRows(rows => rows.filter(row => row !== id));
     }
