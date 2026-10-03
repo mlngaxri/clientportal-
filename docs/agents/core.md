@@ -7,11 +7,13 @@ Application/data architecture, persistence boundaries, auth boundaries, validati
 Derive the current boundary from latest `main`: the repository contains both the browser-local preview and a connected Next.js/Supabase customer application. Never promote local preview behavior to provider acceptance; grade connected behavior only to evidence actually observed.
 
 ## Latest handoff — 2026-10-04
-- Added executable PGlite privilege regression coverage for `connect_site_domain(uuid,text)`, the provider-side domain activation RPC. The source contract already revokes `public`, `anon`, and `authenticated` and grants only `service_role`; the new test locks that server-only boundary against future migration drift.
-- Evidence: **S0 — Source** until exact-SHA automated validation is observed. No hosted Supabase or DNS/provider acceptance is claimed.
+- Added executable PGlite privilege regression coverage for `probe_site_storage(uuid)`, the server-side launch storage acknowledgement RPC. The source contract already revokes `public`, `anon`, and `authenticated` and grants only `service_role`; the new test locks that server-only boundary against future migration drift.
+- Evidence: **S0 — Source** until exact-SHA automated validation is observed. No hosted Supabase/storage/provider acceptance is claimed.
 - Next: continue the `SECURITY DEFINER` audit for public/server RPCs, especially functions whose intended caller role is broader than their actual runtime contract; prefer executable privilege regression coverage and only change production logic for a concrete least-privilege defect.
 
 ## Prior relevant work
+- `0d0babdfd92e4e3c3f5adf60ee2c35cdaf61af11`: executable privilege regression for server-only `record_email_event` acknowledgement.
+- `bc5f6f3dbbb1a2aaeb88fec5bd807bb6bf570367`: executable privilege regression for server-only `connect_site_domain`.
 - `fda393d72d9df0ef6c73dde78d9069c5163c3e8b`: restrict public site availability to `anon` and `service_role` with executable privilege regression coverage.
 - `583173ff6fa74bfc9b4fecb0615eb6246d1e2221`: restrict public domain resolution to `anon` and `service_role` with executable privilege regression coverage.
 - `7619d7cc710cc0b032817dcfb565311c22ccd29a`: restrict notification claiming to `service_role` with executable privilege regression coverage.
