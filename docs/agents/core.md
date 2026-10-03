@@ -7,12 +7,13 @@ Application/data architecture, persistence boundaries, auth boundaries, validati
 Derive the current boundary from latest `main`: the repository contains both the browser-local preview and a connected Next.js/Supabase customer application. Never promote local preview behavior to provider acceptance; grade connected behavior only to evidence actually observed.
 
 ## Latest handoff — 2026-10-04
-- Restricted `claim_notifications(integer)` to `service_role`. The notification worker RPC is `SECURITY DEFINER` and leases queued email work, but migration `010_notifications.sql` had left PostgreSQL's default PUBLIC execute privilege intact while the adjacent provider acknowledgement RPC was already server-only.
-- Added executable PGlite regression coverage proving `anon=false`, `authenticated=false`, and `service_role=true` after applying the real notification migration plus the forward privilege migration.
-- Evidence: **S0 — Source** until exact-SHA automated validation is observed. No email-provider or hosted Supabase acceptance is claimed.
-- Next: continue the `SECURITY DEFINER` audit for worker/provider RPCs, especially functions that mutate queues, leases, publication state, or provider acknowledgements; prefer executable privilege regression coverage and only change production logic for a concrete defect.
+- Tightened `resolve_public_domain(text)`, a `SECURITY DEFINER` custom-domain routing RPC, from PostgreSQL's implicit PUBLIC execute privilege to the exact roles that need it: `anon` for middleware custom-domain resolution and `service_role` for server operations. `authenticated` no longer inherits execution through PUBLIC.
+- Added executable PGlite regression coverage applying the real connected-site/domain migrations plus the forward privilege migration and asserting `anon=true`, `authenticated=false`, `service_role=true`.
+- Evidence: **S0 — Source** until exact-SHA automated validation is observed. No hosted Supabase or custom-domain provider acceptance is claimed.
+- Next: continue the `SECURITY DEFINER` audit for public/server RPCs, especially functions whose intended caller role is implicit rather than explicitly granted; prefer executable privilege regression coverage and only change production logic for a concrete defect.
 
 ## Prior relevant work
+- `7619d7cc710cc0b032817dcfb565311c22ccd29a`: restrict notification claiming to `service_role` with executable privilege regression coverage.
 - `62d041273f95a0691c07956f8322e0f35e65bf4e`: executable authorization/no-side-effect regression for connection settings.
 - `73db712fde3090d9b6cb2c874f5605ce219fe0a7`: executable authorization/no-side-effect regression for domain reservation.
 - `f60db59a4f746dc594101a924d0fb202d8cd86fa`: executable authorization/idempotency regression for onboarding project creation.
