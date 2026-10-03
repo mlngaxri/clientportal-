@@ -21,7 +21,15 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm test
-      - uses: supabase/setup-cli@v1
+      - name: Set up Supabase CLI
+        id: supabase-cli
+        continue-on-error: true
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Retry Supabase CLI setup after a transient failure
+        if: steps.supabase-cli.outcome == 'failure'
+        uses: supabase/setup-cli@v1
         with:
           version: latest
       - name: Start isolated real Supabase
