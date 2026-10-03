@@ -31,6 +31,12 @@ export default function Review({ project, board, otherBoards, onRefresh }: { pro
     setReattach(null);
     setAnnouncement("Reattachment canceled because that Direction is no longer available.");
   }, [reattach, data.objects]);
+  useEffect(() => {
+    if (!locked || !reattach) return;
+    setReattach(null);
+    setMessage("");
+    setAnnouncement("Reattachment canceled because this Review is now locked.");
+  }, [locked, reattach]);
   const obj = data.objects.find((o) => o.id === selected), incomplete = incompleteDirections(data.objects);
   function add(patch: Partial<BoardObject> = {}) { if (locked) return; const id = crypto.randomUUID(); update((d) => ({ ...d, objects: [...d.objects, { id, type: "text", text: "", ...patch }] })); setAnnouncement(""); setSelected(id); }
   async function replacement(file: File, target: BoardObject["target"]) { if (locked) return; setUploading((n) => n + 1); try { const asset = await uploadAsset(project.id, file); add({ type: assetType(asset.mime), text: target ? "Replace this image" : "", name: asset.name, url: asset.url, assetId: asset.id, target }); setMessage(""); } catch (e) { setMessage(`${(e as Error).message} Your existing Directions are preserved; choose the file again to retry.`); } finally { setUploading((n) => n - 1); } }
