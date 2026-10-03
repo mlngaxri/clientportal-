@@ -66,6 +66,7 @@ test("invalid schedules and prototype-like override keys are rejected", () => {
   assert.ok(validateState({ ...dinner, timezone: "Not/AZone" }).length);
   assert.ok(validateState({ ...dinner, days: [5, 5] }).length);
   assert.ok(validateState({ ...dinner, start: "25:00" }).length);
+  assert.ok(validateState({ ...dinner, start: "09:00", end: "09:00" }).length);
   assert.ok(
     validateState({
       ...dinner,
