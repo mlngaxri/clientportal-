@@ -2,6 +2,12 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
+test("Review Direction buttons contain only phrasing content", async () => {
+  const source = await readFile("components/Review.tsx", "utf8");
+  assert.match(source, /className={`inspector-comment[\s\S]*?<span className="inspector-number">[\s\S]*?<span className="inspector-comment-copy">[\s\S]*?<span className="inspector-comment-text">/, "Direction rows must use phrasing elements inside their button rather than invalid flow-content wrappers");
+  assert.doesNotMatch(source, /className={`inspector-comment[\s\S]*?<div>/, "Direction buttons must not contain div flow content");
+});
+
 test("deleting the selected Review Direction restores keyboard focus and announces the change", async () => {
   const source = await readFile("components/Review.tsx", "utf8");
   assert.match(source, /addDirectionButton\s*=\s*useRef<HTMLButtonElement>\(null\)/, "Review must retain a stable focus target outside the deleted Direction");
