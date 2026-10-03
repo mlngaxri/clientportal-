@@ -35,10 +35,10 @@ export const loadSite = cache(async function loadSite(
   if (!review && !version) return null;
   const manifest = (version?.manifest || doc.manifest) as SiteManifest;
   let content = (version?.content || doc.content) as SiteContent;
-  if (project.pro) {
+  if (project.pro && !review) {
     const { data: release, error: releaseError } = await client.from("state_releases").select("states").eq("project_id", id).maybeSingle();
     if (releaseError) throw releaseError;
-    const states = (review ? [] : release?.states || []) as ScheduledState[];
+    const states = (release?.states || []) as ScheduledState[];
     content = {
       ...content,
       fields: evaluateStates(states, new Date(), content.fields).content,
