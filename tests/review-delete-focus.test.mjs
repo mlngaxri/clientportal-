@@ -40,17 +40,23 @@ test("locking Review closes a stale submission dialog", async () => {
 
 test("successful Review submission closes the dialog before refresh acknowledgement", async () => {
   const source = await readFile("components/Review.tsx", "utf8");
-  assert.match(source, /await api\([\s\S]*?delete keys\.current\[action\]; setMessage\(""\); if \(action === "submit_revision"\) \{ setSubmit\(false\); setAnnouncement\("Revision submitted\. Refreshing Review status\."\); \} onRefresh\(\);/, "a confirmed submission must clear stale command errors, remove the actionable dialog, and announce refresh progress before relying on parent refresh");
+  assert.match(source, /await api\([\s\S]*?delete keys\.current\[action\]; setMessage\(""\); setCompletedCommand\(action\); if \(action === "submit_revision"\) \{ setSubmit\(false\); setAnnouncement\("Revision submitted\. Refreshing Review status\."\); \}[\s\S]*?onRefresh\(\);/, "a confirmed submission must clear stale command errors, remove the actionable dialog, and announce refresh progress before relying on parent refresh");
 });
 
 test("Review commands always release busy state and withdrawal failures remain actionable", async () => {
   const source = await readFile("components/Review.tsx", "utf8");
   assert.match(source, /async function command\(action: string\)[\s\S]*?setBusy\(true\); try \{[\s\S]*?\} finally \{ setBusy\(false\); \} \}/, "submit and withdraw commands must release their busy lock on both success and failure");
-  assert.match(source, /disabled=\{busy\} onClick=\{\(\) => command\("withdraw_revision"\)\.catch\(\(e\) => setMessage\(e\.message\)\)\}/, "withdrawal failures must return control to the customer and expose the server error");
+  assert.match(source, /onClick=\{\(\) => command\("withdraw_revision"\)\.catch\(\(e\) => setMessage\(e\.message\)\)\}/, "withdrawal failures must return control to the customer and expose the server error");
   assert.match(source, /\{message && <p role="alert">\{message\}<\/p>\}/, "command failures must be announced as alerts");
 });
 
 test("successful Review command clears a stale failure alert before refresh", async () => {
   const source = await readFile("components/Review.tsx", "utf8");
   assert.match(source, /await api\([\s\S]*?delete keys\.current\[action\]; setMessage\(""\);[\s\S]*?onRefresh\(\);/, "a successful retry must not leave the previous command failure announced while acknowledged state refreshes");
+});
+
+test("confirmed Review withdrawal cannot be repeated while refresh acknowledgement is delayed", async () => {
+  const source = await readFile("components/Review.tsx", "utf8");
+  assert.match(source, /setCompletedCommand\(action\);[\s\S]*?action === "withdraw_revision"\) setAnnouncement\("Revision withdrawn\. Refreshing Review status\."\); onRefresh\(\);/, "a confirmed withdrawal must announce refresh progress and remember that the command already succeeded");
+  assert.match(source, /disabled=\{busy \|\| completedCommand === "withdraw_revision"\}/, "the stale submitted view must not allow a second withdrawal after the server already confirmed the first one");
 });
