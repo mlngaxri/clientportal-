@@ -83,7 +83,7 @@ export default function SettingsWorkspace({
       {notice && <p role="status">{notice}</p>}
       {!settings && !error && <p role="status">Loading your saved {connections ? "connections" : "settings"}…</p>}
       {settings && <DraftRecovery draft={draft} revision={String(settings.revision)} onRestore={data => { setSettings({ ...data, revision: settings.revision }); setDirty(true); setNotice(""); }} />}
-      {!settings && error && <button disabled={busy} onClick={() => void load().catch(e => setError(e.message))}>Retry loading settings</button>}
+      {!settings && error && <button type="button" disabled={busy} onClick={() => void load().catch(e => setError(e.message))}>Retry loading settings</button>}
       {settings && (
         <fieldset className="connected-card" disabled={busy}>
           {connections ? (
@@ -170,6 +170,7 @@ export default function SettingsWorkspace({
           )}
           <div className="connected-actions">
             <button
+              type="button"
               className="primary"
               disabled={!dirty || busy}
               onClick={() => void save()}
@@ -177,6 +178,7 @@ export default function SettingsWorkspace({
               Save {connections ? "connections" : "settings"}
             </button>
             <button
+              type="button"
               disabled={busy}
               onClick={() => {
                 if (
