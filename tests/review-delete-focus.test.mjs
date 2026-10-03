@@ -40,12 +40,14 @@ test("locking Review closes a stale submission dialog", async () => {
 
 test("successful Review submission closes the dialog before refresh acknowledgement", async () => {
   const source = await readFile("components/Review.tsx", "utf8");
-  assert.match(source, /await api\([\s\S]*?delete keys\.current\[action\]; setMessage\(""\); setCompletedCommand\(action\); if \(action === "submit_revision"\) \{ setSubmit\(false\); setAnnouncement\("Revision submitted\. Refreshing Review status\."\); \}[\s\S]*?onRefresh\(\);/, "a confirmed submission must clear stale command errors, remove the actionable dialog, and announce refresh progress before relying on parent refresh");
+  assert.match(source, /await api\([\s\S]*?delete keys\.current\[action\]; setMessage\(""\); commandGate\.current\.completed = action; setCompletedCommand\(action\); if \(action === "submit_revision"\) \{ setSubmit\(false\); setAnnouncement\("Revision submitted\. Refreshing Review status\."\); \}[\s\S]*?onRefresh\(\);/, "a confirmed submission must clear stale command errors, remove the actionable dialog, and announce refresh progress before relying on parent refresh");
 });
 
-test("Review commands always release busy state and withdrawal failures remain actionable", async () => {
+test("Review commands synchronously gate duplicate transitions and release pending state", async () => {
   const source = await readFile("components/Review.tsx", "utf8");
-  assert.match(source, /async function command\(action: string\)[\s\S]*?setBusy\(true\); try \{[\s\S]*?\} finally \{ setBusy\(false\); \} \}/, "submit and withdraw commands must release their busy lock on both success and failure");
+  assert.match(source, /const commandGate = useRef<\{ pending: boolean; completed: string \| null \}>\(\{ pending: false, completed: null \}\);/, "Review must keep command transition state in a synchronous ref rather than relying only on deferred React state");
+  assert.match(source, /if \(commandGate\.current\.pending \|\| uploading \|\| commandGate\.current\.completed === action\) throw new Error[\s\S]*?commandGate\.current\.pending = true; setBusy\(true\);/, "a second same-tick command must be rejected before React can rerender the disabled control");
+  assert.match(source, /finally \{ commandGate\.current\.pending = false; setBusy\(false\); \}/, "submit and withdraw commands must release both synchronous and rendered busy locks on success and failure");
   assert.match(source, /onClick=\{\(\) => command\("withdraw_revision"\)\.catch\(\(e\) => setMessage\(e\.message\)\)\}/, "withdrawal failures must return control to the customer and expose the server error");
   assert.match(source, /\{message && <p role="alert">\{message\}<\/p>\}/, "command failures must be announced as alerts");
 });
@@ -57,6 +59,11 @@ test("successful Review command clears a stale failure alert before refresh", as
 
 test("confirmed Review withdrawal cannot be repeated while refresh acknowledgement is delayed", async () => {
   const source = await readFile("components/Review.tsx", "utf8");
-  assert.match(source, /setCompletedCommand\(action\);[\s\S]*?action === "withdraw_revision"\) setAnnouncement\("Revision withdrawn\. Refreshing Review status\."\); onRefresh\(\);/, "a confirmed withdrawal must announce refresh progress and remember that the command already succeeded");
+  assert.match(source, /commandGate\.current\.completed = action; setCompletedCommand\(action\);[\s\S]*?action === "withdraw_revision"\) setAnnouncement\("Revision withdrawn\. Refreshing Review status\."\); onRefresh\(\);/, "a confirmed withdrawal must synchronously remember that the command already succeeded and announce refresh progress");
   assert.match(source, /disabled=\{busy \|\| completedCommand === "withdraw_revision"\}/, "the stale submitted view must not allow a second withdrawal after the server already confirmed the first one");
+});
+
+test("acknowledged Review state resets the completed-command gate", async () => {
+  const source = await readFile("components/Review.tsx", "utf8");
+  assert.match(source, /commandGate\.current\.completed = null;\s*setCompletedCommand\(null\);\s*\}, \[board\.id, board\.status, board\.version\]\);/s, "a completed command must stop blocking future lifecycle actions once newer acknowledged board state arrives");
 });

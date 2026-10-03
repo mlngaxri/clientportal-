@@ -17,11 +17,16 @@ export default function Review({ project, board, otherBoards, onRefresh }: { pro
   const { data, update, state, error, save, version } = editor;
   const [selected, setSelected] = useState<string | null>(null), [submit, setSubmit] = useState(false), [message, setMessage] = useState(""), [announcement, setAnnouncement] = useState("");
   const keys = useRef<Record<string, string>>({});
+  const commandGate = useRef<{ pending: boolean; completed: string | null }>({ pending: false, completed: null });
   const [uploading, setUploading] = useState(0), [busy, setBusy] = useState(false), [completedCommand, setCompletedCommand] = useState<string | null>(null);
   const [context, setContext] = useState<BoardObject["target"]>();
   const [reattach, setReattach] = useState<string | null>(null);
   const textInput = useRef<HTMLTextAreaElement>(null), addDirectionButton = useRef<HTMLButtonElement>(null);
   useEffect(() => { textInput.current?.focus({ preventScroll: true }); textInput.current?.scrollIntoView({ block: "nearest" }); }, [selected]);
+  useEffect(() => {
+    commandGate.current.completed = null;
+    setCompletedCommand(null);
+  }, [board.id, board.status, board.version]);
   useEffect(() => {
     if (!selected || data.objects.some((object) => object.id === selected)) return;
     setSelected(null);
@@ -47,7 +52,7 @@ export default function Review({ project, board, otherBoards, onRefresh }: { pro
   const obj = data.objects.find((o) => o.id === selected), incomplete = incompleteDirections(data.objects);
   function add(patch: Partial<BoardObject> = {}) { if (locked) return; const id = crypto.randomUUID(); update((d) => ({ ...d, objects: [...d.objects, { id, type: "text", text: "", ...patch }] })); setAnnouncement(""); setSelected(id); }
   async function replacement(file: File, target: BoardObject["target"]) { if (locked) return; setUploading((n) => n + 1); try { const asset = await uploadAsset(project.id, file); if (lockedRef.current) { setMessage("Upload finished after this Review was locked, so the attachment was not added."); return; } add({ type: assetType(asset.mime), text: target ? "Replace this image" : "", name: asset.name, url: asset.url, assetId: asset.id, target }); setMessage(""); } catch (e) { setMessage(`${(e as Error).message} Your existing Directions are preserved; choose the file again to retry.`); } finally { setUploading((n) => n - 1); } }
-  async function command(action: string) { if (busy || uploading || completedCommand === action) throw new Error("Wait for current uploads, submission, or refresh to finish."); setBusy(true); try { const b = locked ? board : await save(); if (!b) throw new Error("Save your Directions before submitting."); await api(`/api/projects/${project.id}/command`, { action, payload: { boardId: board.id }, expected: b.version, key: (keys.current[action] ||= crypto.randomUUID()) }); delete keys.current[action]; setMessage(""); setCompletedCommand(action); if (action === "submit_revision") { setSubmit(false); setAnnouncement("Revision submitted. Refreshing Review status."); } else if (action === "withdraw_revision") setAnnouncement("Revision withdrawn. Refreshing Review status."); onRefresh(); } finally { setBusy(false); } }
+  async function command(action: string) { if (commandGate.current.pending || uploading || commandGate.current.completed === action) throw new Error("Wait for current uploads, submission, or refresh to finish."); commandGate.current.pending = true; setBusy(true); try { const b = locked ? board : await save(); if (!b) throw new Error("Save your Directions before submitting."); await api(`/api/projects/${project.id}/command`, { action, payload: { boardId: board.id }, expected: b.version, key: (keys.current[action] ||= crypto.randomUUID()) }); delete keys.current[action]; setMessage(""); commandGate.current.completed = action; setCompletedCommand(action); if (action === "submit_revision") { setSubmit(false); setAnnouncement("Revision submitted. Refreshing Review status."); } else if (action === "withdraw_revision") setAnnouncement("Revision withdrawn. Refreshing Review status."); onRefresh(); } finally { commandGate.current.pending = false; setBusy(false); } }
   return <>
     {project.preview_url ? <ReviewCanvas url={project.preview_url} readOnly={locked} selectedId={selected} directions={data.objects} onSelect={setSelected} onContext={next => setContext(previous => previous?.page === next?.page && previous?.width === next?.width && previous?.scroll === next?.scroll ? previous : next)} onAnnotate={strokes => { if (selected) update(d => ({ ...d, objects: d.objects.map(o => o.id === selected ? { ...o, strokes } : o) })); }} onDirection={patch => { if (reattach && patch.target) { update(d => ({ ...d, objects: d.objects.map(o => o.id === reattach ? { ...o, target: patch.target } : o) })); setSelected(reattach); setReattach(null); setMessage(""); } else add(patch); }} onReplace={replacement} /> : <div className="empty-workspace">The website preview has not been delivered yet.</div>}
     <aside className="portal-v2-inspector">
