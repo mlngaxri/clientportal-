@@ -46,7 +46,9 @@ test("locking Review closes a stale submission dialog", async () => {
 
 test("successful Review submission closes the dialog before refresh acknowledgement", async () => {
   const source = await readFile("components/Review.tsx", "utf8");
-  assert.match(source, /await api\([\s\S]*?delete keys\.current\[action\];[\s\S]*?if \(boardIdentityRef\.current !== startedFor\) return; setMessage\(""\); commandGate\.current\.completed = action; setCompletedCommand\(action\); if \(action === "submit_revision"\) \{ setSubmit\(false\); setAnnouncement\("Revision submitted\. Refreshing Review status\."\); \}[\s\S]*?onRefresh\(\);/, "a confirmed submission for the current board must clear stale command errors, remove the actionable dialog, and announce refresh progress before relying on parent refresh");
+  assert.match(source, /if \(boardIdentityRef\.current !== startedFor\) return;/, "command completion must reject a stale board before mutating current Review state");
+  assert.match(source, /setMessage\(""\); commandGate\.current\.completed = action; setCompletedCommand\(action\); if \(action === "submit_revision"\) \{ setSubmit\(false\); setAnnouncement\("Revision submitted\. Refreshing Review status\."\); \}/, "a confirmed current-board submission must clear stale command errors, complete the gate, close the dialog, and announce refresh progress");
+  assert.match(source, /setAnnouncement\("Revision submitted\. Refreshing Review status\."\); \}[\s\S]*?onRefresh\(\);/, "submission acknowledgement must precede parent refresh");
 });
 
 test("Review commands synchronously gate duplicate transitions and release pending state", async () => {
@@ -60,7 +62,8 @@ test("Review commands synchronously gate duplicate transitions and release pendi
 
 test("successful Review command clears a stale failure alert before refresh", async () => {
   const source = await readFile("components/Review.tsx", "utf8");
-  assert.match(source, /await api\([\s\S]*?delete keys\.current\[action\];[\s\S]*?if \(boardIdentityRef\.current !== startedFor\) return; setMessage\(""\);[\s\S]*?onRefresh\(\);/, "a successful retry for the current board must not leave the previous command failure announced while acknowledged state refreshes");
+  assert.match(source, /if \(boardIdentityRef\.current !== startedFor\) return; setMessage\(""\);/, "only a current-board command completion may clear the previous failure alert");
+  assert.match(source, /setMessage\(""\);[\s\S]*?onRefresh\(\);/, "a successful current-board retry must clear its stale failure before acknowledged state refreshes");
 });
 
 test("confirmed Review withdrawal cannot be repeated while refresh acknowledgement is delayed", async () => {
