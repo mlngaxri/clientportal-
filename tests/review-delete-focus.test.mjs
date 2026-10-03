@@ -2,10 +2,11 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
-test("Review Direction buttons contain only phrasing content", async () => {
+test("Review Direction buttons contain only phrasing content and expose selection", async () => {
   const source = await readFile("components/Review.tsx", "utf8");
   assert.match(source, /className={`inspector-comment(?:(?!<\/button>)[\s\S])*?<span className="inspector-number">(?:(?!<\/button>)[\s\S])*?<span className="inspector-comment-copy">(?:(?!<\/button>)[\s\S])*?<span className="inspector-comment-text">/, "Direction rows must use phrasing elements inside their button rather than invalid flow-content wrappers");
   assert.doesNotMatch(source, /className={`inspector-comment(?:(?!<\/button>)[\s\S])*?<div>/, "Direction buttons must not contain div flow content");
+  assert.match(source, /<button type="button" aria-pressed=\{selected === o\.id\} className=\{`inspector-comment /, "Direction buttons must expose the same selected state programmatically that the active visual treatment communicates");
 });
 
 test("deleting the selected Review Direction restores keyboard focus and announces the change", async () => {
