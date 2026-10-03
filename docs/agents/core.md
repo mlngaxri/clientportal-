@@ -7,13 +7,15 @@ Application/data architecture, persistence boundaries, auth boundaries, validati
 Derive the current boundary from latest `main`: the repository contains both the browser-local preview and a connected Next.js/Supabase customer application. Never promote local preview behavior to provider acceptance; grade connected behavior only to evidence actually observed.
 
 ## Latest handoff — 2026-10-03
-- Closed a regression-evidence gap in the subscription entitlement fix: the backend commerce test now actually applies `019_subscription_trial_entitlement.sql` instead of only regex-checking its source.
-- The executable lifecycle now proves a reserved `trialing -> active -> past_due` sequence keeps Pro entitlement during trial/active states, removes it on `past_due`, and rejects an older `active` event from restoring entitlement.
-- Baseline evidence before this change: exact-SHA validation run 243 passed on `6d160025389ac5facd0ee7bde50b0b5d7a96a4ef`; the separate deploy workflow failed and remains Builder 5 release plumbing.
+- Closed an equal-timestamp subscription ordering defect in `record_subscription`: Stripe event timestamps are second-granularity, so the previous `<=` upsert allowed two conflicting states with the same timestamp to overwrite each other according to delivery order.
+- Forward migration `020_subscription_equal_timestamp.sql` now permits a newer timestamp or an idempotent same-timestamp/same-status retry, but refuses a same-timestamp conflicting status. This keeps entitlement deterministic and fail-closed when provider ordering cannot be proven from the timestamp alone.
+- The executable commerce regression now applies the new migration and proves `past_due@4` cannot be replaced by conflicting `active@4`, while the existing older-event and trial entitlement checks remain intact.
+- Baseline evidence before this change: latest main had no commit status attached when inspected; deployment remains separately fail-closed and is Builder 5 release plumbing.
 - Evidence: **S0 — Source** until exact-SHA validation runs for this commit. No Stripe provider acceptance is claimed.
-- Next: inspect another under-tested payment/webhook invariant, prioritizing equal-timestamp subscription event ordering or checkout/session binding replay behavior.
+- Next: inspect checkout/session binding replay behavior or another under-tested payment/webhook integrity boundary.
 
 ## Prior relevant work
+- `6bd3a6d71a75a3c96e1382ef9d0c57d4b8b078f0`: execute trial entitlement regression coverage against the real forward migration.
 - `321eeeabfe69589ea34e48f88b6e941a8517ce63`: restore Pro entitlement for Stripe `trialing` subscriptions via forward migration.
 - `653c10b007d86b3ef5648b4692580182c6ebbb99`: require checkout `APP_URL` to be a canonical origin and build Stripe return URLs from parsed `URL.origin`.
 - `c18579b6810f62f22508874b439124ae00ceea68`: cover the `set_form_status` authorization boundary so unrelated authenticated users fail closed while owners can transition their own submission.
