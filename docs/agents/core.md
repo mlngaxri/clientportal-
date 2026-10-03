@@ -7,14 +7,17 @@ Application/data architecture, persistence boundaries, auth boundaries, validati
 Derive the current boundary from latest `main`: the repository contains both the browser-local preview and a connected Next.js/Supabase customer application. Never promote local preview behavior to provider acceptance; grade connected behavior only to evidence actually observed.
 
 ## Latest handoff — 2026-10-03
-- Validation run 215 on `1ff80540f182459ba287f11271d89e3c655e0ccc` passes install, typecheck, unit/backend tests, isolated Supabase, build, Chromium and application startup, then still fails only in the connected password-recovery journey waiting for the New password field; all preceding connected checks pass.
-- The preserved application log contains no `auth_callback_exchange_failed`, `auth_callback_missing_code`, or `auth_callback_exception` event. That means the previous failure-only callback instrumentation still cannot distinguish a successful code exchange followed by session rejection from a recovery navigation that never reaches the callback.
-- Recovery evidence now records a safe `auth_callback_exchanged` event with only the boolean recovery purpose after successful exchange, and `auth_recovery_session_missing` with only the JavaScript error class if the password page rejects the resulting session. Authorization codes, tokens, account data and provider messages remain excluded. Focused regression coverage locks that boundary.
-- Evidence: **S0 pending fresh CI**. No external Supabase/Auth acceptance is claimed.
-- Next: inspect the next connected-system application log. If `auth_callback_exchanged` is followed by `auth_recovery_session_missing`, fix session-cookie persistence/verification; if neither callback event appears, inspect the local email verification redirect/link extraction path instead of changing callback session policy.
+- Exact-SHA validation run 223 on `44b2e20ac6795482cbcb46e5414f40c121f51c22` is green end to end: install, typecheck, unit/backend tests, isolated real Supabase, production build, Chromium, connected production application startup, and the real accounts/storage/CMS/customer browser workflow all passed.
+- The recovery blocker was acceptance-environment cookie-host collision, not a reason to weaken the application auth boundary. The disposable app/callback now uses `http://localhost:4173` while local Supabase remains on `127.0.0.1`; host-scoped PKCE cookies therefore remain isolated as they are across real application/provider hosts.
+- `tests/recovery-origin.test.mjs` locks the host-isolation invariant while still requiring the recovery callback to return to the same app origin that initiated it.
+- Evidence: **S1 — Automated** for the connected recovery path on exact SHA `44b2e20a`. The workflow's connected browser journey also passed, but this handoff conservatively records the automated gate; no external hosted Supabase/Auth provider acceptance is claimed.
+- Next: with the red recovery workflow cleared, resume Core's ladder at security/integrity review: inspect one under-tested authorization/RLS or mutation boundary and add the smallest regression/fix that proves it fails closed.
 
 ## Prior relevant work
-- `7fa74a973cd15ccd77119bfa19027419f9cff52e`: expose safe failure-only callback diagnostics; run 215 proved that evidence was insufficient because no failure event was emitted.
+- `44b2e20ac6795482cbcb46e5414f40c121f51c22`: isolate acceptance app PKCE cookies from the local Supabase Auth host; exact-SHA validation run 223 passed the complete connected browser workflow.
+- `00003f0830dfc1f2910086223ec17b41ca3871e9`: allow encoded recovery callback redirects in local Supabase acceptance configuration.
+- `9c5564df5a8168c00347a927119394f42f6252ea`: add safe successful-exchange/session-handoff recovery diagnostics.
+- `7fa74a973cd15ccd77119bfa19027419f9cff52e`: expose safe failure-only callback diagnostics.
 - `b1264f9b55b0c5ddcbcc7b25a118bf8dd4ecb802`: keep stale Supabase auth tokens gated during PKCE callback; the verifier remains readable through the normal pre-proof filter.
 - `5320934b5a45f881aea392bba810d2778c668bb4`: attempted to preserve the PKCE verifier through callback, but did so by broadly bypassing pre-proof Supabase cookie gating; superseded by the later hardening.
 - `3c2e952c2cc72c0183ef333b456ea5dc24abe7eb`: keep local acceptance auth cookies usable in production builds when `APP_ENV=development`.
