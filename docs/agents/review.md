@@ -7,7 +7,7 @@ Initial Direction, media and annotation UX, Review, revision lifecycle, locking/
 The connected application persists Review/revision state through Supabase-backed project commands, with database constraints and regression coverage for completeness, owner authorization, idempotency, locking, completion, stale-write conflicts, withdrawal and revision accounting. Annotation and revision-submit UI also has focused keyboard/semantic/form-safety coverage. External review/upload provider acceptance remains unproven and must not be inferred from local or CI behavior.
 
 ## Current evidence
-- Latest main inspected before this change: `533498f38dd161fae7fa50f587e2d521108b1512`; no exact-SHA combined status was attached when this task was selected.
+- Latest main inspected before this change: `751798d63d14f70292f7ab0b86399332bb7517f8`; no exact-SHA combined status was attached when this task was selected.
 - Review attachment retry text promises that a failed upload can be retried by choosing the file again. The file input clears its native selection immediately after capturing the File, so selecting the same file after a failed upload fires a fresh change event without mutating existing Directions.
 - Successful retry clears the stale upload error only after the asset is uploaded and the replacement Direction is added.
 - Replacement uploads initiated by `ReviewCanvas` pass the validated bridge-event context into `Review.replacement`; focused source regression coverage locks that captured target through the asynchronous upload instead of allowing completion to consult mutable current Review context.
@@ -16,7 +16,8 @@ The connected application persists Review/revision state through Supabase-backed
 - Reattachment is canceled when its target disappears or when Review becomes locked, preventing stale website clicks from remaining actionable.
 - Upload completion re-checks current lock state before adding a Direction, with focused regression coverage.
 - An open revision submission dialog closes and announces the reason if acknowledged board state becomes locked before submission completes, preventing stale submit UI from remaining actionable.
-- Submit/withdraw commands release their busy lock on success and failure; a successful command retry now clears any stale failure alert before parent refresh acknowledgement.
+- Submit/withdraw commands release their busy lock on success and failure; a successful command retry clears any stale failure alert before parent refresh acknowledgement.
+- Lifecycle commands now acquire a synchronous ref gate before the first await, preventing same-tick duplicate submit/withdraw requests and same-action replay while success is awaiting acknowledged board identity/status/version change. Focused source regression coverage locks acquisition, release, completion and acknowledgement-reset behavior.
 - No live or external-provider acceptance is claimed.
 
 ## Recent Review work
@@ -44,12 +45,16 @@ The connected application persists Review/revision state through Supabase-backed
 - `683e8036eac4ef12a5672857e8ae83471fbe3e98`, covered by `18da75cccccca5734ff226478c9fe7d60b5b4417`: cancel active reattachment when Review becomes locked.
 - `3cd256d9d8751eeaa75ef728ddd940e7ba16acde`, covered by `b4077213501817169ca6d36d19d58cfd7a13dc3e`: re-check Review lock state after asynchronous upload completion before adding a Direction.
 - `905c699d842f85060b52f3a9b6373d2b3078c493`: cover command busy recovery and withdrawal failure alerts.
+- `71fda8c8ba3862d7c62be60dfe070797b4885ab6`: clear stale Review command errors only after a retry succeeds.
+- `ab733ba6a272f7a4f2770e6f35a65f0dec5dcf2a`: retain successful withdrawal replay protection until acknowledged Review state changes.
+- `068e35c84b03fde72c58c27b866b7e57b6c41840`, covered by `751798d63d14f70292f7ab0b86399332bb7517f8`: synchronously gate duplicate Review lifecycle commands and lock the gate/reset invariant with focused source regression coverage.
+- `d9676b6dc1326f7a0b0cfe73e46058c2dd3ee65b`, covered by `c828e13445049474c193e52a71b993fccb1239e6`: keep Review direction button phrasing semantically valid with focused source coverage.
 
 ## Evidence grade
-**S0 — Source.** Fresh exact-SHA automation for this change is not yet proven. No S2/S3/S4 claim is made.
+**S0 — Source.** Fresh exact-SHA automation for this documentation reconciliation is not yet proven. No S2/S3/S4 claim is made.
 
 ## Boundary
-Never double-consume or double-refund revision entitlements. Failed/stale commands must roll back state/accounting and must not create successful command receipts. Successful idempotent replays must return their original result without mutating newer lifecycle state. Review workspace and canvas controls must not accidentally cross a surrounding native form boundary. Failed attachment uploads must preserve existing Directions and leave the chooser capable of retrying the same file. Replacement uploads must retain the validated target captured when the upload began even if selection or current preview context changes before completion, and must not add a Direction after Review locks. Reattachment intent must be canceled when its Direction is deleted locally, disappears from acknowledged server data, or Review becomes locked. Deleting the selected Direction must not strand keyboard focus in removed DOM and must expose the state change to assistive technology. A submission dialog must not remain actionable after acknowledged state locks the Review. Successful command retries must clear stale command failure alerts before refresh acknowledgement. Do not claim external review/upload acceptance without real provider evidence.
+Never double-consume or double-refund revision entitlements. Failed/stale commands must roll back state/accounting and must not create successful command receipts. Successful idempotent replays must return their original result without mutating newer lifecycle state. Client lifecycle commands must synchronously reject same-tick duplicates and retain successful same-action replay protection until acknowledged board identity/status/version changes. Review workspace and canvas controls must not accidentally cross a surrounding native form boundary. Failed attachment uploads must preserve existing Directions and leave the chooser capable of retrying the same file. Replacement uploads must retain the validated target captured when the upload began even if selection or current preview context changes before completion, and must not add a Direction after Review locks. Reattachment intent must be canceled when its Direction is deleted locally, disappears from acknowledged server data, or Review becomes locked. Deleting the selected Direction must not strand keyboard focus in removed DOM and must expose the state change to assistive technology. A submission dialog must not remain actionable after acknowledged state locks the Review. Successful command retries must clear stale command failure alerts before refresh acknowledgement. Do not claim external review/upload acceptance without real provider evidence.
 
 ## Next recommended action
-Continue the Review async-transition audit: inspect whether submit/withdraw completion after acknowledged refresh changes the active board can leave stale announcement, focus, or dialog state; fix only a concrete defect or add focused evidence for the invariant.
+Continue the Review async-transition audit: inspect a lifecycle command that completes after acknowledged props have already switched to another board identity/status/version. Ensure stale completion cannot leave the new Review with an old success announcement, dialog transition, or completed-command gate; fix only a concrete defect and add focused evidence for that invariant.
