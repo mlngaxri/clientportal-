@@ -145,6 +145,7 @@ export default function ReviewCanvas({
         <div className="viewport-presets">
           {[320, 390, 768, 1024, 1440].map((w) => (
             <button
+              type="button"
               key={w}
               onClick={() => { choseWidth.current = true; setWidth(w); }}
               aria-pressed={width === w}
@@ -155,6 +156,7 @@ export default function ReviewCanvas({
           ))}
         </div>
         <button
+          type="button"
           disabled={readOnly}
           aria-pressed={enabled && !readOnly}
           onClick={() => setEnabled((v) => !v)}
