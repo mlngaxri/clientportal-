@@ -84,6 +84,7 @@ export async function POST(req: Request) {
             ["past_due", "unpaid", "incomplete", "paused"].includes(
               subscription.status,
             )
+          )
             throw new Error(
               "Pro billing needs attention. Open Billing and manage your existing subscription.",
             );
