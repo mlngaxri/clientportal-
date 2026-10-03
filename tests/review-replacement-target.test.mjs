@@ -18,7 +18,7 @@ test("Review replacement uploads retain the target captured by the initiating br
   assert.match(replacement, /async function replacement\(file: File, target: BoardObject\["target"\]\)/);
   assert.match(
     replacement,
-    /const asset = await uploadAsset[\s\S]*?add\(\{[\s\S]*?target,[\s\S]*?\}\);/,
+    /const asset = await uploadAsset[\s\S]*?add\(\{[\s\S]*?target\s*\}\);/,
     "upload completion must add the Direction against the target argument captured when upload began",
   );
   assert.doesNotMatch(
