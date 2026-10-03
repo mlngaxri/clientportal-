@@ -66,3 +66,12 @@ Latest known portal work includes complete interactive preview flows plus subseq
 - Added focused regression coverage in `tests/review-upload-retry.test.mjs` requiring success to clear stale retry errors while failures still publish the retry alert.
 - Evidence: **S0 pending exact-SHA validation**. Parent `43eb11add12cb6e4948f919e2bf1535da26b979a` validation run 228 is green; exact-SHA validation is still required before S1.
 - Next: after exact-SHA validation, continue auditing connected Review focus, announcements and narrow-layout behavior. Builder 5 owns deployment provenance.
+
+### 2026-10-03 — Truthful locked Review stale-selection status
+- Latest source validation on parent `a3c09d6edb686e68b104365a55cc8f609308f654` is green; its deployment workflow is separately red and is not live evidence.
+- The new stale-selection recovery always announced `Focus moved to Add Direction.` even when Review was locked. Locked Review does not render Add Direction and deliberately skips the focus call, so assistive-technology users could be told about a focus movement that never happened.
+- `Review` now uses a locked-specific status that only reports the missing Direction; draft Review retains the focus-movement announcement and actual Add Direction focus recovery.
+- Added focused regression coverage in `tests/review-delete-focus.test.mjs` for the locked/draft announcement and focus invariant.
+- Source/test commit: `7b17973272bbe40b5f89401b23be12be124df2ac`.
+- Evidence: **S0 pending exact-SHA validation**. Parent evidence is not promoted to the new source commit.
+- Next: after exact-SHA validation, continue the Review accessibility/narrow-layout audit. Builder 5 owns deployment provenance.
