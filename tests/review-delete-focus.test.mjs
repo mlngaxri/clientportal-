@@ -17,8 +17,8 @@ test("deleting the selected Review Direction restores keyboard focus and announc
   );
   assert.match(
     source,
-    /editor\.removeObjects\(\[obj\.id\]\); setSelected\(null\); setAnnouncement\("Direction deleted\. Focus moved to Add Direction\."\); requestAnimationFrame\(\(\) => addDirectionButton\.current\?\.focus\(\)\);/,
-    "Delete must announce the state change and move focus after the selected Direction is removed",
+    /editor\.removeObjects\(\[obj\.id\]\); setReattach\(\(current\) => current === obj\.id \? null : current\); setSelected\(null\); setAnnouncement\("Direction deleted\. Focus moved to Add Direction\."\); requestAnimationFrame\(\(\) => addDirectionButton\.current\?\.focus\(\)\);/,
+    "Delete must cancel reattachment for that Direction, announce the state change, and move focus after removal",
   );
   assert.match(
     source,
