@@ -32,6 +32,7 @@ export default function Review({
   const [context, setContext] = useState<BoardObject["target"]>();
   const [reattach, setReattach] = useState<string | null>(null);
   const textInput = useRef<HTMLTextAreaElement>(null);
+  const addDirectionButton = useRef<HTMLButtonElement>(null);
   useEffect(() => { textInput.current?.focus({ preventScroll: true }); textInput.current?.scrollIntoView({ block: "nearest" }); }, [selected]);
   const obj = data.objects.find((o) => o.id === selected);
   const incomplete = incompleteDirections(data.objects);
@@ -88,7 +89,7 @@ export default function Review({
         <ReviewCanvas url={project.preview_url} readOnly={locked} selectedId={selected} directions={data.objects} onSelect={setSelected} onContext={next => setContext(previous => previous?.page === next?.page && previous?.width === next?.width && previous?.scroll === next?.scroll ? previous : next)} onAnnotate={strokes => { if (selected) update(d => ({ ...d, objects: d.objects.map(o => o.id === selected ? { ...o, strokes } : o) })); }} onDirection={patch => { if (reattach && patch.target) { update(d => ({ ...d, objects: d.objects.map(o => o.id === reattach ? { ...o, target: patch.target } : o) })); setSelected(reattach); setReattach(null); setMessage(""); } else add(patch); }} onReplace={replacement} />
       ) : <div className="empty-workspace">The website preview has not been delivered yet.</div>}
       <aside className="portal-v2-inspector">
-        <div className="inspector-head"><div><span className="overline">Review</span><h2>{locked ? "Submitted Directions" : "Draft Directions"}</h2></div>{!locked && <button type="button" aria-label="Add Direction" onClick={() => add()}>+</button>}</div>
+        <div className="inspector-head"><div><span className="overline">Review</span><h2>{locked ? "Submitted Directions" : "Draft Directions"}</h2></div>{!locked && <button ref={addDirectionButton} type="button" aria-label="Add Direction" onClick={() => add()}>+</button>}</div>
         <RecoveryNotice editor={editor} />
         <div className="inspector-comments">
           {data.objects.map((o, i) => (
@@ -106,7 +107,7 @@ export default function Review({
           {obj.type === "image" && <img className="replacement-preview" src={obj.url} alt={obj.name || "Replacement"} />}
           <textarea ref={textInput} aria-label="Direction text" maxLength={10000} value={obj.text} readOnly={locked} placeholder="What would you like to change?" onChange={(e) => update((d) => ({ ...d, objects: d.objects.map((o) => o.id === obj.id ? { ...o, text: e.target.value } : o) }))} />
           {obj.type === "video" && <video controls src={obj.url} />}{obj.type === "audio" && <audio controls src={obj.url} />}{obj.type === "file" && <a href={obj.url} target="_blank" rel="noreferrer">Open {obj.name}</a>}{obj.type === "drawing" && <p>Draw directly over the website preview. Add a written description so your feedback can be understood without the drawing.</p>}
-          {!locked && <div className="row"><button type="button" onClick={() => void save()}>Save Direction</button><button type="button" onClick={() => { editor.removeObjects([obj.id]); setSelected(null); }}>Delete</button></div>}
+          {!locked && <div className="row"><button type="button" onClick={() => void save()}>Save Direction</button><button type="button" onClick={() => { editor.removeObjects([obj.id]); setSelected(null); requestAnimationFrame(() => addDirectionButton.current?.focus()); }}>Delete</button></div>}
         </div>}
         {otherBoards.filter((b) => b.status !== "DRAFT").map((b) => <details className="history-item" key={b.id}><summary>{b.status === "IN_PROGRESS" ? "Revision in progress" : b.status === "DONE" ? "Completed Revision" : "Submitted Revision"} · {b.data.objects.length} Directions</summary>{(b.submitted_data || b.data).objects.map((o) => <p key={o.id}>{o.text || o.name || o.type}</p>)}</details>)}
         <div className="portal-submit-panel">
