@@ -7,12 +7,12 @@ Application/data architecture, persistence boundaries, auth boundaries, validati
 Derive the current boundary from latest `main`: the repository contains both the browser-local preview and a connected Next.js/Supabase customer application. Never promote local preview behavior to provider acceptance; grade connected behavior only to evidence actually observed.
 
 ## Latest handoff — 2026-10-04
-- Tightened `public_site_available(uuid,text)`, a `SECURITY DEFINER` public-route availability RPC, from the original `anon,authenticated,service_role` grant to the exact public/server roles: `anon` and `service_role`. Authenticated customer sessions no longer receive an unnecessary public-routing execution capability.
-- Added executable PGlite regression coverage applying the real connected-site migration plus the forward privilege migration and asserting `anon=true`, `authenticated=false`, `service_role=true`.
-- Evidence: **S0 — Source** until exact-SHA automated validation is observed. No hosted Supabase or deployed-route acceptance is claimed.
+- Added executable PGlite privilege regression coverage for `connect_site_domain(uuid,text)`, the provider-side domain activation RPC. The source contract already revokes `public`, `anon`, and `authenticated` and grants only `service_role`; the new test locks that server-only boundary against future migration drift.
+- Evidence: **S0 — Source** until exact-SHA automated validation is observed. No hosted Supabase or DNS/provider acceptance is claimed.
 - Next: continue the `SECURITY DEFINER` audit for public/server RPCs, especially functions whose intended caller role is broader than their actual runtime contract; prefer executable privilege regression coverage and only change production logic for a concrete least-privilege defect.
 
 ## Prior relevant work
+- `fda393d72d9df0ef6c73dde78d9069c5163c3e8b`: restrict public site availability to `anon` and `service_role` with executable privilege regression coverage.
 - `583173ff6fa74bfc9b4fecb0615eb6246d1e2221`: restrict public domain resolution to `anon` and `service_role` with executable privilege regression coverage.
 - `7619d7cc710cc0b032817dcfb565311c22ccd29a`: restrict notification claiming to `service_role` with executable privilege regression coverage.
 - `62d041273f95a0691c07956f8322e0f35e65bf4e`: executable authorization/no-side-effect regression for connection settings.
