@@ -44,6 +44,15 @@ test("auth callback keeps stale Supabase sessions gated while retaining the PKCE
   assert.match(serverText, /isAuthSessionCookie/);
 });
 
+test("auth callback failure evidence never logs provider messages or raw errors", async () => {
+  const text = await source(callbackRoute);
+  assert.match(text, /auth_callback_exchange_failed/);
+  assert.match(text, /code: error\.code \|\| "unknown"/);
+  assert.match(text, /auth_callback_missing_code/);
+  assert.match(text, /auth_callback_exception/);
+  assert.doesNotMatch(text, /error\.message|JSON\.stringify\(error\)|console\.error\(error\)/);
+});
+
 test("password recovery callback returns to the request origin that owns its PKCE verifier", async () => {
   const text = await source(accountRoute);
   assert.match(text, /const callback = new URL\("\/auth\/callback", new URL\(req\.url\)\.origin\);/);

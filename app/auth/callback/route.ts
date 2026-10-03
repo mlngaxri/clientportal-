@@ -33,9 +33,16 @@ export async function GET(req: Request) {
         );
         return NextResponse.redirect(new URL(returnPath, url.origin));
       }
+      console.error(JSON.stringify({ event: "auth_callback_exchange_failed", code: error.code || "unknown" }));
+    } else {
+      console.error(JSON.stringify({ event: "auth_callback_missing_code" }));
     }
-  } catch {
-    /* Invalid/expired recovery or OAuth links return to a recoverable sign-in. */
+  } catch (error) {
+    // Keep callback evidence diagnostic-only: provider messages can contain account or token details.
+    console.error(JSON.stringify({
+      event: "auth_callback_exception",
+      category: error instanceof Error ? error.name : "unknown",
+    }));
   }
   return NextResponse.redirect(new URL("/start?error=signin", url.origin));
 }
