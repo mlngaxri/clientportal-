@@ -51,3 +51,10 @@ Latest known portal work includes complete interactive preview flows plus subseq
 - Added focused source regression coverage in `tests/inbox-accessibility.test.mjs`.
 - Evidence: **S0 pending exact-SHA validation**. Parent validation is red at the connected-browser customer workflow, so S1 is not inferred.
 - Next: continue the connected action audit for focus, announcement and narrow-layout defects after higher-priority red workflow work is resolved. Builder 5 owns deployment provenance.
+
+### 2026-10-03 — Recovery PKCE host isolation
+- Current `main` validation passes install, typecheck, unit tests, isolated Supabase startup, production build and app startup, then fails the real password-recovery browser check with `pkce_code_verifier_not_found`.
+- The disposable app and Supabase Auth API both used the `127.0.0.1` cookie host on different ports. Cookies are host-scoped rather than port-scoped, so the acceptance environment did not preserve the production-like separation between portal PKCE cookies and the Supabase Auth service.
+- Moved the disposable app/auth callback origin to `http://localhost:4173` while leaving Supabase services on their CLI `127.0.0.1` endpoints, and replaced the old same-host regression with a host-isolation invariant.
+- Evidence: **S0 pending exact-SHA validation**. The parent browser failure is the evidence motivating this repair; a fresh workflow must prove the recovery journey before S1.
+- Next: inspect exact-SHA validation. If recovery clears, resume the connected focus/announcement/narrow-layout audit. Builder 5 owns deployment provenance.
