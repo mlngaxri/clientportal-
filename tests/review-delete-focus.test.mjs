@@ -91,3 +91,13 @@ test("locking Review closes a stale submission dialog", async () => {
     "an acknowledged lock transition must remove the stale submit action and announce why it disappeared",
   );
 });
+
+test("successful Review submission closes the dialog before refresh acknowledgement", async () => {
+  const source = await readFile("components/Review.tsx", "utf8");
+
+  assert.match(
+    source,
+    /await api\([\s\S]*?delete keys\.current\[action\]; if \(action === "submit_revision"\) \{ setSubmit\(false\); setAnnouncement\("Revision submitted\. Refreshing Review status\."\); \} onRefresh\(\);/,
+    "a confirmed submission must remove the actionable dialog and announce refresh progress before relying on parent refresh",
+  );
+});
