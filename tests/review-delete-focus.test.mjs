@@ -7,7 +7,7 @@ test("deleting the selected Review Direction restores keyboard focus and announc
 
   assert.match(
     source,
-    /const addDirectionButton = useRef<HTMLButtonElement>\(null\);/,
+    /addDirectionButton\s*=\s*useRef<HTMLButtonElement>\(null\)/,
     "Review must retain a stable focus target outside the deleted Direction",
   );
   assert.match(
