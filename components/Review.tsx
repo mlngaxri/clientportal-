@@ -23,7 +23,7 @@ export default function Review({ project, board, otherBoards, onRefresh }: { pro
   useEffect(() => {
     if (!selected || data.objects.some((object) => object.id === selected)) return;
     setSelected(null);
-    setAnnouncement("Selected Direction is no longer available. Focus moved to Add Direction.");
+    setAnnouncement(locked ? "Selected Direction is no longer available." : "Selected Direction is no longer available. Focus moved to Add Direction.");
     if (!locked) requestAnimationFrame(() => addDirectionButton.current?.focus());
   }, [selected, data.objects, locked]);
   const obj = data.objects.find((o) => o.id === selected), incomplete = incompleteDirections(data.objects);

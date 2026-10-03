@@ -31,3 +31,18 @@ test("deleting the selected Review Direction restores keyboard focus and announc
     "starting a new Direction must clear stale deletion feedback",
   );
 });
+
+test("stale Review selection only claims focus movement when Add Direction exists", async () => {
+  const source = await readFile("components/Review.tsx", "utf8");
+
+  assert.match(
+    source,
+    /setAnnouncement\(locked \? "Selected Direction is no longer available\." : "Selected Direction is no longer available\. Focus moved to Add Direction\."\);/,
+    "locked Review must not announce focus movement to a control that is not rendered",
+  );
+  assert.match(
+    source,
+    /if \(!locked\) requestAnimationFrame\(\(\) => addDirectionButton\.current\?\.focus\(\)\);/,
+    "focus recovery must remain limited to draft Review where Add Direction is available",
+  );
+});
