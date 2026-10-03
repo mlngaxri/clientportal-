@@ -27,7 +27,7 @@ test("project settings mutation is authenticated and owner-scoped without side e
   assert.equal((await db.query<{ count: number }>("select count(*)::int as count from project_settings where project_id=$1", [project])).rows[0].count, 0);
 
   await db.query("select set_config('test.uid',$1,false)", [owner]);
-  const settings = (await db.query<{ revision: number; notify_forms: boolean; notify_project: boolean }>("select (update_project_settings($1,0,$2::jsonb)).*", [project, JSON.stringify(value)])).rows[0];
+  const settings = (await db.query<{ value: { revision: number; notify_forms: boolean; notify_project: boolean } }>("select update_project_settings($1,0,$2::jsonb) as value", [project, JSON.stringify(value)])).rows[0].value;
   assert.equal(settings.revision, 1);
   assert.equal(settings.notify_forms, false);
   assert.equal(settings.notify_project, false);
