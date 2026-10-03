@@ -7,13 +7,14 @@ Application/data architecture, persistence boundaries, auth boundaries, validati
 Derive the current boundary from latest `main`: the repository contains both the browser-local preview and a connected Next.js/Supabase customer application. Never promote local preview behavior to provider acceptance; grade connected behavior only to evidence actually observed.
 
 ## Latest handoff — 2026-10-03
-- Checkout return-address validation now treats `APP_URL` as an origin contract: credentials, non-root paths, query strings and fragments are rejected before Stripe initialization or checkout reservation, and success/cancel URLs are constructed from the parsed canonical `URL.origin` rather than raw configuration.
-- This closes a configuration-integrity gap left after the HTTPS hardening: malformed-but-parseable HTTPS values could previously pass validation and produce ambiguous Stripe return URLs.
-- `tests/checkout-return-address.test.mjs` locks both fail-before-provider ordering and the origin-only/canonicalization invariant.
+- Fixed a subscription entitlement regression introduced by commerce hardening: `record_subscription` accepted Stripe's `trialing` state but computed project Pro entitlement from `active` subscriptions only, so a legitimate trial transition disabled Pro.
+- Added migration `016_subscription_trial_entitlement.sql` rather than rewriting an already-applied migration. It restores the original contract that both `active` and `trialing` subscriptions are entitled while preserving reservation ownership, status validation and stale-event protection.
+- `tests/backend/commerce.test.ts` now exercises reserved `trialing -> active -> past_due` transitions and confirms stale active events cannot restore entitlement.
 - Evidence: **S0 — Source** until exact-SHA validation runs for this commit. No Stripe provider acceptance is claimed.
-- Next: inspect another under-tested authorization/RLS or payment mutation boundary, prioritizing webhook/reservation ownership and replay invariants that lack direct regression coverage.
+- Next: inspect another under-tested payment/webhook invariant, prioritizing subscription checkout binding and replay behavior.
 
 ## Prior relevant work
+- `653c10b007d86b3ef5648b4692580182c6ebbb99`: require checkout `APP_URL` to be a canonical origin and build Stripe return URLs from parsed `URL.origin`.
 - `c18579b6810f62f22508874b439124ae00ceea68`: cover the `set_form_status` authorization boundary so unrelated authenticated users fail closed while owners can transition their own submission.
 - `44b2e20ac6795482cbcb46e5414f40c121f51c22`: isolate acceptance app PKCE cookies from the local Supabase Auth host; exact-SHA validation run 223 passed the complete connected browser workflow.
 - `00003f0830dfc1f2910086223ec17b41ca3871e9`: allow encoded recovery callback redirects in local Supabase acceptance configuration.
