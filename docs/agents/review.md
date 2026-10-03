@@ -7,10 +7,10 @@ Initial Direction, media and annotation UX, Review, revision lifecycle, locking/
 The connected application persists Review/revision state through Supabase-backed project commands, with database constraints and regression coverage for completeness, owner authorization, idempotency, locking, completion, stale-write conflicts, withdrawal and revision accounting. Annotation and revision-submit UI also has focused keyboard/semantic/form-safety coverage. External review/upload provider acceptance remains unproven and must not be inferred from local or CI behavior.
 
 ## Current evidence
-- Latest main inspected before this change: `1ce72b53f6fb47fa4453a9322e2ca8489e8682cd`.
-- Exact-SHA validation run 223 on `44b2e20ac6795482cbcb46e5414f40c121f51c22` passed the connected workflow end to end; run 224 for the latest documentation-only main commit was still in progress when this task was selected.
-- Review attachment retry text promises that a failed upload can be retried by choosing the file again. The file input now clears its native selection immediately after capturing the File, so selecting the same file after a failed upload fires a fresh change event without mutating existing Directions.
-- Focused source regression coverage locks that retry-enabling reset before the asynchronous replacement starts.
+- Latest main inspected before this change: `c18579b6810f62f22508874b439124ae00ceea68`; validation run 230 passed on that exact SHA.
+- Review attachment retry text promises that a failed upload can be retried by choosing the file again. The file input clears its native selection immediately after capturing the File, so selecting the same file after a failed upload fires a fresh change event without mutating existing Directions.
+- Successful retry now clears the stale upload error only after the asset is uploaded and the replacement Direction is added.
+- Replacement uploads initiated by `ReviewCanvas` pass the validated bridge-event context into `Review.replacement`; focused source regression coverage now locks that captured target through the asynchronous upload instead of allowing completion to consult mutable current Review context.
 - No live or external-provider acceptance is claimed.
 
 ## Recent Review work
@@ -27,12 +27,14 @@ The connected application persists Review/revision state through Supabase-backed
 - `c0d9e96a2f57ec36980a767fa6f54161a814a677`: prove replaying an earlier successful completion after a newer revision is submitted returns the original receipt without rolling back newer content/status/accounting or creating another draft/receipt.
 - `cf102386363606fd40b78632c111f39a1b5a893a`: make every native button owned by `components/Review.tsx` explicitly `type="button"` with focused source regression coverage.
 - `b1d0cda095d6d46023f3deb48b9a3eb8e0aaf2dd`, covered and repaired by `aeb2837ae202d5318cd0e44ed00c5e97758f10b9` and `4952efdf25d78f5e90ac924a73c6ce4166c46fbc`: keep ReviewCanvas viewport/review-mode controls explicitly non-submitting with regression coverage matched to the component's two button templates.
+- `d0e27c7a733072834cdcc8a86ee3f6bbac9e1647`, repaired by `9b7959234c39db7a278668111c012bafe1b47cc7` and `3a6128b28c329c4fc2434b0ce9eeb92982b6d1c4`: allow same-file Review upload retries and keep the regression matcher aligned with the source.
+- `6be23906f589547d241172b3bb77a13d42cf1715`: clear stale Review upload errors after a successful retry and cover the success/failure messaging boundary.
 
 ## Evidence grade
 **S0 — Source.** Fresh exact-SHA automation for the current change is not yet proven. No S2/S3/S4 claim is made.
 
 ## Boundary
-Never double-consume or double-refund revision entitlements. Failed/stale commands must roll back state/accounting and must not create successful command receipts. Successful idempotent replays must return their original result without mutating newer lifecycle state. Review workspace and canvas controls must not accidentally cross a surrounding native form boundary. Failed attachment uploads must preserve existing Directions and leave the chooser capable of retrying the same file. Do not claim external review/upload acceptance without real provider evidence.
+Never double-consume or double-refund revision entitlements. Failed/stale commands must roll back state/accounting and must not create successful command receipts. Successful idempotent replays must return their original result without mutating newer lifecycle state. Review workspace and canvas controls must not accidentally cross a surrounding native form boundary. Failed attachment uploads must preserve existing Directions and leave the chooser capable of retrying the same file. Replacement uploads must retain the validated target captured when the upload began even if selection or current preview context changes before completion. Do not claim external review/upload acceptance without real provider evidence.
 
 ## Next recommended action
-Inspect replacement uploads initiated from `ReviewCanvas` for stale-target behavior: prove an upload completing after selection/context changes still creates the replacement against the target captured when the upload began, or fix the smallest concrete violation.
+Audit Review selection/focus behavior when a Direction is deleted or becomes unresolved, especially keyboard focus and announcement recovery on narrow layouts; fix the smallest concrete accessibility defect or add regression evidence for the invariant.
