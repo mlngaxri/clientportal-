@@ -100,7 +100,7 @@ export default function PasswordRecovery({
                 />
               </label>
             )}
-            <button className="primary" disabled={busy}>
+            <button type="submit" className="primary" disabled={busy}>
               {busy
                 ? "Working…"
                 : update
