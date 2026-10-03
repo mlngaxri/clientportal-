@@ -56,3 +56,13 @@ test("stale Review reattachment is canceled when its Direction disappears", asyn
     "acknowledged data removing the reattachment target must cancel the orphaned intent and announce it",
   );
 });
+
+test("locking Review cancels active reattachment intent and instruction", async () => {
+  const source = await readFile("components/Review.tsx", "utf8");
+
+  assert.match(
+    source,
+    /if \(!locked \|\| !reattach\) return;\s*setReattach\(null\);\s*setMessage\(""\);\s*setAnnouncement\("Reattachment canceled because this Review is now locked\."\);/s,
+    "submitted or otherwise locked Review must cancel reattachment and clear its stale click instruction",
+  );
+});
