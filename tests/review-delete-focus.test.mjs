@@ -81,3 +81,13 @@ test("an upload finishing after Review locks cannot add a Direction", async () =
     "upload completion must re-check the current lock state before adding its Direction",
   );
 });
+
+test("locking Review closes a stale submission dialog", async () => {
+  const source = await readFile("components/Review.tsx", "utf8");
+
+  assert.match(
+    source,
+    /if \(!locked \|\| !submit\) return;\s*setSubmit\(false\);\s*setAnnouncement\("Submission dialog closed because this Review is now locked\."\);/s,
+    "an acknowledged lock transition must remove the stale submit action and announce why it disappeared",
+  );
+});
