@@ -7,13 +7,15 @@ Application/data architecture, persistence boundaries, auth boundaries, validati
 Derive the current boundary from latest `main`: the repository contains both the browser-local preview and a connected Next.js/Supabase customer application. Never promote local preview behavior to provider acceptance; grade connected behavior only to evidence actually observed.
 
 ## Latest handoff — 2026-10-03
-- Closed a checkout authorization gap: `rotate_checkout` is `SECURITY DEFINER` and previously retained PostgreSQL's default PUBLIC execute privilege, so browser roles could invoke the provider-binding reset RPC directly if they knew a reservation key.
-- Forward migration `023_checkout_rotation_privileges.sql` revokes execute from `public`, `anon` and `authenticated`, granting it only to `service_role`, matching the already-restricted `bind_checkout` provider boundary.
-- Added executable PGlite regression coverage proving both browser roles lack execute while `service_role` retains it. The checkout regression stack also includes the parallel expiry hardening from `022_checkout_binding_expiry.sql`.
+- Completed the remaining subscription side of the commerce `SECURITY DEFINER` privilege audit with executable regression coverage: `record_subscription` must be inaccessible to `anon` and `authenticated` and executable only by `service_role`.
+- This complements commit `568a733dd95473d77f7df97a900fde0497963c57`, which restricted `record_payment` to the same trusted server boundary, and the existing restrictions on `bind_checkout` and `rotate_checkout`.
+- The regression applies the real commerce + subscription forward migrations in PGlite and checks PostgreSQL function privileges directly, so a later migration that accidentally restores PUBLIC/browser execute will fail tests.
 - Evidence: **S0 — Source** until exact-SHA validation runs for this commit. No Stripe or hosted Supabase provider acceptance is claimed.
-- Next: audit the remaining commerce `SECURITY DEFINER` functions (`record_payment`, `record_subscription`, reservation helpers) for explicit execute grants and least-privilege caller boundaries; fix only a concrete exposed privilege.
+- Next: inspect the customer-callable checkout reservation boundary (`reserve_checkout`) for explicit least-privilege grants and cross-project/authentication invariants, fixing only a concrete defect or evidence gap.
 
 ## Prior relevant work
+- `568a733dd95473d77f7df97a900fde0497963c57`: restrict payment reconciliation to `service_role` with executable privilege regression coverage.
+- `a01fc8e0ad6613e0129942a874eff6c8a103ea41`: restrict checkout rotation to `service_role`.
 - `bbdf11818a4a1be439c83e6ac6483d8e40f9dca6`: fail closed when an expired unbound checkout reservation is first attached to a provider session while preserving idempotent same-session replay.
 - `7eccef29bfd2476eca12fa91a09b8c0f39ac4f51`: fail closed on stale checkout rotation.
 - `c125a1c4397e3045fbd261fcff95d04cf9c89180`: fail closed on equal-timestamp subscription conflicts.
