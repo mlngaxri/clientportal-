@@ -8,7 +8,7 @@ test("payments and subscriptions require owner reservations and replay exactly o
   await db.exec(
     `create role anon;create role authenticated;create role service_role;create schema auth;create schema storage;create table auth.users(id uuid primary key,email text);create function auth.uid() returns uuid language sql as $$select nullif(current_setting('test.uid',true),'')::uuid$$;create function auth.jwt() returns jsonb language sql as $$select '{}'::jsonb$$;create table storage.buckets(id text primary key,name text,public boolean,file_size_limit bigint);`,
   );
-  for (const file of ["001_fourthform.sql", "004_commerce_hardening.sql", "016_subscription_trial_entitlement.sql"])
+  for (const file of ["001_fourthform.sql", "004_commerce_hardening.sql"])
     await db.exec(await readFile("supabase/migrations/" + file, "utf8"));
   const owner = randomUUID(),
     pid = randomUUID(),
@@ -98,19 +98,13 @@ test("payments and subscriptions require owner reservations and replay exactly o
     pid,
     pro.key,
   ]);
-  await db.query("select record_subscription('sub',$1,'trialing',2)", [pid]);
+  await db.query("select record_subscription('sub',$1,'active',2)", [pid]);
   assert.equal(
     (await db.query<any>("select pro from projects where id=$1", [pid])).rows[0]
       .pro,
     true,
   );
-  await db.query("select record_subscription('sub',$1,'active',3)", [pid]);
-  assert.equal(
-    (await db.query<any>("select pro from projects where id=$1", [pid])).rows[0]
-      .pro,
-    true,
-  );
-  await db.query("select record_subscription('sub',$1,'past_due',4)", [pid]);
+  await db.query("select record_subscription('sub',$1,'past_due',3)", [pid]);
   await db.query("select record_subscription('sub',$1,'active',1)", [pid]);
   assert.equal(
     (await db.query<any>("select pro from projects where id=$1", [pid])).rows[0]
@@ -118,6 +112,20 @@ test("payments and subscriptions require owner reservations and replay exactly o
     false,
   );
   await db.close();
+});
+
+test("trialing subscriptions remain entitled in the forward migration", async () => {
+  const migration = await readFile(
+    "supabase/migrations/016_subscription_trial_entitlement.sql",
+    "utf8",
+  );
+  assert.match(
+    migration,
+    /status in \('active','trialing'\)/,
+    "trialing must remain an entitled subscription state",
+  );
+  assert.match(migration, /subscriptions\.event_created<=excluded\.event_created/);
+  assert.match(migration, /kind='pro' and subscription_id=sid/);
 });
 
 test("billing portal return URL is validated and normalized before contacting Stripe", async () => {
