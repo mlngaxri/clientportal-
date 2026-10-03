@@ -14,7 +14,6 @@ export async function POST(req: Request) {
       .parse(await req.json());
     const { project, client } = await ownedProject(projectId);
     assertCheckoutEnabled({ package: project.package, kind }, process.env);
-    const s = stripe();
     const eligible =
       (kind === "initial" && project.phase === "AWAITING_INITIAL_PAYMENT") ||
       (kind === "final" &&
@@ -27,6 +26,10 @@ export async function POST(req: Request) {
       throw new Error(
         "This payment is not available at the current project stage.",
       );
+    const base = process.env.APP_URL;
+    if (!base || !["https:", "http:"].includes(new URL(base).protocol))
+      throw new Error("Payment return address is not configured.");
+    const s = stripe();
     let reservation = await client.rpc("reserve_checkout", {
       pid: projectId,
       payment_kind: kind,
@@ -104,9 +107,6 @@ export async function POST(req: Request) {
           ? prices.first
           : prices.initial
         : prices[kind as keyof typeof prices];
-    const base = process.env.APP_URL;
-    if (!base || !["https:", "http:"].includes(new URL(base).protocol))
-      throw new Error("Payment return address is not configured.");
     // A locked database reservation keeps simultaneous checkout requests on one Stripe session.
     const session = await s.checkout.sessions.create(
       {
