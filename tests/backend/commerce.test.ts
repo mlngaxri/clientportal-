@@ -116,7 +116,7 @@ test("payments and subscriptions require owner reservations and replay exactly o
 
 test("trialing subscriptions remain entitled in the forward migration", async () => {
   const migration = await readFile(
-    "supabase/migrations/016_subscription_trial_entitlement.sql",
+    "supabase/migrations/019_subscription_trial_entitlement.sql",
     "utf8",
   );
   assert.match(
