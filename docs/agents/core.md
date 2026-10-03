@@ -7,13 +7,14 @@ Application/data architecture, persistence boundaries, auth boundaries, validati
 Derive the current boundary from latest `main`: the repository contains both the browser-local preview and a connected Next.js/Supabase customer application. Never promote local preview behavior to provider acceptance; grade connected behavior only to evidence actually observed.
 
 ## Latest handoff — 2026-10-03
-- Validation run 210 on `dabb788dd1d3cbb63b3a461936368a17e45895b5` passes install, typecheck, unit/backend tests, isolated Supabase, build, Chromium and application startup, then still fails only in the connected password-recovery journey waiting for the New password field; all preceding connected checks pass.
-- The preserved application log only emitted generic `request_failed` categories, so it could not distinguish a missing callback code, Supabase PKCE exchange rejection, or a callback exception. That made another speculative auth-boundary change higher risk than adding safe diagnostic evidence.
-- The auth callback now emits structured, non-secret failure evidence: `auth_callback_exchange_failed` with only Supabase's machine error code, `auth_callback_missing_code`, or `auth_callback_exception` with only the JavaScript error class. Provider messages, callback codes and tokens are never logged. Focused regression coverage locks that redaction boundary.
+- Validation run 215 on `1ff80540f182459ba287f11271d89e3c655e0ccc` passes install, typecheck, unit/backend tests, isolated Supabase, build, Chromium and application startup, then still fails only in the connected password-recovery journey waiting for the New password field; all preceding connected checks pass.
+- The preserved application log contains no `auth_callback_exchange_failed`, `auth_callback_missing_code`, or `auth_callback_exception` event. That means the previous failure-only callback instrumentation still cannot distinguish a successful code exchange followed by session rejection from a recovery navigation that never reaches the callback.
+- Recovery evidence now records a safe `auth_callback_exchanged` event with only the boolean recovery purpose after successful exchange, and `auth_recovery_session_missing` with only the JavaScript error class if the password page rejects the resulting session. Authorization codes, tokens, account data and provider messages remain excluded. Focused regression coverage locks that boundary.
 - Evidence: **S0 pending fresh CI**. No external Supabase/Auth acceptance is claimed.
-- Next: inspect the next connected-system application log for the callback event and fix the now-identifiable recovery failure without broadening pre-proof cookie access.
+- Next: inspect the next connected-system application log. If `auth_callback_exchanged` is followed by `auth_recovery_session_missing`, fix session-cookie persistence/verification; if neither callback event appears, inspect the local email verification redirect/link extraction path instead of changing callback session policy.
 
 ## Prior relevant work
+- `7fa74a973cd15ccd77119bfa19027419f9cff52e`: expose safe failure-only callback diagnostics; run 215 proved that evidence was insufficient because no failure event was emitted.
 - `b1264f9b55b0c5ddcbcc7b25a118bf8dd4ecb802`: keep stale Supabase auth tokens gated during PKCE callback; the verifier remains readable through the normal pre-proof filter.
 - `5320934b5a45f881aea392bba810d2778c668bb4`: attempted to preserve the PKCE verifier through callback, but did so by broadly bypassing pre-proof Supabase cookie gating; superseded by the later hardening.
 - `3c2e952c2cc72c0183ef333b456ea5dc24abe7eb`: keep local acceptance auth cookies usable in production builds when `APP_ENV=development`.

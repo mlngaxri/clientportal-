@@ -31,6 +31,8 @@ export async function GET(req: Request) {
           await signSessionExpiry(expiry),
           sessionCookieOptions(remember, expiry),
         );
+        // Record only the callback purpose; never emit the authorization code, tokens, account data or provider text.
+        console.info(JSON.stringify({ event: "auth_callback_exchanged", recovery }));
         return NextResponse.redirect(new URL(returnPath, url.origin));
       }
       console.error(JSON.stringify({ event: "auth_callback_exchange_failed", code: error.code || "unknown" }));
