@@ -43,8 +43,8 @@ export default function RecoveryNotice({
         </section>
       )}
       {conflict && (
-        <section className="recovery-notice" role="alert">
-          <p>
+        <section className="recovery-notice" aria-labelledby="conflict-heading">
+          <p id="conflict-heading" role="alert">
             This document changed elsewhere. Your draft is preserved. Choose
             which version to continue editing, then Save.
           </p>
