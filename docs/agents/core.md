@@ -7,14 +7,15 @@ Application/data architecture, persistence boundaries, auth boundaries, validati
 Derive the current boundary from latest `main`: the repository contains both the browser-local preview and a connected Next.js/Supabase customer application. Never promote local preview behavior to provider acceptance; grade connected behavior only to evidence actually observed.
 
 ## Latest handoff — 2026-10-03
-- Closed an equal-timestamp subscription ordering defect in `record_subscription`: Stripe event timestamps are second-granularity, so the previous `<=` upsert allowed two conflicting states with the same timestamp to overwrite each other according to delivery order.
-- Forward migration `020_subscription_equal_timestamp.sql` now permits a newer timestamp or an idempotent same-timestamp/same-status retry, but refuses a same-timestamp conflicting status. This keeps entitlement deterministic and fail-closed when provider ordering cannot be proven from the timestamp alone.
-- The executable commerce regression now applies the new migration and proves `past_due@4` cannot be replaced by conflicting `active@4`, while the existing older-event and trial entitlement checks remain intact.
-- Baseline evidence before this change: latest main had no commit status attached when inspected; deployment remains separately fail-closed and is Builder 5 release plumbing.
+- Closed a checkout-rotation integrity gap: `rotate_checkout` previously returned success when its reservation key was stale or mismatched, leaving the old provider-bound reservation active while callers could believe it had been invalidated.
+- Forward migration `021_checkout_rotation_fail_closed.sql` now raises `Checkout reservation mismatch` when the targeted reservation was not rotated. Successful rotation still atomically changes the key, clears provider session/subscription bindings and renews expiry under the existing project row lock.
+- Added an executable PGlite regression proving a stale key fails without mutating the existing bound intent and the correct key still rotates and clears its session binding.
+- Recent parallel Core coverage also locks checkout session rebinding: an already-bound reservation accepts an idempotent repeat but rejects a different session ID.
 - Evidence: **S0 — Source** until exact-SHA validation runs for this commit. No Stripe provider acceptance is claimed.
-- Next: inspect checkout/session binding replay behavior or another under-tested payment/webhook integrity boundary.
+- Next: inspect checkout reservation expiry enforcement or webhook/provider receipt binding for another concrete fail-closed integrity gap.
 
 ## Prior relevant work
+- `c125a1c4397e3045fbd261fcff95d04cf9c89180`: fail closed on equal-timestamp subscription conflicts.
 - `6bd3a6d71a75a3c96e1382ef9d0c57d4b8b078f0`: execute trial entitlement regression coverage against the real forward migration.
 - `321eeeabfe69589ea34e48f88b6e941a8517ce63`: restore Pro entitlement for Stripe `trialing` subscriptions via forward migration.
 - `653c10b007d86b3ef5648b4692580182c6ebbb99`: require checkout `APP_URL` to be a canonical origin and build Stripe return URLs from parsed `URL.origin`.
@@ -24,10 +25,5 @@ Derive the current boundary from latest `main`: the repository contains both the
 - `9c5564df5a8168c00347a927119394f42f6252ea`: add safe successful-exchange/session-handoff recovery diagnostics.
 - `7fa74a973cd15ccd77119bfa19027419f9cff52e`: expose safe failure-only callback diagnostics.
 - `b1264f9b55b0c5ddcbcc7b25a118bf8dd4ecb802`: keep stale Supabase auth tokens gated during PKCE callback; the verifier remains readable through the normal pre-proof filter.
-- `5320934b5a45f881aea392bba810d2778c668bb4`: attempted to preserve the PKCE verifier through callback, but did so by broadly bypassing pre-proof Supabase cookie gating; superseded by the later hardening.
-- `3c2e952c2cc72c0183ef333b456ea5dc24abe7eb`: keep local acceptance auth cookies usable in production builds when `APP_ENV=development`.
-- `44dfc6fa3e81ab7b010b8d32d14f474ff7ca4227c`: keep recovery PKCE callback on the incoming request origin.
 - `577ebea10a667b40db5037cdc963177e767ea23b`: scope password updates to recovery-purpose sessions with a domain-separated HMAC proof.
-- `445e52fa3709a6c016b4bb0e956c1c986638712e`: preserve callback request origin so host-only Supabase cookies survive recovery navigation.
-- Recovery callbacks are transient and clear stale remembered-session intent.
 - Customer Supabase sessions no longer depend on the service-role credential.
