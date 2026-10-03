@@ -18,8 +18,8 @@ export async function GET(req: Request) {
       const recovery = returnPath === "/account/password";
       const remember = !recovery && jar.get("ff-remember")?.value === "yes";
       const expiry = sessionExpiry(remember);
-      // PKCE callbacks must read the transient verifier even before a Fourthform session proof exists.
-      const client = await db({ remember, expiry }, true);
+      // The PKCE verifier is not a Supabase session token, so it remains readable while stale auth tokens stay gated.
+      const client = await db({ remember, expiry });
       const { error } = await client.auth.exchangeCodeForSession(code);
       if (!error) {
         if (recovery) {

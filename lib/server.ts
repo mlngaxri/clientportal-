@@ -14,7 +14,7 @@ export function configured() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
   );
 }
-export async function db(newSession?: { remember: boolean; expiry: string }, allowTransientAuthCookies = false) {
+export async function db(newSession?: { remember: boolean; expiry: string }) {
   if (!configured())
     throw new Error(
       "Account services are not configured yet. Your work has not been saved.",
@@ -33,7 +33,7 @@ export async function db(newSession?: { remember: boolean; expiry: string }, all
     {
       cookies: {
         getAll: () =>
-          !expiry && !allowTransientAuthCookies
+          !expiry
             ? jar.getAll().filter((c) => !isAuthSessionCookie(c.name))
             : jar.getAll(),
         setAll: (items) => {

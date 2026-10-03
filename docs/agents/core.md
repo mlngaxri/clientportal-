@@ -7,13 +7,14 @@ Application/data architecture, persistence boundaries, auth boundaries, validati
 Derive the current boundary from latest `main`: the repository contains both the browser-local preview and a connected Next.js/Supabase customer application. Never promote local preview behavior to provider acceptance; grade connected behavior only to evidence actually observed.
 
 ## Latest handoff — 2026-10-03
-- Validation run 200 passes install, typecheck, unit/backend tests, isolated Supabase, build and application startup, then still fails in the connected password-recovery journey waiting for the New password field; signup now passes.
-- Auth provider entry paths still allowed `APP_URL` to choose the callback host. That is unsafe for PKCE whenever the incoming request host differs from configured public origin: the verifier/session cookies belong to the request host, as already established for recovery.
-- Google OAuth, signup confirmation/resend and signup email callbacks now use the incoming request origin consistently. Focused auth-policy regression coverage rejects reintroduction of `APP_URL` at that provider callback boundary.
+- Validation run 205 passes install, typecheck, unit/backend tests, isolated Supabase, build and application startup, then still fails only in the connected password-recovery journey waiting for the New password field; all preceding connected checks pass.
+- The preceding PKCE change added an `allowTransientAuthCookies` bypass that exposed every Supabase auth cookie to the callback before a signed Fourthform session proof existed. That was broader than its stated purpose and did not fix recovery: the PKCE code-verifier cookie is not classified by `isAuthSessionCookie`, so it was already readable through the normal gated client.
+- The callback now uses the normal gated `db()` path again. Stale Supabase session tokens remain hidden until `ff-session-until` verifies, while the transient PKCE verifier remains available for code exchange. Focused auth-policy coverage rejects reintroducing the broad bypass.
 - Evidence: **S0 pending fresh CI**. No external Supabase/Auth acceptance is claimed.
-- Next: verify exact-SHA connected auth; if recovery remains red, use the preserved application/Supabase evidence to isolate exchange failure rather than changing callback hosts again.
+- Next: use fresh connected evidence to isolate the still-red recovery exchange/navigation failure; do not broaden pre-proof cookie access again.
 
 ## Prior relevant work
+- `5320934b5a45f881aea392bba810d2778c668bb4`: attempted to preserve the PKCE verifier through callback, but did so by broadly bypassing pre-proof Supabase cookie gating; superseded by the latest hardening.
 - `3c2e952c2cc72c0183ef333b456ea5dc24abe7eb`: keep local acceptance auth cookies usable in production builds when `APP_ENV=development`.
 - `44dfc6fa3e81ab7b0108d32d14f474ff7ca4227c`: keep recovery PKCE callback on the incoming request origin.
 - `577ebea10a667b40db5037cdc963177e767ea23b`: scope password updates to recovery-purpose sessions with a domain-separated HMAC proof.

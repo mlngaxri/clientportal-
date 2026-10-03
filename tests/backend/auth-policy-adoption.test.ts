@@ -34,12 +34,14 @@ test("auth callback preserves the request origin that owns its session cookies",
   assert.doesNotMatch(text, /new URL\(returnPath, process\.env\.APP_URL/);
 });
 
-test("auth callback can read only the transient PKCE verifier before session proof exists", async () => {
+test("auth callback keeps stale Supabase sessions gated while retaining the PKCE verifier", async () => {
   const callback = await source(callbackRoute);
   const serverText = await source(server);
-  assert.match(callback, /db\(\{ remember, expiry \}, true\)/);
-  assert.match(serverText, /!expiry && !allowTransientAuthCookies/);
-  assert.match(serverText, /jar\.getAll\(\)\.filter\(\(c\) => !isAuthSessionCookie\(c\.name\)\)/);
+  assert.match(callback, /db\(\{ remember, expiry \}\)/);
+  assert.doesNotMatch(callback, /db\(\{ remember, expiry \}, true\)/);
+  assert.match(serverText, /!expiry\s*\?\s*jar\.getAll\(\)\.filter\(\(c\) => !isAuthSessionCookie\(c\.name\)\)/);
+  assert.doesNotMatch(serverText, /allowTransientAuthCookies/);
+  assert.match(serverText, /isAuthSessionCookie/);
 });
 
 test("password recovery callback returns to the request origin that owns its PKCE verifier", async () => {
