@@ -25,7 +25,8 @@ export default function Review({
   const { data, update, state, error, save, version } = editor;
   const [selected, setSelected] = useState<string | null>(null),
     [submit, setSubmit] = useState(false),
-    [message, setMessage] = useState("");
+    [message, setMessage] = useState(""),
+    [announcement, setAnnouncement] = useState("");
   const keys = useRef<Record<string, string>>({});
   const [uploading, setUploading] = useState(0);
   const [busy, setBusy] = useState(false);
@@ -43,6 +44,7 @@ export default function Review({
       ...d,
       objects: [...d.objects, { id, type: "text", text: "", ...patch }],
     }));
+    setAnnouncement("");
     setSelected(id);
   }
   async function replacement(file: File, target: BoardObject["target"]) {
@@ -107,13 +109,13 @@ export default function Review({
           {obj.type === "image" && <img className="replacement-preview" src={obj.url} alt={obj.name || "Replacement"} />}
           <textarea ref={textInput} aria-label="Direction text" maxLength={10000} value={obj.text} readOnly={locked} placeholder="What would you like to change?" onChange={(e) => update((d) => ({ ...d, objects: d.objects.map((o) => o.id === obj.id ? { ...o, text: e.target.value } : o) }))} />
           {obj.type === "video" && <video controls src={obj.url} />}{obj.type === "audio" && <audio controls src={obj.url} />}{obj.type === "file" && <a href={obj.url} target="_blank" rel="noreferrer">Open {obj.name}</a>}{obj.type === "drawing" && <p>Draw directly over the website preview. Add a written description so your feedback can be understood without the drawing.</p>}
-          {!locked && <div className="row"><button type="button" onClick={() => void save()}>Save Direction</button><button type="button" onClick={() => { editor.removeObjects([obj.id]); setSelected(null); requestAnimationFrame(() => addDirectionButton.current?.focus()); }}>Delete</button></div>}
+          {!locked && <div className="row"><button type="button" onClick={() => void save()}>Save Direction</button><button type="button" onClick={() => { editor.removeObjects([obj.id]); setSelected(null); setAnnouncement("Direction deleted. Focus moved to Add Direction."); requestAnimationFrame(() => addDirectionButton.current?.focus()); }}>Delete</button></div>}
         </div>}
         {otherBoards.filter((b) => b.status !== "DRAFT").map((b) => <details className="history-item" key={b.id}><summary>{b.status === "IN_PROGRESS" ? "Revision in progress" : b.status === "DONE" ? "Completed Revision" : "Submitted Revision"} · {b.data.objects.length} Directions</summary>{(b.submitted_data || b.data).objects.map((o) => <p key={o.id}>{o.text || o.name || o.type}</p>)}</details>)}
         <div className="portal-submit-panel">
           <span className="mono">Revision {String(locked ? project.revision_used : project.revision_used + 1).padStart(2, "0")} / {String(project.revision_limit).padStart(2, "0")}</span>
           {!locked && <SaveControl state={state} error={error} onSave={() => void save()} label="Save revision" />}
-          {uploading > 0 && <p role="status">Uploading {uploading} file(s)…</p>}{message && <p role="alert">{message}</p>}
+          {announcement && <p role="status">{announcement}</p>}{uploading > 0 && <p role="status">Uploading {uploading} file(s)…</p>}{message && <p role="alert">{message}</p>}
           {locked && board.status === "SUBMITTED" ? <><p>Waiting for Fourthform. You can withdraw before work begins.</p><button type="button" disabled={busy} onClick={() => command("withdraw_revision").catch((e) => setMessage(e.message))}>Withdraw Revision</button></> : !locked ? <><p>{Math.max(0, project.revision_limit - project.revision_used)} rounds remaining. Saving preserves this batch. Only submitting uses a round.</p><button type="button" disabled={busy || uploading > 0 || !data.objects.length || incomplete.length > 0 || project.phase === "REVISION_IN_PROGRESS" || project.revision_used >= project.revision_limit} onClick={() => setSubmit(true)}>Submit Revision</button>{incomplete.length > 0 && <p role="status">Finish or delete {incomplete.length} empty Direction{incomplete.length === 1 ? "" : "s"} before submitting.</p>}{project.phase === "REVISION_IN_PROGRESS" && <p>Your next batch can be drafted and saved while we work.</p>}</> : null}
         </div>
       </aside>
