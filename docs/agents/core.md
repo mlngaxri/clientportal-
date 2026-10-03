@@ -7,12 +7,14 @@ Application/data architecture, persistence boundaries, auth boundaries, validati
 Derive the current boundary from latest `main`: the repository contains both the browser-local preview and a connected Next.js/Supabase customer application. Never promote local preview behavior to provider acceptance; grade connected behavior only to evidence actually observed.
 
 ## Latest handoff — 2026-10-04
-- Added executable regression coverage for the customer revision-command authorization boundary: `anon` cannot execute `project_command`, authenticated callers can reach the RPC, and an unrelated authenticated user cannot submit a revision for another owner's project or persist a command receipt.
-- The existing migration already performs the owner check before delegating to the validated command chain; this run locks that invariant rather than changing correct authorization logic.
+- Added executable regression coverage for the customer account-settings mutation boundary: `anon` cannot execute `update_project_settings`, authenticated callers can reach the RPC, and an unrelated authenticated user cannot mutate another owner's project or create a settings row as a side effect.
+- The existing migration already checks `auth.uid()` plus `can_access(pid)` before its lazy settings-row creation; this run locks that ordering and owner-scope invariant rather than changing correct production logic.
 - Evidence: **S0 — Source** until exact-SHA automated validation is observed. No hosted Supabase/Auth provider acceptance is claimed.
-- Next: inspect another customer-callable `SECURITY DEFINER`/mutation boundary outside commerce and revision submission for explicit grants, cross-project isolation, and no-side-effect rejection; prefer executable regression coverage and only change production logic for a concrete defect.
+- Next: inspect another customer-callable `SECURITY DEFINER` mutation outside commerce, revision submission, State activation and account settings for explicit grants, cross-project isolation, and no-side-effect rejection; prefer executable regression coverage and only change production logic for a concrete defect.
 
 ## Prior relevant work
+- `b0ce7fc04fa691442bc94021871212a867b4b591`: executable authorization/no-side-effect regression for State activation.
+- `533498f38dd161fae7fa50f587e2d521108b1512`: executable authorization regression for customer revision commands.
 - `6bf8fcbe32ee96ed157d8c3e42bfe0fef503e77d`: executable owner-scope and role coverage for `reserve_checkout`.
 - `ee1dca8a34b403e417ed024d741f0ce5648b3d53`: executable privilege regression for server-only `record_subscription`.
 - `568a733dd95473d77f7df97a900fde0497963c57`: restrict payment reconciliation to `service_role` with executable privilege regression coverage.
