@@ -96,7 +96,7 @@ export default function Review({
             </button>
           ))}
           {!data.objects.length && <p className="muted">Click an element on your site, or add a general Direction.</p>}
-          {!locked && <><button type="button" className="inspector-new-comment" onClick={() => add()}>+ General Direction</button><button type="button" className="inspector-new-comment" disabled={!context} onClick={() => add({ type: "drawing", strokes: [], target: context })}>Draw a Direction</button><label className="upload-label">Attach a file<input type="file" onChange={(e) => { const f = e.target.files?.[0]; if (f) void replacement(f, undefined); }} /></label></>}
+          {!locked && <><button type="button" className="inspector-new-comment" onClick={() => add()}>+ General Direction</button><button type="button" className="inspector-new-comment" disabled={!context} onClick={() => add({ type: "drawing", strokes: [], target: context })}>Draw a Direction</button><label className="upload-label">Attach a file<input type="file" onChange={(e) => { const f = e.currentTarget.files?.[0]; e.currentTarget.value = ""; if (f) void replacement(f, undefined); }} /></label></>}
         </div>
         {obj && <div className="selected-comment-editor">
           <span>{obj.name || obj.target?.selector || "Direction"}</span>
