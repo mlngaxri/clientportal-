@@ -46,6 +46,12 @@ test("an upload finishing after Review identity changes cannot mutate the new Re
   assert.match(source, /catch \(e\) \{ if \(boardIdentityRef\.current !== startedFor\) return; setMessage\(/, "a failed upload from an obsolete Review must not surface its error in the replacement Review");
 });
 
+test("stale Review uploads cannot keep or corrupt the new board upload busy state", async () => {
+  const source = await readFile("components/Review.tsx", "utf8");
+  assert.match(source, /setCompletedCommand\(null\);\s*setUploading\(0\);\s*\}, \[board\.id, board\.status, board\.version\]\);/s, "acknowledging a new Review identity must release upload busy state owned by the previous board");
+  assert.match(source, /finally \{ if \(boardIdentityRef\.current === startedFor\) setUploading\(\(n\) => Math\.max\(0, n - 1\)\); \}/, "obsolete upload completion must not decrement the replacement Review's independent upload count");
+});
+
 test("locking Review closes a stale submission dialog", async () => {
   const source = await readFile("components/Review.tsx", "utf8");
   assert.match(source, /if \(!locked \|\| !submit\) return;\s*setSubmit\(null\);\s*setAnnouncement\("Submission dialog closed because this Review is now locked\."\);/s, "an acknowledged lock transition must remove the stale submit action and announce why it disappeared");
@@ -82,5 +88,5 @@ test("confirmed Review withdrawal cannot be repeated while refresh acknowledgeme
 
 test("acknowledged Review state resets the completed-command gate", async () => {
   const source = await readFile("components/Review.tsx", "utf8");
-  assert.match(source, /commandGate\.current\.completed = null;\s*setCompletedCommand\(null\);\s*\}, \[board\.id, board\.status, board\.version\]\);/s, "a completed command must stop blocking future lifecycle actions once newer acknowledged board state arrives");
+  assert.match(source, /commandGate\.current\.completed = null;\s*setCompletedCommand\(null\);[\s\S]*?\}, \[board\.id, board\.status, board\.version\]\);/s, "a completed command must stop blocking future lifecycle actions once newer acknowledged board state arrives");
 });
