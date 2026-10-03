@@ -46,3 +46,13 @@ test("stale Review selection only claims focus movement when Add Direction exist
     "focus recovery must remain limited to draft Review where Add Direction is available",
   );
 });
+
+test("stale Review reattachment is canceled when its Direction disappears", async () => {
+  const source = await readFile("components/Review.tsx", "utf8");
+
+  assert.match(
+    source,
+    /if \(!reattach \|\| data\.objects\.some\(\(object\) => object\.id === reattach\)\) return;\s*setReattach\(null\);\s*setAnnouncement\("Reattachment canceled because that Direction is no longer available\."\);/s,
+    "acknowledged data removing the reattachment target must cancel the orphaned intent and announce it",
+  );
+});
