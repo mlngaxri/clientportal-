@@ -26,19 +26,25 @@ export async function POST(req: Request) {
       throw new Error(
         "This payment is not available at the current project stage.",
       );
-    const base = process.env.APP_URL;
+    const configuredBase = process.env.APP_URL;
     let returnAddress: URL;
     try {
-      returnAddress = new URL(base || "");
+      returnAddress = new URL(configuredBase || "");
     } catch {
       throw new Error("Payment return address is not configured.");
     }
     if (
       !["https:", "http:"].includes(returnAddress.protocol) ||
       (process.env.APP_ENV !== "development" &&
-        returnAddress.protocol !== "https:")
+        returnAddress.protocol !== "https:") ||
+      returnAddress.username !== "" ||
+      returnAddress.password !== "" ||
+      returnAddress.pathname !== "/" ||
+      returnAddress.search !== "" ||
+      returnAddress.hash !== ""
     )
       throw new Error("Payment return address is not configured.");
+    const base = returnAddress.origin;
     const s = stripe();
     let reservation = await client.rpc("reserve_checkout", {
       pid: projectId,
@@ -78,7 +84,6 @@ export async function POST(req: Request) {
             ["past_due", "unpaid", "incomplete", "paused"].includes(
               subscription.status,
             )
-          )
             throw new Error(
               "Pro billing needs attention. Open Billing and manage your existing subscription.",
             );

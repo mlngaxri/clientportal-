@@ -7,13 +7,14 @@ Application/data architecture, persistence boundaries, auth boundaries, validati
 Derive the current boundary from latest `main`: the repository contains both the browser-local preview and a connected Next.js/Supabase customer application. Never promote local preview behavior to provider acceptance; grade connected behavior only to evidence actually observed.
 
 ## Latest handoff — 2026-10-03
-- Exact-SHA validation run 223 on `44b2e20ac6795482cbcb46e5414f40c121f51c22` is green end to end: install, typecheck, unit/backend tests, isolated real Supabase, production build, Chromium, connected production application startup, and the real accounts/storage/CMS/customer browser workflow all passed.
-- The recovery blocker was acceptance-environment cookie-host collision, not a reason to weaken the application auth boundary. The disposable app/callback now uses `http://localhost:4173` while local Supabase remains on `127.0.0.1`; host-scoped PKCE cookies therefore remain isolated as they are across real application/provider hosts.
-- `tests/recovery-origin.test.mjs` locks the host-isolation invariant while still requiring the recovery callback to return to the same app origin that initiated it.
-- Evidence: **S1 — Automated** for the connected recovery path on exact SHA `44b2e20a`. The workflow's connected browser journey also passed, but this handoff conservatively records the automated gate; no external hosted Supabase/Auth provider acceptance is claimed.
-- Next: with the red recovery workflow cleared, resume Core's ladder at security/integrity review: inspect one under-tested authorization/RLS or mutation boundary and add the smallest regression/fix that proves it fails closed.
+- Checkout return-address validation now treats `APP_URL` as an origin contract: credentials, non-root paths, query strings and fragments are rejected before Stripe initialization or checkout reservation, and success/cancel URLs are constructed from the parsed canonical `URL.origin` rather than raw configuration.
+- This closes a configuration-integrity gap left after the HTTPS hardening: malformed-but-parseable HTTPS values could previously pass validation and produce ambiguous Stripe return URLs.
+- `tests/checkout-return-address.test.mjs` locks both fail-before-provider ordering and the origin-only/canonicalization invariant.
+- Evidence: **S0 — Source** until exact-SHA validation runs for this commit. No Stripe provider acceptance is claimed.
+- Next: inspect another under-tested authorization/RLS or payment mutation boundary, prioritizing webhook/reservation ownership and replay invariants that lack direct regression coverage.
 
 ## Prior relevant work
+- `c18579b6810f62f22508874b439124ae00ceea68`: cover the `set_form_status` authorization boundary so unrelated authenticated users fail closed while owners can transition their own submission.
 - `44b2e20ac6795482cbcb46e5414f40c121f51c22`: isolate acceptance app PKCE cookies from the local Supabase Auth host; exact-SHA validation run 223 passed the complete connected browser workflow.
 - `00003f0830dfc1f2910086223ec17b41ca3871e9`: allow encoded recovery callback redirects in local Supabase acceptance configuration.
 - `9c5564df5a8168c00347a927119394f42f6252ea`: add safe successful-exchange/session-handoff recovery diagnostics.
