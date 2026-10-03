@@ -42,13 +42,13 @@ test("an upload finishing after Review locks cannot add a Direction", async () =
 
 test("locking Review closes a stale submission dialog", async () => {
   const source = await readFile("components/Review.tsx", "utf8");
-  assert.match(source, /if \(!locked \|\| !submit\) return;\s*setSubmit\(false\);\s*setAnnouncement\("Submission dialog closed because this Review is now locked\."\);/s, "an acknowledged lock transition must remove the stale submit action and announce why it disappeared");
+  assert.match(source, /if \(!locked \|\| !submit\) return;\s*setSubmit\(null\);\s*setAnnouncement\("Submission dialog closed because this Review is now locked\."\);/s, "an acknowledged lock transition must remove the stale submit action and announce why it disappeared");
 });
 
 test("successful Review submission closes the dialog before refresh acknowledgement", async () => {
   const source = await readFile("components/Review.tsx", "utf8");
   assert.match(source, /if \(boardIdentityRef\.current !== startedFor\) return;/, "command completion must reject a stale board before mutating current Review state");
-  assert.match(source, /setMessage\(""\); commandGate\.current\.completed = action; setCompletedCommand\(action\); if \(action === "submit_revision"\) \{ setSubmit\(false\); setAnnouncement\("Revision submitted\. Refreshing Review status\."\); \}/, "a confirmed current-board submission must clear stale command errors, complete the gate, close the dialog, and announce refresh progress");
+  assert.match(source, /setMessage\(""\); commandGate\.current\.completed = action; setCompletedCommand\(action\); if \(action === "submit_revision"\) \{ setSubmit\(null\); setAnnouncement\("Revision submitted\. Refreshing Review status\."\); \}/, "a confirmed current-board submission must clear stale command errors, complete the gate, close the dialog, and announce refresh progress");
   assert.match(source, /setAnnouncement\("Revision submitted\. Refreshing Review status\."\); \}[\s\S]*?onRefresh\(\);/, "submission acknowledgement must precede parent refresh");
 });
 
