@@ -20,7 +20,7 @@ test("customer revision commands are authenticated and owner-scoped", async () =
   const project = randomUUID();
   const commandKey = randomUUID();
   await db.query("insert into auth.users(id) values($1),($2)", [owner, unrelated]);
-  await db.query("insert into projects(id,owner_id,phase) values($1,$2,'BUILD')", [project, owner]);
+  await db.query("insert into projects(id,owner_id,phase) values($1,$2,'BUILDING')", [project, owner]);
 
   const privileges = (await db.query<{ anon: boolean; authenticated: boolean }>(`select has_function_privilege('anon','public.project_command(uuid,text,jsonb,integer,uuid)','EXECUTE') as anon, has_function_privilege('authenticated','public.project_command(uuid,text,jsonb,integer,uuid)','EXECUTE') as authenticated`)).rows[0];
   assert.equal(privileges.anon, false);
