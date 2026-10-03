@@ -27,7 +27,17 @@ export async function POST(req: Request) {
         "This payment is not available at the current project stage.",
       );
     const base = process.env.APP_URL;
-    if (!base || !["https:", "http:"].includes(new URL(base).protocol))
+    let returnAddress: URL;
+    try {
+      returnAddress = new URL(base || "");
+    } catch {
+      throw new Error("Payment return address is not configured.");
+    }
+    if (
+      !["https:", "http:"].includes(returnAddress.protocol) ||
+      (process.env.APP_ENV !== "development" &&
+        returnAddress.protocol !== "https:")
+    )
       throw new Error("Payment return address is not configured.");
     const s = stripe();
     let reservation = await client.rpc("reserve_checkout", {

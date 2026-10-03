@@ -16,3 +16,11 @@ test("checkout validates its return address before provider or reservation work"
     "checkout reservations must not be created before APP_URL validation",
   );
 });
+
+test("checkout permits HTTP return addresses only in development", () => {
+  assert.match(
+    source,
+    /process\.env\.APP_ENV\s*!==\s*"development"[\s\S]*?returnAddress\.protocol\s*!==\s*"https:"/,
+    "staging and production checkout callbacks must require HTTPS",
+  );
+});
