@@ -66,3 +66,18 @@ test("locking Review cancels active reattachment intent and instruction", async 
     "submitted or otherwise locked Review must cancel reattachment and clear its stale click instruction",
   );
 });
+
+test("an upload finishing after Review locks cannot add a Direction", async () => {
+  const source = await readFile("components/Review.tsx", "utf8");
+
+  assert.match(
+    source,
+    /const lockedRef = useRef\(locked\);\s*lockedRef\.current = locked;/,
+    "Review must retain the latest lock state across an in-flight upload",
+  );
+  assert.match(
+    source,
+    /const asset = await uploadAsset\(project\.id, file\); if \(lockedRef\.current\) \{ setMessage\("Upload finished after this Review was locked, so the attachment was not added\."\); return; \} add\(/,
+    "upload completion must re-check the current lock state before adding its Direction",
+  );
+});
