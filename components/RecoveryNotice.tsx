@@ -17,10 +17,15 @@ export default function RecoveryNotice({
     localWarning,
   } = editor;
   const recoveryAction = useRef<HTMLButtonElement>(null);
+  const conflictHeading = useRef<HTMLParagraphElement>(null);
 
   useEffect(() => {
     if (recovery) recoveryAction.current?.focus();
   }, [recovery]);
+
+  useEffect(() => {
+    if (conflict) conflictHeading.current?.focus();
+  }, [conflict]);
 
   return (
     <>
@@ -44,7 +49,7 @@ export default function RecoveryNotice({
       )}
       {conflict && (
         <section className="recovery-notice" aria-labelledby="conflict-heading">
-          <p id="conflict-heading" role="alert">
+          <p id="conflict-heading" role="alert" ref={conflictHeading} tabIndex={-1}>
             This document changed elsewhere. Your draft is preserved. Choose
             which version to continue editing, then Save.
           </p>
