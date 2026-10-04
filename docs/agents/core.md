@@ -7,12 +7,13 @@ Application/data architecture, persistence boundaries, auth boundaries, validati
 Derive the current boundary from latest `main`: the repository contains both the browser-local preview and a connected Next.js/Supabase customer application. Never promote local preview behavior to provider acceptance; grade connected behavior only to evidence actually observed.
 
 ## Latest handoff — 2026-10-04
-- Repaired the red `public-domain-resolution` backend regression after the public resolver privilege contract was tightened.
-- The behavioral test now matches the intended public/server-only matrix: `anon=true`, `authenticated=false`, `service_role=true`, while retaining launch/live routing assertions.
+- Hardened `analytics_summary(uuid,integer)` so range validation runs before interval arithmetic. Previously `days * 2` was evaluated in the declaration block before the supported-range guard, allowing a hostile/invalid `2147483647` range to raise integer overflow instead of the stable `Invalid analytics range` contract.
+- Added executable PGlite regression coverage for the maximum signed integer input while retaining null, ordinary-invalid, authorization and valid-summary coverage.
 - Evidence for this commit remains **S0 — Source** until exact-SHA automated validation is observed. No hosted Supabase/provider acceptance is claimed.
-- Next: continue the `SECURITY DEFINER` audit for customer/public/server RPCs; prefer executable role/scope regression coverage and only change production logic for a concrete least-privilege or integrity defect.
+- Next: continue the `SECURITY DEFINER` audit for customer/public/server RPCs; prefer executable role/scope regression coverage and inspect validation ordering for expressions that can fail before guards.
 
 ## Prior relevant work
+- `8546c81ec67ebc25535e4296a7fdb714c0b0d71f`: aligned public-domain resolution regression with the tightened `anon=true`, `authenticated=false`, `service_role=true` contract.
 - `da0119ed060bb4fc4d22d51c78c74b82ea6e3b55`: locked distributed request limiter privileges to service-role only.
 - `67418e19c29ecd1272aa66555135b13056a824a5`: executable privilege regression for the trigger-only `notify_project_event()` boundary.
 - `27b8d43aba0904176867df603ab68d21359f5e49`: executable privilege regression for server-only checkout rotation.
