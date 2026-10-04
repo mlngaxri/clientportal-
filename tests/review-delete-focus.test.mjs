@@ -24,6 +24,11 @@ test("stale Review selection only claims focus movement when Add Direction exist
   assert.match(source, /if \(!locked\) requestAnimationFrame\(\(\) => addDirectionButton\.current\?\.focus\(\)\);/, "focus recovery must remain limited to draft Review where Add Direction is available");
 });
 
+test("acknowledged Review identity clears stale selected Direction intent", async () => {
+  const source = await readFile("components/Review.tsx", "utf8");
+  assert.match(source, /commandGate\.current\.completed = null;\s*setCompletedCommand\(null\);\s*setUploading\(0\);\s*setSelected\(null\);\s*\}, \[board\.id, board\.status, board\.version\]\);/s, "selection must be scoped to the acknowledged Review identity so a matching Direction id on a replacement board cannot inherit stale editor intent");
+});
+
 test("stale Review reattachment is canceled when its Direction disappears", async () => {
   const source = await readFile("components/Review.tsx", "utf8");
   assert.match(source, /if \(!reattach \|\| data\.objects\.some\(\(object\) => object\.id === reattach\)\) return;\s*setReattach\(null\);\s*setAnnouncement\("Reattachment canceled because that Direction is no longer available\."\);/s, "acknowledged data removing the reattachment target must cancel the orphaned intent and announce it");
