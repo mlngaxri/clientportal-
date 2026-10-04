@@ -30,7 +30,7 @@ export function usePaymentReturn(projectId: string | undefined, onConfirmed: () 
     void check();
     return () => clearInterval(timer);
   }, [projectId]);
-  return { state, error, checking, timedOut, check, blocked: ["processing", "unknown"].includes(state) };
+  return { state, error, checking, timedOut, check, blocked: state === "processing" };
 }
 export default function PaymentReturn({ payment }: { payment: ReturnType<typeof usePaymentReturn> }) {
   if (!payment.state) return null;

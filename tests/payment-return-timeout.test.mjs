@@ -11,3 +11,9 @@ test("payment confirmation polling exposes a truthful timeout recovery state", (
   assert.match(source, /Payment confirmation is taking longer than expected\. Use Check confirmation to try again before starting another checkout\./);
   assert.match(source, /<p role="status">\{status\}<\/p>/);
 });
+
+test("unmatched payment returns do not expose an enabled no-op confirmation action", () => {
+  assert.match(source, /blocked: state === "processing"/);
+  assert.doesNotMatch(source, /blocked: \["processing", "unknown"\]\.includes\(state\)/);
+  assert.match(source, /unknown: "This checkout could not be matched to a payment\. Check Billing before paying again\./);
+});
