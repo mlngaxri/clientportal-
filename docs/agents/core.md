@@ -7,11 +7,12 @@ Application/data architecture, persistence boundaries, auth boundaries, validati
 Derive the current boundary from latest `main`: the repository contains both the browser-local preview and a connected Next.js/Supabase customer application. Never promote local preview behavior to provider acceptance; grade connected behavior only to evidence actually observed.
 
 ## Latest handoff — 2026-10-04
-- Added executable PGlite authorization coverage for `analytics_summary(uuid,integer)`, the customer analytics read boundary. The regression proves `anon` has no execute privilege, authenticated sessions can reach the RPC, an unrelated authenticated user is rejected by project scope, and the project owner receives the empty 7-day summary for their own project.
+- Added executable PGlite privilege coverage for `prepare_site_release(uuid,integer)`, the server-side release preparation boundary. The regression proves `anon` and `authenticated` cannot execute it while `service_role` can, locking the existing least-privilege contract against migration drift.
 - Evidence: **S0 — Source** until exact-SHA automated validation is observed. No hosted Supabase/provider acceptance is claimed.
 - Next: continue the `SECURITY DEFINER` audit for customer/public/server RPCs; prefer executable role/scope regression coverage and only change production logic for a concrete least-privilege or integrity defect.
 
 ## Prior relevant work
+- `d133be80c33de6814a0b629da90ee5f6b1c649d0`: executable authorization regression for customer `analytics_summary`.
 - `b62ccc38cf4cee0c22cbc21d6269a627b581da98`: executable authorization/no-side-effect regression for authenticated operator-only `register_site`.
 - `0e30efd0c636f9fd0341ac2e66207f6e13f992e0`: executable privilege regression for server-only `probe_site_storage`.
 - `0d0babdfd92e4e3c3f5adf60ee2c35cdaf61af11`: executable privilege regression for server-only `record_email_event` acknowledgement.
