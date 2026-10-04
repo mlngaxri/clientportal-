@@ -7,11 +7,12 @@ Application/data architecture, persistence boundaries, auth boundaries, validati
 Derive the current boundary from latest `main`: the repository contains both the browser-local preview and a connected Next.js/Supabase customer application. Never promote local preview behavior to provider acceptance; grade connected behavior only to evidence actually observed.
 
 ## Latest handoff — 2026-10-04
-- Added executable PGlite authorization coverage for `register_site(uuid,jsonb,jsonb)`, the authenticated agency website-definition boundary. The regression proves `anon` has no execute privilege, an ordinary authenticated project owner is rejected without creating either `site_documents` or `project_settings`, and an authenticated operator can register the site and create both records.
+- Added executable PGlite authorization coverage for `analytics_summary(uuid,integer)`, the customer analytics read boundary. The regression proves `anon` has no execute privilege, authenticated sessions can reach the RPC, an unrelated authenticated user is rejected by project scope, and the project owner receives the empty 7-day summary for their own project.
 - Evidence: **S0 — Source** until exact-SHA automated validation is observed. No hosted Supabase/provider acceptance is claimed.
-- Next: continue the `SECURITY DEFINER` audit for public/server RPCs, especially functions whose intended caller role is broader than their actual runtime contract; prefer executable privilege and no-side-effect regression coverage and only change production logic for a concrete least-privilege defect.
+- Next: continue the `SECURITY DEFINER` audit for customer/public/server RPCs; prefer executable role/scope regression coverage and only change production logic for a concrete least-privilege or integrity defect.
 
 ## Prior relevant work
+- `b62ccc38cf4cee0c22cbc21d6269a627b581da98`: executable authorization/no-side-effect regression for authenticated operator-only `register_site`.
 - `0e30efd0c636f9fd0341ac2e66207f6e13f992e0`: executable privilege regression for server-only `probe_site_storage`.
 - `0d0babdfd92e4e3c3f5adf60ee2c35cdaf61af11`: executable privilege regression for server-only `record_email_event` acknowledgement.
 - `bc5f6f3dbbb1a2aaeb88fec5bd807bb6bf570367`: executable privilege regression for server-only `connect_site_domain`.
