@@ -28,6 +28,7 @@ export default function SiteSetup({ project }: { project: Project }) {
         />
       </label>
       <button
+        type="button"
         disabled={busy}
         onClick={async () => {
           setBusy(true);
