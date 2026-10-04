@@ -29,6 +29,11 @@ test("stale Review reattachment is canceled when its Direction disappears", asyn
   assert.match(source, /if \(!reattach \|\| data\.objects\.some\(\(object\) => object\.id === reattach\)\) return;\s*setReattach\(null\);\s*setAnnouncement\("Reattachment canceled because that Direction is no longer available\."\);/s, "acknowledged data removing the reattachment target must cancel the orphaned intent and announce it");
 });
 
+test("changing acknowledged Review identity cancels stale reattachment intent", async () => {
+  const source = await readFile("components/Review.tsx", "utf8");
+  assert.match(source, /useEffect\(\(\) => \{\s*if \(!reattach\) return;\s*setReattach\(null\);\s*setMessage\(""\);\s*setAnnouncement\("Reattachment canceled because this Review changed\."\);\s*\}, \[boardIdentity\]\);/s, "a reattachment started on one Review must be canceled and announced when acknowledged board identity changes");
+});
+
 test("locking Review cancels active reattachment intent and instruction", async () => {
   const source = await readFile("components/Review.tsx", "utf8");
   assert.match(source, /if \(!locked \|\| !reattach\) return;\s*setReattach\(null\);\s*setMessage\(""\);\s*setAnnouncement\("Reattachment canceled because this Review is now locked\."\);/s, "submitted or otherwise locked Review must cancel reattachment and clear its stale click instruction");
