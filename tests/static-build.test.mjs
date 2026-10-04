@@ -121,3 +121,8 @@ test("domain operations announce their in-progress state", async () => {
   assert.match(source, /setNotice\(action === "connect" \? `Checking \$\{host\}…` : `Preparing DNS records for \$\{host\}…`\)/);
   assert.match(source, /\{notice && <p role="status">\{notice\}<\/p>\}/);
 });
+
+test("site setup action cannot submit an enclosing form", async () => {
+  const source = await readFile("components/SiteSetup.tsx", "utf8");
+  assert.match(source, /<button\s+type="button"\s+disabled=\{busy\}/);
+});
