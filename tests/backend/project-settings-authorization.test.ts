@@ -11,7 +11,7 @@ async function database() {
   return db;
 }
 
-test("project settings mutation is authenticated and owner-scoped without side effects", async () => {
+test("project settings are authenticated and project-scoped without side effects", async () => {
   const db = await database();
   const owner = randomUUID(), unrelated = randomUUID(), project = randomUUID();
   await db.query("insert into auth.users(id) values($1),($2)", [owner, unrelated]);
@@ -21,15 +21,17 @@ test("project settings mutation is authenticated and owner-scoped without side e
   assert.equal(privileges.anon, false);
   assert.equal(privileges.authenticated, true);
 
-  const value = { timezone: "Australia/Brisbane", notifyForms: false, notifyProject: false };
+  const value = { timezone: "Australia/Brisbane", notifyForms: false, notifyProject: true };
   await db.query("select set_config('test.uid',$1,false)", [unrelated]);
   await assert.rejects(() => db.query("select update_project_settings($1,0,$2::jsonb)", [project, JSON.stringify(value)]), /Project not found or access denied/);
   assert.equal((await db.query<{ count: number }>("select count(*)::int as count from project_settings where project_id=$1", [project])).rows[0].count, 0);
 
   await db.query("select set_config('test.uid',$1,false)", [owner]);
-  const settings = (await db.query<{ value: { revision: number; notify_forms: boolean; notify_project: boolean } }>("select update_project_settings($1,0,$2::jsonb) as value", [project, JSON.stringify(value)])).rows[0].value;
-  assert.equal(settings.revision, 1);
-  assert.equal(settings.notify_forms, false);
-  assert.equal(settings.notify_project, false);
+  const saved = (await db.query<{ value: { revision: number; timezone: string; notify_forms: boolean; notify_project: boolean } }>("select update_project_settings($1,0,$2::jsonb) as value", [project, JSON.stringify(value)])).rows[0].value;
+  assert.equal(saved.revision, 1);
+  assert.equal(saved.timezone, value.timezone);
+  assert.equal(saved.notify_forms, value.notifyForms);
+  assert.equal(saved.notify_project, value.notifyProject);
+  assert.equal((await db.query<{ count: number }>("select count(*)::int as count from project_settings where project_id=$1", [project])).rows[0].count, 1);
   await db.close();
 });
