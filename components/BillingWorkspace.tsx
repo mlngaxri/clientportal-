@@ -121,29 +121,31 @@ export default function BillingWorkspace({
           <button type="button" disabled={busy} onClick={() => onPay("pro")}>Restart Pro · A$39/month</button>
         )}
       <h2>Payment history</h2>
-      <table className="connected-table">
-        <thead>
-          <tr>
-            <th>Payment</th>
-            <th>Date</th>
-            <th>Amount</th>
-          </tr>
-        </thead>
-        <tbody>
-          {receipts.map((p) => (
-            <tr key={p.id}>
-              <td>{paymentNames[p.kind] || "Website payment"}<button type="button" className="text-button" onClick={() => setReceipt(p)}>View confirmation</button></td>
-              <td>{new Date(p.paid_at).toLocaleDateString()}</td>
-              <td>
-                {new Intl.NumberFormat("en-AU", {
-                  style: "currency",
-                  currency: "AUD",
-                }).format(p.amount / 100)}
-              </td>
+      <div role="region" aria-label="Payment history" tabIndex={0} style={{ overflowX: "auto" }}>
+        <table className="connected-table">
+          <thead>
+            <tr>
+              <th>Payment</th>
+              <th>Date</th>
+              <th>Amount</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {receipts.map((p) => (
+              <tr key={p.id}>
+                <td>{paymentNames[p.kind] || "Website payment"}<button type="button" className="text-button" onClick={() => setReceipt(p)}>View confirmation</button></td>
+                <td>{new Date(p.paid_at).toLocaleDateString()}</td>
+                <td>
+                  {new Intl.NumberFormat("en-AU", {
+                    style: "currency",
+                    currency: "AUD",
+                  }).format(p.amount / 100)}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
       {!loading && !error && !receipts.length && <p>No confirmed payments yet.</p>}
       {receipt && <Dialog title="Payment confirmation" onClose={() => setReceipt(null)}><dl><dt>For</dt><dd>{paymentNames[receipt.kind] || "Website payment"} · {project.name}</dd><dt>Amount</dt><dd>A${(receipt.amount / 100).toFixed(2)}</dd><dt>Confirmed</dt><dd>{new Date(receipt.paid_at).toLocaleString()}</dd><dt>Reference</dt><dd className="connected-code">{receipt.id}</dd></dl><p>This is your Fourthform payment record. Your payment provider sends its receipt to your checkout email address.</p><button type="button" onClick={() => { const url = URL.createObjectURL(new Blob([`Fourthform payment confirmation\n${project.name}\n${paymentNames[receipt.kind] || receipt.kind}\nA$${(receipt.amount / 100).toFixed(2)}\n${receipt.paid_at}\nReference: ${receipt.id}`], { type: "text/plain" })); const a = document.createElement("a"); a.href = url; a.download = "fourthform-payment-confirmation.txt"; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000); }}>Download confirmation</button></Dialog>}
     </section>
