@@ -17,7 +17,7 @@ test("can_access is executable only by authenticated customer sessions", async (
         select exists(select 1 from projects where id=pid and (owner_id=auth.uid() or public.is_operator()))
       $$;
     `);
-    await db.exec(await readFile("supabase/migrations/028_can_access_privileges.sql", "utf8"));
+    await db.exec(await readFile("supabase/migrations/029_can_access_privileges.sql", "utf8"));
 
     const privilege = async (role: string) =>
       (await db.query<{ allowed: boolean }>(

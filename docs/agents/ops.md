@@ -94,3 +94,10 @@ No autonomous run recorded under the refined protocol yet.
 - Current blocker: run 202 fails only in the final connected-browser password-recovery check while waiting for the New password field. Builder 5/Core own that cross-cutting auth release blocker; no billing/provider failure is evidenced by the run.
 - Boundary: this proves the billing isolation source and its automated regression on a descendant SHA only. It does not claim Stripe acceptance, live deployment or provider behavior.
 - Next: inspect Pro entitlement loss after State activation and prove request-time rendering falls back to usual content without deleting or mutating the pinned release snapshot.
+
+### 2026-10-04 — Repair duplicate migration version
+- Validation run 349 passed install, typecheck and all preview tests, then failed the backend migration-version invariant because `028` was assigned twice. Supabase startup, build and browser stages were skipped after `npm test` failed.
+- Renumbered the new `can_access(uuid)` privilege hardening migration from `028` to `029` without changing its SQL semantics, and updated its executable privilege regression to load the new migration path.
+- Evidence: **S0 — Source** until exact-SHA validation is observed.
+- Boundary: this repairs migration ordering only. It does not claim a hosted migration, deployment, authentication/provider acceptance or production authorization change.
+- Next: after CI clears the migration chain, continue the operations trust-boundary audit from current main.
