@@ -43,6 +43,12 @@ export default function Review({ project, board, otherBoards, onRefresh }: { pro
     setAnnouncement("Reattachment canceled because that Direction is no longer available.");
   }, [reattach, data.objects]);
   useEffect(() => {
+    if (!reattach) return;
+    setReattach(null);
+    setMessage("");
+    setAnnouncement("Reattachment canceled because this Review changed.");
+  }, [boardIdentity]);
+  useEffect(() => {
     if (!locked || !reattach) return;
     setReattach(null);
     setMessage("");
