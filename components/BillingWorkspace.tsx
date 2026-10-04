@@ -58,6 +58,7 @@ export default function BillingWorkspace({
         </div>
       </header>
       {loading && <p role="status">Loading confirmed billing records…</p>}
+      {managing && <p role="status">Opening secure billing portal…</p>}
       {error && <div role="alert"><p>{error}</p><button type="button" onClick={() => setAttempt((n) => n + 1)}>Reload billing</button></div>}
       <div className="connected-grid">
         <div className="connected-card">
