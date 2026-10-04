@@ -16,7 +16,7 @@ test("public domain resolution exposes only connected launch/live projects", asy
   const owner = randomUUID();
   const draft = randomUUID(), launch = randomUUID(), live = randomUUID();
   await db.query("insert into auth.users(id) values($1)", [owner]);
-  await db.query("insert into projects(id,owner_id,phase) values($1,$4,'BUILD'),($2,$4,'LAUNCH'),($3,$4,'LIVE')", [draft, launch, live, owner]);
+  await db.query("insert into projects(id,owner_id,phase) values($1,$4,'BUILDING'),($2,$4,'LAUNCH'),($3,$4,'LIVE')", [draft, launch, live, owner]);
   await db.query(`insert into site_domains(hostname,project_id,status) values
     ('draft.example.test',$1,'connected'),
     ('launch.example.test',$2,'connected'),
