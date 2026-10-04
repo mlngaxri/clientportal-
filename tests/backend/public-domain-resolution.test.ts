@@ -23,11 +23,13 @@ test("public domain resolution exposes only connected launch/live projects", asy
     ('live.example.test',$3,'connected'),
     ('owned.example.test',$3,'owned')`, [draft, launch, live]);
 
-  const privileges = (await db.query<{ anon: boolean; authenticated: boolean }>(`select
+  const privileges = (await db.query<{ anon: boolean; authenticated: boolean; service_role: boolean }>(`select
     has_function_privilege('anon','public.resolve_public_domain(text)','EXECUTE') as anon,
-    has_function_privilege('authenticated','public.resolve_public_domain(text)','EXECUTE') as authenticated`)).rows[0];
+    has_function_privilege('authenticated','public.resolve_public_domain(text)','EXECUTE') as authenticated,
+    has_function_privilege('service_role','public.resolve_public_domain(text)','EXECUTE') as service_role`)).rows[0];
   assert.equal(privileges.anon, true);
-  assert.equal(privileges.authenticated, true);
+  assert.equal(privileges.authenticated, false);
+  assert.equal(privileges.service_role, true);
 
   const resolve = async (host: string) => (await db.query<{ project_id: string | null }>("select resolve_public_domain($1) as project_id", [host])).rows[0].project_id;
   assert.equal(await resolve("DRAFT.EXAMPLE.TEST"), null);

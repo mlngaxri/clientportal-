@@ -7,12 +7,13 @@ Application/data architecture, persistence boundaries, auth boundaries, validati
 Derive the current boundary from latest `main`: the repository contains both the browser-local preview and a connected Next.js/Supabase customer application. Never promote local preview behavior to provider acceptance; grade connected behavior only to evidence actually observed.
 
 ## Latest handoff — 2026-10-04
-- Strengthened executable PGlite privilege coverage for the distributed `consume_request_limit(text,integer,integer)` abuse-control RPC.
-- The regression now locks the existing backend-only contract explicitly: `anon=false`, `authenticated=false`, and `service_role=true`, in addition to the existing authenticated denial and rate-limit behavior checks.
-- Evidence for this new commit remains **S0 — Source** until exact-SHA automated validation is observed. No hosted Supabase/provider acceptance is claimed.
+- Repaired the red `public-domain-resolution` backend regression after the public resolver privilege contract was tightened.
+- The behavioral test now matches the intended public/server-only matrix: `anon=true`, `authenticated=false`, `service_role=true`, while retaining launch/live routing assertions.
+- Evidence for this commit remains **S0 — Source** until exact-SHA automated validation is observed. No hosted Supabase/provider acceptance is claimed.
 - Next: continue the `SECURITY DEFINER` audit for customer/public/server RPCs; prefer executable role/scope regression coverage and only change production logic for a concrete least-privilege or integrity defect.
 
 ## Prior relevant work
+- `da0119ed060bb4fc4d22d51c78c74b82ea6e3b55`: locked distributed request limiter privileges to service-role only.
 - `67418e19c29ecd1272aa66555135b13056a824a5`: executable privilege regression for the trigger-only `notify_project_event()` boundary.
 - `27b8d43aba0904176867df603ab68d21359f5e49`: executable privilege regression for server-only checkout rotation.
 - `a19c45f6b67472aec8c0e39b3854e36f421399e2`: executable privilege regression for server-only payment acknowledgement.
