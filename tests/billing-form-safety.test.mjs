@@ -21,3 +21,10 @@ test("billing clears project-specific records before a refresh", async () => {
   assert.match(setup, /setReceipt\(null\)/);
   assert.match(setup, /setManaging\(false\)/);
 });
+
+test("billing announces billing portal launch progress", async () => {
+  const source = await readFile("components/BillingWorkspace.tsx", "utf8");
+  assert.match(source, /\{managing && <p role="status">Opening secure billing portal…<\/p>\}/);
+  assert.match(source, /setManaging\(true\); setError\(""\)/);
+  assert.match(source, /catch \(e\) \{ setError\(\(e as Error\)\.message\); setManaging\(false\); \}/);
+});
