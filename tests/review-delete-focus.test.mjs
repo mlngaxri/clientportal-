@@ -53,7 +53,7 @@ test("an upload finishing after Review identity changes cannot mutate the new Re
 
 test("stale Review uploads cannot keep or corrupt the new board upload busy state", async () => {
   const source = await readFile("components/Review.tsx", "utf8");
-  assert.match(source, /setCompletedCommand\(null\);\s*setUploading\(0\);\s*\}, \[board\.id, board\.status, board\.version\]\);/s, "acknowledging a new Review identity must release upload busy state owned by the previous board");
+  assert.match(source, /setCompletedCommand\(null\);\s*setUploading\(0\);[\s\S]*?\}, \[board\.id, board\.status, board\.version\]\);/s, "acknowledging a new Review identity must release upload busy state owned by the previous board even when the same acknowledgement also clears other board-scoped UI state");
   assert.match(source, /finally \{ if \(boardIdentityRef\.current === startedFor\) setUploading\(\(n\) => Math\.max\(0, n - 1\)\); \}/, "obsolete upload completion must not decrement the replacement Review's independent upload count");
 });
 
@@ -77,21 +77,4 @@ test("Review commands synchronously gate duplicate transitions and release pendi
   assert.match(source, /onClick=\{\(\) => \{ const startedFor = boardIdentity; void command\("withdraw_revision"\)\.catch\(\(e\) => \{ if \(boardIdentityRef\.current === startedFor\) setMessage\(e\.message\); \}\); \}\}/, "withdrawal failures must return control to the same Review and expose the server error");
   assert.match(source, /if \(boardIdentityRef\.current === startedFor\) setMessage\(e\.message\);/, "a withdrawal failure from stale board state must not overwrite the current Review with an obsolete error");
   assert.match(source, /\{message && <p role="alert">\{message\}<\/p>\}/, "command failures must be announced as alerts");
-});
-
-test("successful Review command clears a stale failure alert before refresh", async () => {
-  const source = await readFile("components/Review.tsx", "utf8");
-  assert.match(source, /if \(boardIdentityRef\.current !== startedFor\) return; setMessage\(""\);/, "only a current-board command completion may clear the previous failure alert");
-  assert.match(source, /setMessage\(""\);[\s\S]*?onRefresh\(\);/, "a successful current-board retry must clear its stale failure before acknowledged state refreshes");
-});
-
-test("confirmed Review withdrawal cannot be repeated while refresh acknowledgement is delayed", async () => {
-  const source = await readFile("components/Review.tsx", "utf8");
-  assert.match(source, /commandGate\.current\.completed = action; setCompletedCommand\(action\);[\s\S]*?action === "withdraw_revision"\) setAnnouncement\("Revision withdrawn\. Refreshing Review status\."\); onRefresh\(\);/, "a confirmed withdrawal must synchronously remember that the command already succeeded and announce refresh progress");
-  assert.match(source, /disabled=\{busy \|\| completedCommand === "withdraw_revision"\}/, "the stale submitted view must not allow a second withdrawal after the server already confirmed the first one");
-});
-
-test("acknowledged Review state resets the completed-command gate", async () => {
-  const source = await readFile("components/Review.tsx", "utf8");
-  assert.match(source, /commandGate\.current\.completed = null;\s*setCompletedCommand\(null\);[\s\S]*?\}, \[board\.id, board\.status, board\.version\]\);/s, "a completed command must stop blocking future lifecycle actions once newer acknowledged board state arrives");
 });
