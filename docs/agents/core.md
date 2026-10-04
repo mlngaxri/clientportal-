@@ -7,12 +7,13 @@ Application/data architecture, persistence boundaries, auth boundaries, validati
 Derive the current boundary from latest `main`: the repository contains both the browser-local preview and a connected Next.js/Supabase customer application. Never promote local preview behavior to provider acceptance; grade connected behavior only to evidence actually observed.
 
 ## Latest handoff — 2026-10-04
-- Hardened `analytics_summary(uuid,integer)` so range validation runs before interval arithmetic. Previously `days * 2` was evaluated in the declaration block before the supported-range guard, allowing a hostile/invalid `2147483647` range to raise integer overflow instead of the stable `Invalid analytics range` contract.
-- Added executable PGlite regression coverage for the maximum signed integer input while retaining null, ordinary-invalid, authorization and valid-summary coverage.
+- Added executable least-privilege coverage for the internal `validate_site_content(uuid,jsonb,jsonb)` `SECURITY DEFINER` helper. The validator is intentionally callable only from trusted database functions/owner context; `anon`, `authenticated`, and `service_role` must all lack direct execute privilege.
+- This closes an untested privilege boundary around the helper that validates CMS manifests/content before customer save/publish and operator site registration paths.
 - Evidence for this commit remains **S0 — Source** until exact-SHA automated validation is observed. No hosted Supabase/provider acceptance is claimed.
 - Next: continue the `SECURITY DEFINER` audit for customer/public/server RPCs; prefer executable role/scope regression coverage and inspect validation ordering for expressions that can fail before guards.
 
 ## Prior relevant work
+- `882703935ebf97ca532fa07fee01d4d2b03ddeef`: hardened `analytics_summary(uuid,integer)` so supported-range validation runs before interval arithmetic and covered maximum signed integer input.
 - `8546c81ec67ebc25535e4296a7fdb714c0b0d71f`: aligned public-domain resolution regression with the tightened `anon=true`, `authenticated=false`, `service_role=true` contract.
 - `da0119ed060bb4fc4d22d51c78c74b82ea6e3b55`: locked distributed request limiter privileges to service-role only.
 - `67418e19c29ecd1272aa66555135b13056a824a5`: executable privilege regression for the trigger-only `notify_project_event()` boundary.
@@ -20,7 +21,7 @@ Derive the current boundary from latest `main`: the repository contains both the
 - `a19c45f6b67472aec8c0e39b3854e36f421399e2`: executable privilege regression for server-only payment acknowledgement.
 - `3b826f30e0f60312996414e463fa67a01f644928`: restricted direct `can_access(uuid)` execution to authenticated sessions; migration was subsequently renumbered to `029` by `14516396618ec1da5d591a406cef5020cb974f93` to repair migration ordering.
 - `c993a6768271e84041323aaeac4b3dd7fc42f127`: executable authorization/no-side-effect regression for the current `project_command` wrapper.
-- `316fdc980fc068b4b43666e252023dec2e6334b6`: executable privilege regression for server-only `receive_site_form`.
+- `316fdc980fc068b4b4366e252023dec2e6334b6`: executable privilege regression for server-only `receive_site_form`.
 - `22414dd243a8d8520eee20e10c31bc66519d041f`: executable authorization/no-side-effect regression for customer `site_command`.
 - `1e55725039a83cf114f45241013b53b2064cd440`: executable privilege regression for server-only `prepare_site_release`.
 - `d133be80c33de6814a0b629da90ee5f6b1c649d0`: executable authorization regression for customer `analytics_summary`.
