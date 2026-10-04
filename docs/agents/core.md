@@ -7,12 +7,14 @@ Application/data architecture, persistence boundaries, auth boundaries, validati
 Derive the current boundary from latest `main`: the repository contains both the browser-local preview and a connected Next.js/Supabase customer application. Never promote local preview behavior to provider acceptance; grade connected behavior only to evidence actually observed.
 
 ## Latest handoff — 2026-10-04
-- Added executable PGlite privilege coverage for the `SECURITY DEFINER` payment acknowledgement boundary `record_payment(text,text,uuid,text,integer,text)`.
-- The regression locks the existing server-only contract to `anon=false`, `authenticated=false`, and `service_role=true`, protecting Stripe-confirmed payment mutation from privilege drift.
-- Current main validation run 351 was green before this change; evidence for this new commit remains **S0 — Source** until exact-SHA automated validation is observed. No Stripe/provider acceptance is claimed.
+- Added executable PGlite privilege coverage for the `SECURITY DEFINER` audit-event trigger `notify_project_event()`.
+- The regression locks the existing trigger-only contract: `anon=false`, `authenticated=false`, and `service_role=false`, preventing API roles from directly invoking notification side effects while PostgreSQL can still execute the trigger internally.
+- Evidence for this new commit remains **S0 — Source** until exact-SHA automated validation is observed. No email/provider acceptance is claimed.
 - Next: continue the `SECURITY DEFINER` audit for customer/public/server RPCs; prefer executable role/scope regression coverage and only change production logic for a concrete least-privilege or integrity defect.
 
 ## Prior relevant work
+- `27b8d43aba0904176867df603ab68d21359f5e49`: executable privilege regression for server-only checkout rotation.
+- `a19c45f6b67472aec8c0e39b3854e36f421399e2`: executable privilege regression for server-only payment acknowledgement.
 - `3b826f30e0f60312996414e463fa67a01f644928`: restricted direct `can_access(uuid)` execution to authenticated sessions; migration was subsequently renumbered to `029` by `14516396618ec1da5d591a406cef5020cb974f93` to repair migration ordering.
 - `c993a6768271e84041323aaeac4b3dd7fc42f127`: executable authorization/no-side-effect regression for the current `project_command` wrapper.
 - `316fdc980fc068b4b43666e252023dec2e6334b6`: executable privilege regression for server-only `receive_site_form`.

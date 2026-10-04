@@ -21,3 +21,24 @@ test("notification claiming is service-role only", async () => {
   assert.equal(privileges.service_role, true);
   await db.close();
 });
+
+test("project notification trigger cannot be invoked directly by API roles", async () => {
+  const db = new PGlite();
+  try {
+    await db.exec(`create role anon;create role authenticated;create role service_role;create schema auth;create schema storage;create table auth.users(id uuid primary key,email text);create function auth.uid() returns uuid language sql as $$select nullif(current_setting('test.uid',true),'')::uuid$$;create function auth.jwt() returns jsonb language sql as $$select '{}'::jsonb$$;create table storage.buckets(id text primary key,name text,public boolean,file_size_limit bigint);`);
+    await db.exec(await readFile("supabase/migrations/001_fourthform.sql", "utf8"));
+    await db.exec(await readFile("supabase/migrations/007_connected_sites.sql", "utf8"));
+    await db.exec(await readFile("supabase/migrations/010_notifications.sql", "utf8"));
+
+    const privileges = (await db.query<any>(`select
+      has_function_privilege('anon','public.notify_project_event()','execute') anon,
+      has_function_privilege('authenticated','public.notify_project_event()','execute') authenticated,
+      has_function_privilege('service_role','public.notify_project_event()','execute') service_role`)).rows[0];
+
+    assert.equal(privileges.anon, false);
+    assert.equal(privileges.authenticated, false);
+    assert.equal(privileges.service_role, false);
+  } finally {
+    await db.close();
+  }
+});
