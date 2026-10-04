@@ -35,6 +35,17 @@ test("distributed limiter enforces capacity, expiry, validation and backend-only
     await db.exec(
       await readFile("supabase/migrations/005_abuse_limits.sql", "utf8"),
     );
+
+    const privilege = async (role: string) =>
+      (await db.query<{ allowed: boolean }>(
+        "select has_function_privilege($1, 'public.consume_request_limit(text,integer,integer)', 'EXECUTE') as allowed",
+        [role],
+      )).rows[0].allowed;
+
+    assert.equal(await privilege("anon"), false);
+    assert.equal(await privilege("authenticated"), false);
+    assert.equal(await privilege("service_role"), true);
+
     const hit = async () =>
       (await db.query<any>("select consume_request_limit('bucket',2,60) as r"))
         .rows[0].r;

@@ -7,12 +7,13 @@ Application/data architecture, persistence boundaries, auth boundaries, validati
 Derive the current boundary from latest `main`: the repository contains both the browser-local preview and a connected Next.js/Supabase customer application. Never promote local preview behavior to provider acceptance; grade connected behavior only to evidence actually observed.
 
 ## Latest handoff — 2026-10-04
-- Added executable PGlite privilege coverage for the `SECURITY DEFINER` audit-event trigger `notify_project_event()`.
-- The regression locks the existing trigger-only contract: `anon=false`, `authenticated=false`, and `service_role=false`, preventing API roles from directly invoking notification side effects while PostgreSQL can still execute the trigger internally.
-- Evidence for this new commit remains **S0 — Source** until exact-SHA automated validation is observed. No email/provider acceptance is claimed.
+- Strengthened executable PGlite privilege coverage for the distributed `consume_request_limit(text,integer,integer)` abuse-control RPC.
+- The regression now locks the existing backend-only contract explicitly: `anon=false`, `authenticated=false`, and `service_role=true`, in addition to the existing authenticated denial and rate-limit behavior checks.
+- Evidence for this new commit remains **S0 — Source** until exact-SHA automated validation is observed. No hosted Supabase/provider acceptance is claimed.
 - Next: continue the `SECURITY DEFINER` audit for customer/public/server RPCs; prefer executable role/scope regression coverage and only change production logic for a concrete least-privilege or integrity defect.
 
 ## Prior relevant work
+- `67418e19c29ecd1272aa66555135b13056a824a5`: executable privilege regression for the trigger-only `notify_project_event()` boundary.
 - `27b8d43aba0904176867df603ab68d21359f5e49`: executable privilege regression for server-only checkout rotation.
 - `a19c45f6b67472aec8c0e39b3854e36f421399e2`: executable privilege regression for server-only payment acknowledgement.
 - `3b826f30e0f60312996414e463fa67a01f644928`: restricted direct `can_access(uuid)` execution to authenticated sessions; migration was subsequently renumbered to `029` by `14516396618ec1da5d591a406cef5020cb974f93` to repair migration ordering.
