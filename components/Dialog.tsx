@@ -10,14 +10,14 @@ export default function Dialog({
   children: React.ReactNode;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
+  const previousFocus = useRef<HTMLElement | null>(typeof document === "undefined" ? null : document.activeElement as HTMLElement | null);
   const titleId = useId();
   useEffect(() => {
     const el = ref.current;
-    const previousFocus = document.activeElement as HTMLElement | null;
     if (el && !el.open) el.showModal();
     return () => {
       el?.close();
-      if (previousFocus?.isConnected) previousFocus.focus();
+      if (previousFocus.current?.isConnected) previousFocus.current.focus();
     };
   }, []);
   return (
