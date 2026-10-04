@@ -78,3 +78,20 @@ test("Review commands synchronously gate duplicate transitions and release pendi
   assert.match(source, /if \(boardIdentityRef\.current === startedFor\) setMessage\(e\.message\);/, "a withdrawal failure from stale board state must not overwrite the current Review with an obsolete error");
   assert.match(source, /\{message && <p role="alert">\{message\}<\/p>\}/, "command failures must be announced as alerts");
 });
+
+test("successful Review command clears a stale failure alert before refresh", async () => {
+  const source = await readFile("components/Review.tsx", "utf8");
+  assert.match(source, /if \(boardIdentityRef\.current !== startedFor\) return; setMessage\(""\);/, "only a current-board command completion may clear the previous failure alert");
+  assert.match(source, /setMessage\(""\);[\s\S]*?onRefresh\(\);/, "a successful current-board retry must clear its stale failure before acknowledged state refreshes");
+});
+
+test("confirmed Review withdrawal cannot be repeated while refresh acknowledgement is delayed", async () => {
+  const source = await readFile("components/Review.tsx", "utf8");
+  assert.match(source, /commandGate\.current\.completed = action; setCompletedCommand\(action\);[\s\S]*?action === "withdraw_revision"\) setAnnouncement\("Revision withdrawn\. Refreshing Review status\."\); onRefresh\(\);/, "a confirmed withdrawal must synchronously remember that the command already succeeded and announce refresh progress");
+  assert.match(source, /disabled=\{busy \|\| completedCommand === "withdraw_revision"\}/, "the stale submitted view must not allow a second withdrawal after the server already confirmed the first one");
+});
+
+test("acknowledged Review state resets the completed-command gate", async () => {
+  const source = await readFile("components/Review.tsx", "utf8");
+  assert.match(source, /commandGate\.current\.completed = null;\s*setCompletedCommand\(null\);[\s\S]*?\}, \[board\.id, board\.status, board\.version\]\);/s, "a completed command must stop blocking future lifecycle actions once newer acknowledged board state arrives");
+});
