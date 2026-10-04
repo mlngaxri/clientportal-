@@ -31,6 +31,7 @@ export default function Review({ project, board, otherBoards, onRefresh }: { pro
     commandGate.current.completed = null;
     setCompletedCommand(null);
     setUploading(0);
+    setSelected(null);
   }, [board.id, board.status, board.version]);
   useEffect(() => {
     if (!selected || data.objects.some((object) => object.id === selected)) return;
