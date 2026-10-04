@@ -14,3 +14,16 @@ test("Pro analytics comparison stays keyboard-scrollable on narrow layouts", asy
   assert.match(comparison, /overflowX: "auto"/);
   assert.match(comparison, /<table className="connected-table">/);
 });
+
+test("Analytics breakdown tables stay keyboard-scrollable on narrow layouts", async () => {
+  const source = await readFile("components/AnalyticsWorkspace.tsx", "utf8");
+  const grid = source.indexOf('<div className="connected-grid">');
+  const pro = source.indexOf("{data.pro &&", grid);
+  assert.ok(grid >= 0 && pro > grid, "expected the analytics breakdown grid");
+  const breakdowns = source.slice(grid, pro);
+  assert.match(breakdowns, /role="region"/);
+  assert.match(breakdowns, /aria-label=\{`\$\{String\(label\)\} analytics table`\}/);
+  assert.match(breakdowns, /tabIndex=\{0\}/);
+  assert.match(breakdowns, /overflowX: "auto"/);
+  assert.match(breakdowns, /<table className="connected-table">/);
+});
