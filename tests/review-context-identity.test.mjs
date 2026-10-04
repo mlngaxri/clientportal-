@@ -12,8 +12,8 @@ test("Review preview context is scoped to the acknowledged board identity", asyn
   );
   assert.match(
     source,
-    /onContext=\{next => setContextState\(previous => previous\?\.identity === boardIdentity && previous\.target\?\.page === next\?\.page && previous\.target\?\.width === next\?\.width && previous\.target\?\.scroll === next\?\.scroll \? previous : \{ identity: boardIdentity, target: next \}\)\}/,
-    "preview context updates must be tagged with the acknowledged Review identity that produced them",
+    /onContext=\{next => \{ if \(boardIdentityRef\.current !== boardIdentity\) return; setContextState\(previous => previous\?\.identity === boardIdentity && previous\.target\?\.page === next\?\.page && previous\.target\?\.width === next\?\.width && previous\.target\?\.scroll === next\?\.scroll \? previous : \{ identity: boardIdentity, target: next \}\); \}\}/,
+    "preview context updates must reject stale canvas callbacks and tag accepted context with the acknowledged Review identity",
   );
   assert.match(
     source,
