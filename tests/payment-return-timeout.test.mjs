@@ -12,6 +12,11 @@ test("payment confirmation polling exposes a truthful timeout recovery state", (
   assert.match(source, /<p role="status">\{status\}<\/p>/);
 });
 
+test("confirmed payments stop the bounded polling loop immediately", () => {
+  assert.match(source, /if \(result\.state === "confirmed"\) \{ key\.current = ""; callback\.current\(\); \}/);
+  assert.match(source, /if \(!key\.current\) \{ clearInterval\(timer\); return; \}/);
+});
+
 test("unmatched payment returns do not expose an enabled no-op confirmation action", () => {
   assert.match(source, /blocked: state === "processing"/);
   assert.doesNotMatch(source, /blocked: \["processing", "unknown"\]\.includes\(state\)/);
