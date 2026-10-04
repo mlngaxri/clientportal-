@@ -72,7 +72,10 @@ export default function PasswordRecovery({
                     aria-invalid={passwordMismatch || undefined}
                     aria-describedby={passwordMismatch ? "password-error" : undefined}
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    onChange={(e) => {
+                      setPassword(e.target.value);
+                      if (passwordMismatch) setError("");
+                    }}
                   />
                 </label>
                 <label>
@@ -84,7 +87,10 @@ export default function PasswordRecovery({
                     aria-invalid={passwordMismatch || undefined}
                     aria-describedby={passwordMismatch ? "password-error" : undefined}
                     value={confirmation}
-                    onChange={(e) => setConfirmation(e.target.value)}
+                    onChange={(e) => {
+                      setConfirmation(e.target.value);
+                      if (passwordMismatch) setError("");
+                    }}
                   />
                 </label>
               </>
