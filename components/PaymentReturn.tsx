@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { api } from "../lib/client";
 export function usePaymentReturn(projectId: string | undefined, onConfirmed: () => void) {
-  const [state, setState] = useState(""), [error, setError] = useState(""), [checking, setChecking] = useState(false);
+  const [state, setState] = useState(""), [error, setError] = useState(""), [checking, setChecking] = useState(false), [timedOut, setTimedOut] = useState(false);
   const key = useRef(""), callback = useRef(onConfirmed), running = useRef(false);
   callback.current = onConfirmed;
   async function check() {
@@ -18,15 +18,19 @@ export function usePaymentReturn(projectId: string | undefined, onConfirmed: () 
   useEffect(() => {
     const query = new URLSearchParams(location.search), payment = query.get("payment");
     key.current = query.get("checkout") || "";
+    setTimedOut(false);
     if (payment === "cancelled") { setState("cancelled"); return; }
     if (payment !== "processing") return;
     setState(key.current ? "processing" : "unknown");
     let attempts = 0;
-    const timer = setInterval(() => { if (++attempts >= 20) clearInterval(timer); void check(); }, 3000);
+    const timer = setInterval(() => {
+      if (++attempts >= 20) { clearInterval(timer); setTimedOut(true); return; }
+      void check();
+    }, 3000);
     void check();
     return () => clearInterval(timer);
   }, [projectId]);
-  return { state, error, checking, check, blocked: ["processing", "unknown"].includes(state) };
+  return { state, error, checking, timedOut, check, blocked: ["processing", "unknown"].includes(state) };
 }
 export default function PaymentReturn({ payment }: { payment: ReturnType<typeof usePaymentReturn> }) {
   if (!payment.state) return null;
@@ -37,6 +41,10 @@ export default function PaymentReturn({ payment }: { payment: ReturnType<typeof 
     expired: "This checkout expired without a confirmed payment. You can start a new checkout.",
     unknown: "This checkout could not be matched to a payment. Check Billing before paying again. If confirmation is delayed, contact Fourthform through your project.",
   };
-  const status = payment.checking ? "Checking payment confirmation…" : messages[payment.state];
+  const status = payment.checking
+    ? "Checking payment confirmation…"
+    : payment.timedOut && payment.state === "processing"
+      ? "Payment confirmation is taking longer than expected. Use Check confirmation to try again before starting another checkout."
+      : messages[payment.state];
   return <section className="recovery-notice" aria-label="Payment status"><p role="status">{status}</p>{payment.blocked && <button type="button" disabled={payment.checking} onClick={() => void payment.check()}>{payment.checking ? "Checking payment…" : "Check confirmation"}</button>}{payment.error && <p role="alert">{payment.error}</p>}</section>;
 }
