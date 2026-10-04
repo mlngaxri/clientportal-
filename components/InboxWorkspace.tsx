@@ -40,12 +40,13 @@ export default function InboxWorkspace({ projectId }: { projectId: string }) {
   }, [projectId]);
   async function status(id: string, value: string) {
     if (pendingRows.includes(id)) return;
+    const restoring = value === "new" && messages.find(item => item.id === id)?.status === "archived";
     setPendingRows(rows => [...rows, id]);
     setError("");
-    setNotice(value === "new" ? "Marking enquiry unread…" : value === "read" ? "Marking enquiry read…" : "Archiving enquiry…");
+    setNotice(restoring ? "Restoring enquiry…" : value === "new" ? "Marking enquiry unread…" : value === "read" ? "Marking enquiry read…" : "Archiving enquiry…");
     try {
       await api(`/api/projects/${projectId}/forms`, { id, status: value });
-      setNotice(`Enquiry ${value === "new" ? "marked unread" : value === "read" ? "marked read" : "archived"}.`);
+      setNotice(restoring ? "Enquiry restored." : `Enquiry ${value === "new" ? "marked unread" : value === "read" ? "marked read" : "archived"}.`);
       setMessages((m) =>
         m.map((item) => (item.id === id ? { ...item, status: value } : item)),
       );
