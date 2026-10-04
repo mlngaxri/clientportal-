@@ -11,7 +11,7 @@ async function database() {
   return db;
 }
 
-test("analytics summary is authenticated and project-scoped", async () => {
+test("analytics summary is authenticated, project-scoped, and rejects invalid ranges", async () => {
   const db = await database();
   const owner = randomUUID(), outsider = randomUUID(), project = randomUUID();
   await db.query("insert into auth.users(id) values($1),($2)", [owner, outsider]);
@@ -25,6 +25,9 @@ test("analytics summary is authenticated and project-scoped", async () => {
   await assert.rejects(() => db.query("select analytics_summary($1,7)", [project]), /Project not found or access denied/);
 
   await db.query("select set_config('test.uid',$1,false)", [owner]);
+  await assert.rejects(() => db.query("select analytics_summary($1,$2::integer)", [project, null]), /Invalid analytics range/);
+  await assert.rejects(() => db.query("select analytics_summary($1,14)", [project]), /Invalid analytics range/);
+
   const summary = (await db.query<{ analytics_summary: { views: number; visitors: number; actions: number; forms: number; pro: boolean } }>("select analytics_summary($1,7) as analytics_summary", [project])).rows[0].analytics_summary;
   assert.equal(Number(summary.views), 0);
   assert.equal(Number(summary.visitors), 0);
