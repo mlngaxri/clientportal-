@@ -29,6 +29,13 @@ test("acknowledged Review identity clears stale selected Direction intent", asyn
   assert.match(source, /commandGate\.current\.completed = null;\s*setCompletedCommand\(null\);\s*setUploading\(0\);\s*setSelected\(null\);\s*\}, \[board\.id, board\.status, board\.version\]\);/s, "selection must be scoped to the acknowledged Review identity so a matching Direction id on a replacement board cannot inherit stale editor intent");
 });
 
+test("stale Review canvas callbacks cannot mutate a replacement board", async () => {
+  const source = await readFile("components/Review.tsx", "utf8");
+  assert.match(source, /onContext=\{next => \{ if \(boardIdentityRef\.current !== boardIdentity\) return;/, "late context callbacks from an obsolete canvas must not retarget the replacement Review");
+  assert.match(source, /onAnnotate=\{strokes => \{ if \(boardIdentityRef\.current !== boardIdentity\) return; if \(selected\) update\(/, "late annotation callbacks from an obsolete canvas must not mutate a Direction on the replacement Review");
+  assert.match(source, /onDirection=\{patch => \{ if \(boardIdentityRef\.current !== boardIdentity\) return;/, "late draw or reattachment callbacks from an obsolete canvas must not add or retarget Directions on the replacement Review");
+});
+
 test("stale Review reattachment is canceled when its Direction disappears", async () => {
   const source = await readFile("components/Review.tsx", "utf8");
   assert.match(source, /if \(!reattach \|\| data\.objects\.some\(\(object\) => object\.id === reattach\)\) return;\s*setReattach\(null\);\s*setAnnouncement\("Reattachment canceled because that Direction is no longer available\."\);/s, "acknowledged data removing the reattachment target must cancel the orphaned intent and announce it");
