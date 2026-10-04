@@ -24,6 +24,7 @@ export function usePaymentReturn(projectId: string | undefined, onConfirmed: () 
     setState(key.current ? "processing" : "unknown");
     let attempts = 0;
     const timer = setInterval(() => {
+      if (!key.current) { clearInterval(timer); return; }
       if (++attempts >= 20) { clearInterval(timer); setTimedOut(true); return; }
       void check();
     }, 3000);
